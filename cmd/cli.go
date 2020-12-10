@@ -4,9 +4,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mr-karan/doggo/pkg/resolver"
+	resolver "github.com/mr-karan/doggo/pkg/resolve"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -37,23 +37,28 @@ func main() {
 	app.Name = "doggo"
 	app.Usage = "Command-line DNS Client"
 	app.Version = buildVersion
-	app.Author = "Karan Sharma @mrkaran"
-	// Register command line args.
-	app.Flags = []cli.Flag{
-		cli.BoolFlag{
-			Name:  "verbose",
-			Usage: "Enable verbose logging",
-		},
-	}
 	var (
 		logger = initLogger(true)
 	)
 	// Initialize hub.
 	hub := NewHub(logger, buildVersion)
-
+	// Register command line args.
+	app.Flags = []cli.Flag{
+		&cli.StringSliceFlag{
+			Name:        "query",
+			Usage:       "Domain name to query",
+			Destination: hub.Domains,
+		},
+		&cli.BoolFlag{
+			Name:  "verbose",
+			Usage: "Enable verbose logging",
+		},
+	}
 	app.Action = func(c *cli.Context) error {
+
 		// parse arguments
-		for _, arg := range c.Args() {
+		var domains cli.StringSlice
+		for _, arg := range c.Args().Slice() {
 			if strings.HasPrefix(arg, "@") {
 				hub.Nameservers = append(hub.Nameservers, arg)
 			} else if isUpper(arg) {
@@ -63,7 +68,8 @@ func main() {
 					hub.QClass = append(hub.QClass, arg)
 				}
 			} else {
-				hub.Domains = append(hub.Domains, arg)
+				domains.Set(arg)
+				hub.Domains = &domains
 			}
 		}
 		// load defaults

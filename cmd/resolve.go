@@ -8,12 +8,12 @@ import (
 
 // Resolve resolves the domain name
 func (hub *Hub) Resolve() {
-	var messages = make([]dns.Msg, 0, len(hub.Domains))
-	for _, d := range hub.Domains {
+	var messages = make([]dns.Msg, 0, len(hub.Domains.Value()))
+	for _, d := range hub.Domains.Value() {
 		msg := dns.Msg{}
 		msg.Id = dns.Id()
 		msg.RecursionDesired = true
-		msg.Question = []dns.Question{(dns.Question{d, dns.TypeA, dns.ClassINET})}
+		msg.Question = []dns.Question{(dns.Question{dns.Fqdn(d), dns.TypeA, dns.ClassINET})}
 		messages = append(messages, msg)
 	}
 	c := new(dns.Client)
@@ -27,6 +27,6 @@ func (hub *Hub) Resolve() {
 				fmt.Println(t.String())
 			}
 		}
-		fmt.Println("rtt is", rtt, msg.Question)
+		fmt.Println("rtt is", rtt, msg.Question[0].Name)
 	}
 }

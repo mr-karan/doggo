@@ -2,14 +2,14 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 // Hub represents the structure for all app wide functions and structs.
 type Hub struct {
 	Logger      *logrus.Logger
 	Version     string
-	Domains     []string
+	Domains     *cli.StringSlice
 	QTypes      []string
 	QClass      []string
 	Nameservers []string
