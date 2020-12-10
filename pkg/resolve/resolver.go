@@ -78,7 +78,7 @@ func (r *Resolver) Lookup(questions []dns.Question) error {
 					fmt.Println(t.String())
 				}
 			}
-			fmt.Println("rtt is", rtt, msg.Question)
+			fmt.Println("rtt is", rtt)
 		}
 	}
 	return nil

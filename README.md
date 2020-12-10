@@ -1,2 +1,4 @@
 # doggo
-Golang port of https://github.com/ogham/dog
+
+_Command-line DNS client written in Golang_
+
