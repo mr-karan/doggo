@@ -2,24 +2,24 @@ package main
 
 import (
 	"os"
-	"strings"
 
-	resolver "github.com/mr-karan/doggo/pkg/resolve"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
 var (
 	// Version and date of the build. This is injected at build-time.
-	buildVersion = "unknown"
-	buildDate    = "unknown"
+	buildVersion   = "unknown"
+	buildDate      = "unknown"
+	verboseEnabled = false
 )
 
 // initLogger initializes logger
 func initLogger(verbose bool) *logrus.Logger {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
+		DisableTimestamp:       true,
+		DisableLevelTruncation: true,
 	})
 	// Set logger level
 	if verbose {
@@ -32,66 +32,61 @@ func initLogger(verbose bool) *logrus.Logger {
 }
 
 func main() {
-	// Intialize new CLI app
-	app := cli.NewApp()
-	app.Name = "doggo"
-	app.Usage = "Command-line DNS Client"
-	app.Version = buildVersion
 	var (
-		logger = initLogger(true)
+		logger = initLogger(verboseEnabled)
+		app    = cli.NewApp()
 	)
 	// Initialize hub.
 	hub := NewHub(logger, buildVersion)
-	// Register command line args.
+
+	// Configure CLI app.
+	app.Name = "doggo"
+	app.Usage = "Command-line DNS Client"
+	app.Version = buildVersion
+
+	var qFlags QueryFlags
+	// Register command line flags.
 	app.Flags = []cli.Flag{
 		&cli.StringSliceFlag{
 			Name:        "query",
 			Usage:       "Domain name to query",
-			Destination: hub.Domains,
+			Destination: qFlags.QNames,
+		},
+		&cli.StringSliceFlag{
+			Name:        "type",
+			Usage:       "Type of DNS record to be queried (A, AAAA, MX etc)",
+			Destination: qFlags.QTypes,
+		},
+		&cli.StringSliceFlag{
+			Name:        "nameserver",
+			Usage:       "Address of the nameserver to send packets to",
+			Destination: qFlags.Nameservers,
+		},
+		&cli.StringSliceFlag{
+			Name:        "class",
+			Usage:       "Network class of the DNS record to be queried (IN, CH, HS etc)",
+			Destination: qFlags.QClasses,
 		},
 		&cli.BoolFlag{
-			Name:  "verbose",
-			Usage: "Enable verbose logging",
+			Name:        "verbose",
+			Usage:       "Enable verbose logging",
+			Destination: &verboseEnabled,
+			DefaultText: "false",
 		},
 	}
-	app.Action = func(c *cli.Context) error {
 
-		// parse arguments
-		var domains cli.StringSlice
-		for _, arg := range c.Args().Slice() {
-			if strings.HasPrefix(arg, "@") {
-				hub.Nameservers = append(hub.Nameservers, arg)
-			} else if isUpper(arg) {
-				if parseQueryType(arg) {
-					hub.QTypes = append(hub.QTypes, arg)
-				} else if parseQueryClass(arg) {
-					hub.QClass = append(hub.QClass, arg)
-				}
-			} else {
-				domains.Set(arg)
-				hub.Domains = &domains
-			}
+	app.Before = hub.loadQueryArgs
+	app.Action = func(c *cli.Context) error {
+		if len(hub.QueryFlags.QNames.Value()) == 0 {
+			cli.ShowAppHelpAndExit(c, 0)
 		}
-		// load defaults
-		if len(hub.QTypes) == 0 {
-			hub.QTypes = append(hub.QTypes, "A")
-		}
-		if len(hub.Nameservers) == 0 {
-			ns, err := resolver.GetDefaultNameserver()
-			if err != nil {
-				panic(err)
-			}
-			hub.Nameservers = append(hub.Nameservers, ns)
-		}
-		// resolve query
-		hub.Resolve()
+		hub.Lookup(c)
 		return nil
 	}
-
 	// Run the app.
-	hub.Logger.Info("Starting doggo...")
+	hub.Logger.Debug("Starting doggo...")
 	err := app.Run(os.Args)
 	if err != nil {
-		logger.Errorf("Something terrbily went wrong: %s", err)
+		logger.Errorf("oops! we encountered an issue: %s", err)
 	}
 }

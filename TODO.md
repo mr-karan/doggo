@@ -1,10 +1,11 @@
 # doggo - v1.0 Milestone
 
 ## Resolver
-- [ ] Create a DNS Resolver struct
+- [x] Create a DNS Resolver struct
 - [ ] Add methods to initialise the config, set defaults
-- [ ] Add a resolve method
-- [ ] Make it separate from Hub
+- [x] Add a resolve method
+- [x] Make it separate from Hub
+- [ ] Parse output into separate fields
 
 ## CLI Features
 - [ ] `digfile`
@@ -15,10 +16,10 @@
 - [ ] Table output
 
 ## CLI Grunt
-- [ ] Query args
-- [ ] Neatly package them to load args in different functions
-- [ ] Upper case is not mandatory for query type/classes
-
+- [x] Query args
+- [x] Neatly package them to load args in different functions
+- [x] Upper case is not mandatory for query type/classes
+- [ ] Output
 ## Tests
 
 ## Documentation

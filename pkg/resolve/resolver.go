@@ -54,30 +54,24 @@ func NewResolverFromResolvFile(resolvFilePath string) (*Resolver, error) {
 	}, nil
 }
 
-func (r *Resolver) Lookup(domains []string) []error {
-	// Prepare a list of DNS messages to be sent to the server.
-	// It's possible to send multiple question in one message
-	// but some nameservers are not able to
-	var messages = make([]dns.Msg, 0, len(domains))
-
-	for _, d := range domains {
+// Lookup prepare a list of DNS messages to be sent to the server.
+// It's possible to send multiple question in one message
+// but some nameservers are not able to
+func (r *Resolver) Lookup(questions []dns.Question) error {
+	var messages = make([]dns.Msg, 0, len(questions))
+	for _, q := range questions {
 		msg := dns.Msg{}
 		msg.Id = dns.Id()
 		msg.RecursionDesired = true
 		// It's recommended to only send 1 question for 1 DNS message.
-		msg.Question = []dns.Question{(dns.Question{
-			Name:   dns.Fqdn(d),
-			Qtype:  dns.TypeA,
-			Qclass: dns.ClassINET,
-		})}
+		msg.Question = []dns.Question{q}
 		messages = append(messages, msg)
 	}
-	var errors []error
 	for _, msg := range messages {
 		for _, srv := range r.servers {
 			in, rtt, err := r.client.Exchange(&msg, srv)
 			if err != nil {
-				errors = append(errors, err)
+				return err
 			}
 			for _, ans := range in.Answer {
 				if t, ok := ans.(*dns.A); ok {
@@ -87,5 +81,5 @@ func (r *Resolver) Lookup(domains []string) []error {
 			fmt.Println("rtt is", rtt, msg.Question)
 		}
 	}
-	return errors
+	return nil
 }
