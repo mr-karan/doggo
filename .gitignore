@@ -19,4 +19,4 @@ vendor/
 .env
 config.yml
 .DS_Store
-bin/
+bin/*
