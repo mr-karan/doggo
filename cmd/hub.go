@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/miekg/dns"
-	"github.com/mr-karan/doggo/pkg/resolve"
+	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
@@ -13,7 +13,7 @@ type Hub struct {
 	Version    string
 	QueryFlags QueryFlags
 	Questions  []dns.Question
-	Resolver   *resolve.Resolver
+	Resolver   resolvers.Resolver
 }
 
 // QueryFlags is used store the value of CLI flags.
@@ -22,6 +22,10 @@ type QueryFlags struct {
 	QTypes      *cli.StringSlice
 	QClasses    *cli.StringSlice
 	Nameservers *cli.StringSlice
+	IsDOH       bool
+	IsDOT       bool
+	IsUDP       bool
+	IsTLS       bool
 }
 
 // NewHub initializes an instance of Hub which holds app wide configuration.

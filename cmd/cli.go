@@ -68,6 +68,12 @@ func main() {
 			Destination: qFlags.QClasses,
 		},
 		&cli.BoolFlag{
+			Name:        "https",
+			Usage:       "Use the DNS-over-HTTPS protocol",
+			Destination: &qFlags.IsDOH,
+			DefaultText: "udp",
+		},
+		&cli.BoolFlag{
 			Name:        "verbose",
 			Usage:       "Enable verbose logging",
 			Destination: &verboseEnabled,

@@ -1,11 +1,9 @@
 package main
 
 import (
-	"runtime"
 	"strings"
 
 	"github.com/miekg/dns"
-	"github.com/mr-karan/doggo/pkg/resolve"
 	"github.com/urfave/cli/v2"
 )
 
@@ -54,23 +52,4 @@ func (hub *Hub) loadFallbacks(c *cli.Context) {
 	if len(hub.QueryFlags.QClasses.Value()) == 0 {
 		hub.QueryFlags.QClasses.Set("IN")
 	}
-}
-
-// loadResolver checks
-func (hub *Hub) loadResolver(c *cli.Context) error {
-	if len(hub.QueryFlags.Nameservers.Value()) == 0 {
-		if runtime.GOOS == "windows" {
-			// TODO: Add a method for reading system default nameserver in windows.
-		} else {
-			rslvr, err := resolve.NewResolverFromResolvFile(resolve.DefaultResolvConfPath)
-			if err != nil {
-				return err
-			}
-			hub.Resolver = rslvr
-		}
-	} else {
-		rslvr := resolve.NewResolver(hub.QueryFlags.Nameservers.Value())
-		hub.Resolver = rslvr
-	}
-	return nil
 }

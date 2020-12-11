@@ -1,4 +1,4 @@
-package resolve
+package resolvers
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"github.com/miekg/dns"
 )
 
-// Resolver holds the configuration for a dns.Client
-type Resolver struct {
+// Manager represents the config options for setting up a Resolver.
+type Manager struct {
 	client  *dns.Client
 	servers []string
 }
@@ -17,7 +17,7 @@ type Resolver struct {
 const DefaultResolvConfPath = "/etc/resolv.conf"
 
 // NewResolver accepts a list of nameservers and configures a DNS resolver.
-func NewResolver(servers []string) *Resolver {
+func NewResolver(servers []string) Resolver {
 	client := &dns.Client{}
 	var nameservers []string
 	for _, srv := range servers {
@@ -27,7 +27,7 @@ func NewResolver(servers []string) *Resolver {
 			nameservers = append(nameservers, dns.Fqdn(srv)+":"+"53")
 		}
 	}
-	return &Resolver{
+	return &Manager{
 		client:  client,
 		servers: nameservers,
 	}
@@ -35,7 +35,7 @@ func NewResolver(servers []string) *Resolver {
 
 // NewResolverFromResolvFile loads the configuration from resolv config file
 // and initialises a DNS resolver.
-func NewResolverFromResolvFile(resolvFilePath string) (*Resolver, error) {
+func NewResolverFromResolvFile(resolvFilePath string) (Resolver, error) {
 	if resolvFilePath == "" {
 		resolvFilePath = DefaultResolvConfPath
 	}
@@ -56,7 +56,7 @@ func NewResolverFromResolvFile(resolvFilePath string) (*Resolver, error) {
 	}
 
 	client := &dns.Client{}
-	return &Resolver{
+	return &Manager{
 		client:  client,
 		servers: servers,
 	}, nil
@@ -65,7 +65,7 @@ func NewResolverFromResolvFile(resolvFilePath string) (*Resolver, error) {
 // Lookup prepare a list of DNS messages to be sent to the server.
 // It's possible to send multiple question in one message
 // but some nameservers are not able to
-func (r *Resolver) Lookup(questions []dns.Question) error {
+func (m *Manager) Lookup(questions []dns.Question) error {
 	var messages = make([]dns.Msg, 0, len(questions))
 	for _, q := range questions {
 		msg := dns.Msg{}
@@ -76,8 +76,8 @@ func (r *Resolver) Lookup(questions []dns.Question) error {
 		messages = append(messages, msg)
 	}
 	for _, msg := range messages {
-		for _, srv := range r.servers {
-			in, rtt, err := r.client.Exchange(&msg, srv)
+		for _, srv := range m.servers {
+			in, rtt, err := m.client.Exchange(&msg, srv)
 			if err != nil {
 				return err
 			}
@@ -90,4 +90,8 @@ func (r *Resolver) Lookup(questions []dns.Question) error {
 		}
 	}
 	return nil
+}
+
+func (m *Manager) Name() string {
+	return "classic"
 }
