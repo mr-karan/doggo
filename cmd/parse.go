@@ -32,7 +32,7 @@ func (hub *Hub) loadQueryArgs(c *cli.Context) error {
 func (hub *Hub) parseFreeArgs(c *cli.Context) error {
 	for _, arg := range c.Args().Slice() {
 		if strings.HasPrefix(arg, "@") {
-			hub.QueryFlags.Nameservers.Set(arg)
+			hub.QueryFlags.Nameservers.Set(strings.Trim(arg, "@"))
 		} else if _, ok := dns.StringToType[strings.ToUpper(arg)]; ok {
 			hub.QueryFlags.QTypes.Set(arg)
 		} else if _, ok := dns.StringToClass[strings.ToUpper(arg)]; ok {

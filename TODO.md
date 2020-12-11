@@ -20,6 +20,8 @@
 - [x] Neatly package them to load args in different functions
 - [x] Upper case is not mandatory for query type/classes
 - [ ] Output
+- [ ] Add client transport options
+
 ## Tests
 
 ## Documentation

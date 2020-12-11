@@ -19,9 +19,17 @@ const DefaultResolvConfPath = "/etc/resolv.conf"
 // NewResolver accepts a list of nameservers and configures a DNS resolver.
 func NewResolver(servers []string) *Resolver {
 	client := &dns.Client{}
+	var nameservers []string
+	for _, srv := range servers {
+		if i := net.ParseIP(srv); i != nil {
+			nameservers = append(nameservers, net.JoinHostPort(srv, "53"))
+		} else {
+			nameservers = append(nameservers, dns.Fqdn(srv)+":"+"53")
+		}
+	}
 	return &Resolver{
 		client:  client,
-		servers: servers,
+		servers: nameservers,
 	}
 }
 
