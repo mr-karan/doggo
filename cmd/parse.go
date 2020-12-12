@@ -8,7 +8,8 @@ import (
 )
 
 func (hub *Hub) loadQueryArgs(c *cli.Context) error {
-	err := hub.parseFreeArgs(c)
+	hub.loadTransportArgs(c)
+	err := hub.loadFreeArgs(c)
 	if err != nil {
 		cli.Exit("Error parsing arguments", -1)
 	}
@@ -20,14 +21,14 @@ func (hub *Hub) loadQueryArgs(c *cli.Context) error {
 	return err
 }
 
-// parseFreeArgs tries to parse all the arguments
+// loadFreeArgs tries to parse all the arguments
 // given to the CLI. These arguments don't have any specific
 // order so we have to deduce based on the pattern of argument.
 // For eg, a nameserver must always begin with `@`. In this
 // pattern we deduce the arguments and map it to internal query
 // options. In case an argument isn't able to fit in any of the existing
 // pattern it is considered to be a "query name".
-func (hub *Hub) parseFreeArgs(c *cli.Context) error {
+func (hub *Hub) loadFreeArgs(c *cli.Context) error {
 	for _, arg := range c.Args().Slice() {
 		if strings.HasPrefix(arg, "@") {
 			hub.QueryFlags.Nameservers.Set(strings.Trim(arg, "@"))
@@ -51,5 +52,13 @@ func (hub *Hub) loadFallbacks(c *cli.Context) {
 	}
 	if len(hub.QueryFlags.QClasses.Value()) == 0 {
 		hub.QueryFlags.QClasses.Set("IN")
+	}
+}
+
+// loadTransportArgs loads the query flags
+// for transport options.
+func (hub *Hub) loadTransportArgs(c *cli.Context) {
+	if c.Bool("https") {
+		hub.QueryFlags.IsDOH = true
 	}
 }

@@ -7,8 +7,8 @@ import (
 	"github.com/miekg/dns"
 )
 
-// Manager represents the config options for setting up a Resolver.
-type Manager struct {
+// ClassicResolver represents the config options for setting up a Resolver.
+type ClassicResolver struct {
 	client  *dns.Client
 	servers []string
 }
@@ -16,21 +16,25 @@ type Manager struct {
 //DefaultResolvConfPath specifies path to default resolv config file on UNIX.
 const DefaultResolvConfPath = "/etc/resolv.conf"
 
-// NewResolver accepts a list of nameservers and configures a DNS resolver.
-func NewResolver(servers []string) Resolver {
+// NewClassicResolver accepts a list of nameservers and configures a DNS resolver.
+func NewClassicResolver(servers []string) (Resolver, error) {
 	client := &dns.Client{}
 	var nameservers []string
 	for _, srv := range servers {
 		if i := net.ParseIP(srv); i != nil {
 			nameservers = append(nameservers, net.JoinHostPort(srv, "53"))
 		} else {
-			nameservers = append(nameservers, dns.Fqdn(srv)+":"+"53")
+			host, port, err := net.SplitHostPort(srv)
+			if err != nil {
+				return nil, err
+			}
+			nameservers = append(nameservers, fmt.Sprintf("%s:%s", host, port))
 		}
 	}
-	return &Manager{
+	return &ClassicResolver{
 		client:  client,
 		servers: nameservers,
-	}
+	}, nil
 }
 
 // NewResolverFromResolvFile loads the configuration from resolv config file
@@ -56,7 +60,7 @@ func NewResolverFromResolvFile(resolvFilePath string) (Resolver, error) {
 	}
 
 	client := &dns.Client{}
-	return &Manager{
+	return &ClassicResolver{
 		client:  client,
 		servers: servers,
 	}, nil
@@ -65,7 +69,7 @@ func NewResolverFromResolvFile(resolvFilePath string) (Resolver, error) {
 // Lookup prepare a list of DNS messages to be sent to the server.
 // It's possible to send multiple question in one message
 // but some nameservers are not able to
-func (m *Manager) Lookup(questions []dns.Question) error {
+func (c *ClassicResolver) Lookup(questions []dns.Question) error {
 	var messages = make([]dns.Msg, 0, len(questions))
 	for _, q := range questions {
 		msg := dns.Msg{}
@@ -76,8 +80,8 @@ func (m *Manager) Lookup(questions []dns.Question) error {
 		messages = append(messages, msg)
 	}
 	for _, msg := range messages {
-		for _, srv := range m.servers {
-			in, rtt, err := m.client.Exchange(&msg, srv)
+		for _, srv := range c.servers {
+			in, rtt, err := c.client.Exchange(&msg, srv)
 			if err != nil {
 				return err
 			}
@@ -90,8 +94,4 @@ func (m *Manager) Lookup(questions []dns.Question) error {
 		}
 	}
 	return nil
-}
-
-func (m *Manager) Name() string {
-	return "classic"
 }

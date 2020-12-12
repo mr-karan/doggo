@@ -39,6 +39,7 @@ func NewHub(logger *logrus.Logger, buildVersion string) *Hub {
 			QTypes:      cli.NewStringSlice(),
 			QClasses:    cli.NewStringSlice(),
 			Nameservers: cli.NewStringSlice(),
+			IsDOH:       false,
 		},
 	}
 	return hub
