@@ -25,7 +25,7 @@ type QueryFlags struct {
 	IsDOH       bool
 	IsDOT       bool
 	IsUDP       bool
-	IsTLS       bool
+	UseTCP      bool
 	UseIPv4     bool
 	UseIPv6     bool
 }

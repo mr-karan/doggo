@@ -7,7 +7,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// loadResolver checks
+// loadResolver checks for various flags and initialises
+// the correct resolver based on the config.
 func (hub *Hub) loadResolver(c *cli.Context) error {
 	// check if DOH flag is set.
 	if hub.QueryFlags.IsDOH {
@@ -18,11 +19,6 @@ func (hub *Hub) loadResolver(c *cli.Context) error {
 		hub.Resolver = rslvr
 		return nil
 	}
-	// check if DOT flag is set.
-
-	// check if TCP flag is set.
-
-	// fallback to good ol UDP.
 	if len(hub.QueryFlags.Nameservers.Value()) == 0 {
 		if runtime.GOOS == "windows" {
 			// TODO: Add a method for reading system default nameserver in windows.
@@ -38,6 +34,8 @@ func (hub *Hub) loadResolver(c *cli.Context) error {
 		rslvr, err := resolvers.NewClassicResolver(hub.QueryFlags.Nameservers.Value(), resolvers.ClassicResolverOpts{
 			UseIPv4: hub.QueryFlags.UseIPv4,
 			UseIPv6: hub.QueryFlags.UseIPv6,
+			UseTLS:  hub.QueryFlags.IsDOT,
+			UseTCP:  hub.QueryFlags.UseTCP,
 		})
 		if err != nil {
 			return err

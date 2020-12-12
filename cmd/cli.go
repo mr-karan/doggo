@@ -67,17 +67,27 @@ func main() {
 			Destination: hub.QueryFlags.QClasses,
 		},
 		&cli.BoolFlag{
-			Name:  "udp",
-			Usage: "Use the DNS protocol over UDP",
+			Name:    "udp",
+			Usage:   "Use the DNS protocol over UDP",
+			Aliases: []string{"U"},
 		},
 		&cli.BoolFlag{
-			Name:  "tcp",
-			Usage: "Use the DNS protocol over TCP",
+			Name:        "tcp",
+			Usage:       "Use the DNS protocol over TCP",
+			Aliases:     []string{"T"},
+			Destination: &hub.QueryFlags.UseTCP,
 		},
 		&cli.BoolFlag{
 			Name:        "https",
 			Usage:       "Use the DNS-over-HTTPS protocol",
+			Aliases:     []string{"H"},
 			Destination: &hub.QueryFlags.IsDOH,
+		},
+		&cli.BoolFlag{
+			Name:        "tls",
+			Usage:       "Use the DNS-over-TLS",
+			Aliases:     []string{"S"},
+			Destination: &hub.QueryFlags.IsDOT,
 		},
 		&cli.BoolFlag{
 			Name:        "ipv6",

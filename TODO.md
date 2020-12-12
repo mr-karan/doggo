@@ -2,10 +2,14 @@
 
 ## Resolver
 - [x] Create a DNS Resolver struct
-- [ ] Add methods to initialise the config, set defaults
+- [x]] Add methods to initialise the config, set defaults
 - [x] Add a resolve method
 - [x] Make it separate from Hub
 - [ ] Parse output into separate fields
+- [ ] Test UDP6
+- [x] Add DOH support
+- [x] Add DOT support
+- [x] Add DNS protocol on TCP mode support.
 
 ## CLI Features
 - [ ] `digfile`
