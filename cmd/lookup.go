@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -13,16 +12,9 @@ func (hub *Hub) Lookup(c *cli.Context) error {
 	hub.prepareQuestions()
 	responses, err := hub.Resolver.Lookup(hub.Questions)
 	if err != nil {
-		hub.Logger.Error(err)
+		return err
 	}
-	for _, r := range responses {
-		for _, a := range r.Message.Answer {
-			if t, ok := a.(*dns.A); ok {
-				fmt.Println(t.String())
-			}
-		}
-	}
-
+	hub.Output(responses)
 	return nil
 }
 
