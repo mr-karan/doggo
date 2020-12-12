@@ -7,9 +7,9 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// loadResolver checks for various flags and initialises
+// initResolver checks for various flags and initialises
 // the correct resolver based on the config.
-func (hub *Hub) loadResolver(c *cli.Context) error {
+func (hub *Hub) initResolver(c *cli.Context) error {
 	// check if DOH flag is set.
 	if hub.QueryFlags.IsDOH {
 		rslvr, err := resolvers.NewDOHResolver(hub.QueryFlags.Nameservers.Value())

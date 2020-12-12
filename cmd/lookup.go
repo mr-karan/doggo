@@ -1,18 +1,28 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/miekg/dns"
 	"github.com/urfave/cli/v2"
 )
 
+// Lookup sends the DNS queries to the server.
 func (hub *Hub) Lookup(c *cli.Context) error {
 	hub.prepareQuestions()
-	err := hub.Resolver.Lookup(hub.Questions)
+	responses, err := hub.Resolver.Lookup(hub.Questions)
 	if err != nil {
 		hub.Logger.Error(err)
 	}
+	for _, r := range responses {
+		for _, a := range r.Message.Answer {
+			if t, ok := a.(*dns.A); ok {
+				fmt.Println(t.String())
+			}
+		}
+	}
+
 	return nil
 }
 

@@ -12,7 +12,7 @@ func (hub *Hub) loadQueryArgs(c *cli.Context) error {
 	if err != nil {
 		cli.Exit("Error parsing arguments", -1)
 	}
-	err = hub.loadResolver(c)
+	err = hub.initResolver(c)
 	if err != nil {
 		cli.Exit("Error parsing nameservers", -1)
 	}

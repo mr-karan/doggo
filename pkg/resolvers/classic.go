@@ -98,22 +98,26 @@ func NewResolverFromResolvFile(resolvFilePath string) (Resolver, error) {
 // Lookup prepare a list of DNS messages to be sent to the server.
 // It's possible to send multiple question in one message
 // but some nameservers are not able to
-func (c *ClassicResolver) Lookup(questions []dns.Question) error {
-	messages := prepareMessages(questions)
+func (c *ClassicResolver) Lookup(questions []dns.Question) ([]Response, error) {
+	var (
+		messages  = prepareMessages(questions)
+		responses []Response
+	)
 
 	for _, msg := range messages {
 		for _, srv := range c.servers {
 			in, rtt, err := c.client.Exchange(&msg, srv)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			for _, ans := range in.Answer {
-				if t, ok := ans.(*dns.A); ok {
-					fmt.Println(t.String())
-				}
+			msg.Answer = in.Answer
+			rsp := Response{
+				Message:    msg,
+				RTT:        rtt,
+				Nameserver: srv,
 			}
-			fmt.Println("rtt is", rtt)
+			responses = append(responses, rsp)
 		}
 	}
-	return nil
+	return responses, nil
 }

@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -27,39 +26,46 @@ func NewDOHResolver(servers []string) (Resolver, error) {
 	}, nil
 }
 
-func (r *DOHResolver) Lookup(questions []dns.Question) error {
-	messages := prepareMessages(questions)
+func (r *DOHResolver) Lookup(questions []dns.Question) ([]Response, error) {
+	var (
+		messages  = prepareMessages(questions)
+		responses []Response
+	)
 
-	for _, m := range messages {
-		b, err := m.Pack()
+	for _, msg := range messages {
+		// get the DNS Message in wire format.
+		b, err := msg.Pack()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		for _, srv := range r.servers {
+			now := time.Now()
+			// Make an HTTP POST request to the DNS server with the DNS message as wire format bytes in the body.
 			resp, err := r.client.Post(srv, "application/dns-message", bytes.NewBuffer(b))
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if resp.StatusCode != http.StatusOK {
-				return err
+				return nil, err
 			}
-
+			rtt := time.Since(now)
+			// extract the binary response in DNS Message.
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
-			r := &dns.Msg{}
-			err = r.Unpack(body)
+			err = msg.Unpack(body)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			for _, ans := range r.Answer {
-				if t, ok := ans.(*dns.A); ok {
-					fmt.Println(t.String())
-				}
+			rsp := Response{
+				Message:    msg,
+				RTT:        rtt,
+				Nameserver: srv,
 			}
+			responses = append(responses, rsp)
 		}
 	}
-	return nil
+	return responses, nil
 }
