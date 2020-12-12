@@ -8,7 +8,6 @@ import (
 )
 
 func (hub *Hub) loadQueryArgs(c *cli.Context) error {
-	hub.loadTransportArgs(c)
 	err := hub.loadFreeArgs(c)
 	if err != nil {
 		cli.Exit("Error parsing arguments", -1)
@@ -52,13 +51,5 @@ func (hub *Hub) loadFallbacks(c *cli.Context) {
 	}
 	if len(hub.QueryFlags.QClasses.Value()) == 0 {
 		hub.QueryFlags.QClasses.Set("IN")
-	}
-}
-
-// loadTransportArgs loads the query flags
-// for transport options.
-func (hub *Hub) loadTransportArgs(c *cli.Context) {
-	if c.Bool("https") {
-		hub.QueryFlags.IsDOH = true
 	}
 }

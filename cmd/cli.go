@@ -44,32 +44,52 @@ func main() {
 	app.Usage = "Command-line DNS Client"
 	app.Version = buildVersion
 
-	var qFlags QueryFlags
 	// Register command line flags.
 	app.Flags = []cli.Flag{
 		&cli.StringSliceFlag{
 			Name:        "query",
 			Usage:       "Domain name to query",
-			Destination: qFlags.QNames,
+			Destination: hub.QueryFlags.QNames,
 		},
 		&cli.StringSliceFlag{
 			Name:        "type",
 			Usage:       "Type of DNS record to be queried (A, AAAA, MX etc)",
-			Destination: qFlags.QTypes,
+			Destination: hub.QueryFlags.QTypes,
 		},
 		&cli.StringSliceFlag{
 			Name:        "nameserver",
 			Usage:       "Address of the nameserver to send packets to",
-			Destination: qFlags.Nameservers,
+			Destination: hub.QueryFlags.Nameservers,
 		},
 		&cli.StringSliceFlag{
 			Name:        "class",
 			Usage:       "Network class of the DNS record to be queried (IN, CH, HS etc)",
-			Destination: qFlags.QClasses,
+			Destination: hub.QueryFlags.QClasses,
 		},
 		&cli.BoolFlag{
-			Name:  "https",
-			Usage: "Use the DNS-over-HTTPS protocol",
+			Name:  "udp",
+			Usage: "Use the DNS protocol over UDP",
+		},
+		&cli.BoolFlag{
+			Name:  "tcp",
+			Usage: "Use the DNS protocol over TCP",
+		},
+		&cli.BoolFlag{
+			Name:        "https",
+			Usage:       "Use the DNS-over-HTTPS protocol",
+			Destination: &hub.QueryFlags.IsDOH,
+		},
+		&cli.BoolFlag{
+			Name:        "ipv6",
+			Aliases:     []string{"6"},
+			Usage:       "Use IPv6 only",
+			Destination: &hub.QueryFlags.UseIPv6,
+		},
+		&cli.BoolFlag{
+			Name:        "ipv4",
+			Aliases:     []string{"4"},
+			Usage:       "Use IPv4 only",
+			Destination: &hub.QueryFlags.UseIPv4,
 		},
 		&cli.BoolFlag{
 			Name:        "verbose",

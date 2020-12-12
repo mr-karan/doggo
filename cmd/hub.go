@@ -26,6 +26,8 @@ type QueryFlags struct {
 	IsDOT       bool
 	IsUDP       bool
 	IsTLS       bool
+	UseIPv4     bool
+	UseIPv6     bool
 }
 
 // NewHub initializes an instance of Hub which holds app wide configuration.
@@ -39,7 +41,6 @@ func NewHub(logger *logrus.Logger, buildVersion string) *Hub {
 			QTypes:      cli.NewStringSlice(),
 			QClasses:    cli.NewStringSlice(),
 			Nameservers: cli.NewStringSlice(),
-			IsDOH:       false,
 		},
 	}
 	return hub

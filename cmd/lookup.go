@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -12,7 +11,6 @@ func (hub *Hub) Lookup(c *cli.Context) error {
 	hub.prepareQuestions()
 	err := hub.Resolver.Lookup(hub.Questions)
 	if err != nil {
-		fmt.Println(err)
 		hub.Logger.Error(err)
 	}
 	return nil

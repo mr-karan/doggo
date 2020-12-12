@@ -13,11 +13,18 @@ type ClassicResolver struct {
 	servers []string
 }
 
+// ClassicResolverOpts holds options for setting up a Classic resolver.
+type ClassicResolverOpts struct {
+	UseIPv4 bool
+	UseIPv6 bool
+	UseTCP  bool
+}
+
 //DefaultResolvConfPath specifies path to default resolv config file on UNIX.
 const DefaultResolvConfPath = "/etc/resolv.conf"
 
 // NewClassicResolver accepts a list of nameservers and configures a DNS resolver.
-func NewClassicResolver(servers []string) (Resolver, error) {
+func NewClassicResolver(servers []string, opts ClassicResolverOpts) (Resolver, error) {
 	client := &dns.Client{}
 	var nameservers []string
 	for _, srv := range servers {
@@ -30,6 +37,13 @@ func NewClassicResolver(servers []string) (Resolver, error) {
 			}
 			nameservers = append(nameservers, fmt.Sprintf("%s:%s", host, port))
 		}
+	}
+	client.Net = "udp"
+	if opts.UseIPv4 {
+		client.Net = "udp4"
+	}
+	if opts.UseIPv6 {
+		client.Net = "udp6"
 	}
 	return &ClassicResolver{
 		client:  client,
@@ -70,15 +84,8 @@ func NewResolverFromResolvFile(resolvFilePath string) (Resolver, error) {
 // It's possible to send multiple question in one message
 // but some nameservers are not able to
 func (c *ClassicResolver) Lookup(questions []dns.Question) error {
-	var messages = make([]dns.Msg, 0, len(questions))
-	for _, q := range questions {
-		msg := dns.Msg{}
-		msg.Id = dns.Id()
-		msg.RecursionDesired = true
-		// It's recommended to only send 1 question for 1 DNS message.
-		msg.Question = []dns.Question{q}
-		messages = append(messages, msg)
-	}
+	messages := prepareMessages(questions)
+
 	for _, msg := range messages {
 		for _, srv := range c.servers {
 			in, rtt, err := c.client.Exchange(&msg, srv)

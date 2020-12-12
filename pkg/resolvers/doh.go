@@ -28,15 +28,8 @@ func NewDOHResolver(servers []string) (Resolver, error) {
 }
 
 func (r *DOHResolver) Lookup(questions []dns.Question) error {
-	var messages = make([]dns.Msg, 0, len(questions))
-	for _, q := range questions {
-		msg := dns.Msg{}
-		msg.Id = dns.Id()
-		msg.RecursionDesired = true
-		// It's recommended to only send 1 question for 1 DNS message.
-		msg.Question = []dns.Question{q}
-		messages = append(messages, msg)
-	}
+	messages := prepareMessages(questions)
+
 	for _, m := range messages {
 		b, err := m.Pack()
 		if err != nil {

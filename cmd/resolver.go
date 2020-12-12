@@ -35,7 +35,10 @@ func (hub *Hub) loadResolver(c *cli.Context) error {
 			return nil
 		}
 	} else {
-		rslvr, err := resolvers.NewClassicResolver(hub.QueryFlags.Nameservers.Value())
+		rslvr, err := resolvers.NewClassicResolver(hub.QueryFlags.Nameservers.Value(), resolvers.ClassicResolverOpts{
+			UseIPv4: hub.QueryFlags.UseIPv4,
+			UseIPv6: hub.QueryFlags.UseIPv6,
+		})
 		if err != nil {
 			return err
 		}
