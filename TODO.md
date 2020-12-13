@@ -34,7 +34,7 @@
   - [ ] Colorize
   - [ ] Add different commands
 - [x] Add client transport options
-- [ ] Fix an issue while loading free form args, where the same records are being added twice
+- [x] Fix an issue while loading free form args, where the same records are being added twice
 
 ## Tests
 

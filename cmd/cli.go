@@ -32,7 +32,7 @@ func main() {
 	f.StringSliceP("query", "q", []string{}, "Domain name to query")
 	f.StringSliceP("type", "t", []string{}, "Type of DNS record to be queried (A, AAAA, MX etc)")
 	f.StringSliceP("class", "c", []string{}, "Network class of the DNS record to be queried (IN, CH, HS etc)")
-	f.StringSliceP("nameservers", "n", []string{}, "Address of the nameserver to send packets to")
+	f.StringSliceP("nameserver", "n", []string{}, "Address of the nameserver to send packets to")
 
 	// Protocol Options
 	f.BoolP("udp", "U", false, "Use the DNS protocol over UDP")
@@ -57,6 +57,9 @@ func main() {
 		f.Usage()
 		hub.Logger.Exit(2)
 	}
+
+	hub.FreeArgs = f.Args()
+
 	// set log level
 	if k.Bool("debug") {
 		// Set logger level

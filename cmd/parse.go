@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -33,8 +32,7 @@ func (hub *Hub) loadQueryArgs() error {
 // options. In case an argument isn't able to fit in any of the existing
 // pattern it is considered to be a "query name".
 func (hub *Hub) loadFreeArgs() error {
-	args := os.Args[1:]
-	for _, arg := range args {
+	for _, arg := range hub.FreeArgs {
 		if strings.HasPrefix(arg, "--") || strings.HasPrefix(arg, "-") {
 			continue
 		}

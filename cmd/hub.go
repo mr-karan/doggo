@@ -11,6 +11,7 @@ type Hub struct {
 	Logger     *logrus.Logger
 	Version    string
 	QueryFlags QueryFlags
+	FreeArgs   []string
 	Questions  []dns.Question
 	Resolver   resolvers.Resolver
 }
@@ -20,7 +21,7 @@ type QueryFlags struct {
 	QNames           []string `koanf:"query"`
 	QTypes           []string `koanf:"type"`
 	QClasses         []string `koanf:"class"`
-	Nameservers      []string `koanf:"namserver"`
+	Nameservers      []string `koanf:"nameserver"`
 	IsDOH            bool     `koanf:"doh"`
 	IsDOT            bool     `koanf:"dot"`
 	IsUDP            bool     `koanf:"udp"`
