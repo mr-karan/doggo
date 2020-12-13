@@ -5,17 +5,9 @@ import (
 	"strings"
 
 	"github.com/miekg/dns"
-	"github.com/sirupsen/logrus"
 )
 
 func (hub *Hub) loadQueryArgs() error {
-	// set log level
-	if k.Bool("debug") {
-		// Set logger level
-		hub.Logger.SetLevel(logrus.DebugLevel)
-	} else {
-		hub.Logger.SetLevel(logrus.InfoLevel)
-	}
 
 	err := hub.loadNamedArgs()
 

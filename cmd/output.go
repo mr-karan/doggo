@@ -64,9 +64,15 @@ func (hub *Hub) outputJSON(out []Output, msgs []resolvers.Response) {
 }
 
 func (hub *Hub) outputTerminal(out []Output) {
-	green := color.New(color.FgGreen).SprintFunc()
-	blue := color.New(color.FgBlue).SprintFunc()
-	magenta := color.New(color.FgMagenta).SprintFunc()
+	green := color.New(color.FgGreen, color.Bold).SprintFunc()
+	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
+	yellow := color.New(color.FgYellow, color.Bold).SprintFunc()
+	cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
+	red := color.New(color.FgRed, color.Bold).SprintFunc()
+
+	if !hub.QueryFlags.Color {
+		color.NoColor = true // disables colorized output
+	}
 
 	table := tablewriter.NewWriter(os.Stdout)
 	header := []string{"Name", "Type", "Class", "TTL", "Address", "Nameserver"}
@@ -87,7 +93,24 @@ func (hub *Hub) outputTerminal(out []Output) {
 	table.SetNoWhiteSpace(true)
 
 	for _, o := range out {
-		output := []string{green(o.Name), blue(o.Type), o.Class, o.TTL, magenta(o.Address), o.Nameserver}
+		var typOut string
+		switch typ := o.Type; typ {
+		case "A":
+			typOut = blue(o.Type)
+		case "AAAA":
+			typOut = blue(o.Type)
+		case "MX":
+			typOut = cyan(o.Type)
+		case "NS":
+			typOut = cyan(o.Type)
+		case "CNAME":
+			typOut = yellow(o.Type)
+		case "TXT":
+			typOut = yellow(o.Type)
+		default:
+			typOut = red(o.Type)
+		}
+		output := []string{green(o.Name), typOut, o.Class, o.TTL, o.Address, o.Nameserver}
 		// Print how long it took
 		if hub.QueryFlags.DisplayTimeTaken {
 			output = append(output, o.TimeTaken)
@@ -125,9 +148,27 @@ func collectOutput(responses []resolvers.Response) []Output {
 				addr = t.AAAA.String()
 			case *dns.CNAME:
 				addr = t.Target
+			case *dns.CAA:
+				addr = t.Tag + " " + t.Value
+			case *dns.HINFO:
+				addr = t.Cpu + " " + t.Os
+			// case *dns.LOC:
+			// 	addr = t.String()
+			case *dns.PTR:
+				addr = t.Ptr
+			case *dns.SRV:
+				addr = strconv.Itoa(int(t.Priority)) + " " +
+					strconv.Itoa(int(t.Weight)) + " " +
+					t.Target + ":" + strconv.Itoa(int(t.Port))
+			case *dns.TXT:
+				addr = t.String()
+			case *dns.NS:
+				addr = t.String()
 			case *dns.MX:
 				addr = strconv.Itoa(int(t.Preference)) + " " + t.Mx
 			case *dns.SOA:
+				addr = t.String()
+			case *dns.NAPTR:
 				addr = t.String()
 			}
 

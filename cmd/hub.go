@@ -31,6 +31,7 @@ type QueryFlags struct {
 	ShowJSON         bool     `koanf:"json"`
 	UseSearchList    bool     `koanf:"search"`
 	Ndots            int      `koanf:"ndots"`
+	Color            bool     `koanf:"color"`
 }
 
 // NewHub initializes an instance of Hub which holds app wide configuration.
