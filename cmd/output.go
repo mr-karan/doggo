@@ -66,18 +66,28 @@ func (hub *Hub) outputJSON(out []Output, msgs []resolvers.Response) {
 func (hub *Hub) outputTerminal(out []Output) {
 	green := color.New(color.FgGreen).SprintFunc()
 	blue := color.New(color.FgBlue).SprintFunc()
+	magenta := color.New(color.FgMagenta).SprintFunc()
 
 	table := tablewriter.NewWriter(os.Stdout)
-	header := []string{"Name", "Type", "Class", "TTL", "Address"}
+	header := []string{"Name", "Type", "Class", "TTL", "Address", "Nameserver"}
 	if hub.QueryFlags.DisplayTimeTaken {
 		header = append(header, "Time Taken")
 	}
+	table.SetHeader(header)
 	table.SetAutoWrapText(false)
 	table.SetAutoFormatHeaders(true)
-	table.SetHeader(header)
+	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.SetCenterSeparator("")
+	table.SetColumnSeparator("")
+	table.SetRowSeparator("")
+	table.SetHeaderLine(false)
+	table.SetBorder(false)
+	table.SetTablePadding("\t") // pad with tabs
+	table.SetNoWhiteSpace(true)
 
 	for _, o := range out {
-		output := []string{green(o.Name), blue(o.Type), o.Class, o.TTL, o.Address}
+		output := []string{green(o.Name), blue(o.Type), o.Class, o.TTL, magenta(o.Address), o.Nameserver}
 		// Print how long it took
 		if hub.QueryFlags.DisplayTimeTaken {
 			output = append(output, o.TimeTaken)
