@@ -89,6 +89,12 @@ func main() {
 			Destination: &hub.QueryFlags.DisplayTimeTaken,
 		},
 		&cli.BoolFlag{
+			Name:        "json",
+			Aliases:     []string{"J"},
+			Usage:       "Set the output format as JSON",
+			Destination: &hub.QueryFlags.ShowJSON,
+		},
+		&cli.BoolFlag{
 			Name:        "verbose",
 			Usage:       "Enable verbose logging",
 			Destination: &verboseEnabled,

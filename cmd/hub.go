@@ -29,6 +29,7 @@ type QueryFlags struct {
 	UseIPv4          bool
 	UseIPv6          bool
 	DisplayTimeTaken bool
+	ShowJSON         bool
 }
 
 // NewHub initializes an instance of Hub which holds app wide configuration.
