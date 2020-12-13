@@ -14,7 +14,7 @@
 ## CLI Features
 - [ ] `digfile`
 - [x] `ndots` support
-- [x] `search path` support
+- [x] `search list` support
 - [x] JSON output
 - [x] Colorized output
 - [x] Table output

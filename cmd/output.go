@@ -40,16 +40,15 @@ type JSONResponse struct {
 func (hub *Hub) outputJSON(out []Output, msgs []resolvers.Response) {
 	// get the questions
 	queries := make([]Query, 0, len(msgs))
-	for _, m := range msgs {
-		for _, ques := range m.Message.Question {
-			q := Query{
-				Name:  ques.Name,
-				Type:  dns.ClassToString[ques.Qtype],
-				Class: dns.ClassToString[ques.Qclass],
-			}
-			queries = append(queries, q)
+	for _, ques := range hub.Questions {
+		q := Query{
+			Name:  ques.Name,
+			Type:  dns.ClassToString[ques.Qtype],
+			Class: dns.ClassToString[ques.Qclass],
 		}
+		queries = append(queries, q)
 	}
+
 	resp := JSONResponse{
 		Response{
 			Output:  out,
@@ -73,6 +72,8 @@ func (hub *Hub) outputTerminal(out []Output) {
 	if hub.QueryFlags.DisplayTimeTaken {
 		header = append(header, "Time Taken")
 	}
+	table.SetAutoWrapText(false)
+	table.SetAutoFormatHeaders(true)
 	table.SetHeader(header)
 
 	for _, o := range out {
@@ -90,6 +91,10 @@ func (hub *Hub) outputTerminal(out []Output) {
 // on the output format specified displays the information.
 func (hub *Hub) Output(responses []resolvers.Response) {
 	out := collectOutput(responses)
+	if len(out) == 0 {
+		hub.Logger.Info("No records found")
+		hub.Logger.Exit(0)
+	}
 	if hub.QueryFlags.ShowJSON {
 		hub.outputJSON(out, responses)
 	} else {
@@ -98,7 +103,7 @@ func (hub *Hub) Output(responses []resolvers.Response) {
 }
 
 func collectOutput(responses []resolvers.Response) []Output {
-	out := make([]Output, 0, len(responses))
+	var out []Output
 	// gather Output from the DNS Messages
 	for _, r := range responses {
 		var addr string
@@ -106,7 +111,16 @@ func collectOutput(responses []resolvers.Response) []Output {
 			switch t := a.(type) {
 			case *dns.A:
 				addr = t.A.String()
+			case *dns.AAAA:
+				addr = t.AAAA.String()
+			case *dns.CNAME:
+				addr = t.Target
+			case *dns.MX:
+				addr = strconv.Itoa(int(t.Preference)) + " " + t.Mx
+			case *dns.SOA:
+				addr = t.String()
 			}
+
 			h := a.Header()
 			name := h.Name
 			qclass := dns.Class(h.Class).String()

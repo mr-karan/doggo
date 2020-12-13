@@ -49,17 +49,6 @@ func NewSystemResolver(resolvFilePath string) (Resolver, error) {
 // It's possible to send multiple question in one message
 // but some nameservers are not able to
 func (s *SystemResolver) Lookup(questions []dns.Question) ([]Response, error) {
-	for _, q := range questions {
-		domains := s.config.NameList(q.Name)
-		for _, d := range domains {
-			ques := dns.Question{
-				Name:   d,
-				Qtype:  q.Qtype,
-				Qclass: q.Qclass,
-			}
-			questions = append(questions, ques)
-		}
-	}
 	var (
 		messages  = prepareMessages(questions)
 		responses []Response
