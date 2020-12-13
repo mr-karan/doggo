@@ -1,7 +1,6 @@
 package resolvers
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/miekg/dns"
@@ -47,6 +46,7 @@ func NewClassicResolver(servers []string, opts ClassicResolverOpts) (Resolver, e
 			nameservers = append(nameservers, srv)
 		}
 	}
+
 	client.Net = "udp"
 	if opts.UseIPv4 {
 		client.Net = "udp4"
@@ -63,35 +63,6 @@ func NewClassicResolver(servers []string, opts ClassicResolverOpts) (Resolver, e
 	return &ClassicResolver{
 		client:  client,
 		servers: nameservers,
-	}, nil
-}
-
-// NewResolverFromResolvFile loads the configuration from resolv config file
-// and initialises a DNS resolver.
-func NewResolverFromResolvFile(resolvFilePath string) (Resolver, error) {
-	if resolvFilePath == "" {
-		resolvFilePath = DefaultResolvConfPath
-	}
-	cfg, err := dns.ClientConfigFromFile(resolvFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	servers := make([]string, 0, len(cfg.Servers))
-	for _, s := range cfg.Servers {
-		ip := net.ParseIP(s)
-		// handle IPv6
-		if ip != nil && ip.To4() != nil {
-			servers = append(servers, fmt.Sprintf("%s:%s", s, cfg.Port))
-		} else {
-			servers = append(servers, fmt.Sprintf("[%s]:%s", s, cfg.Port))
-		}
-	}
-
-	client := &dns.Client{}
-	return &ClassicResolver{
-		client:  client,
-		servers: servers,
 	}, nil
 }
 

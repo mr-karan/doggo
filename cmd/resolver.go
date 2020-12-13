@@ -23,7 +23,7 @@ func (hub *Hub) initResolver(c *cli.Context) error {
 		if runtime.GOOS == "windows" {
 			// TODO: Add a method for reading system default nameserver in windows.
 		} else {
-			rslvr, err := resolvers.NewResolverFromResolvFile(resolvers.DefaultResolvConfPath)
+			rslvr, err := resolvers.NewSystemResolver(resolvers.DefaultResolvConfPath)
 			if err != nil {
 				return err
 			}

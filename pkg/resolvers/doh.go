@@ -26,7 +26,7 @@ func NewDOHResolver(servers []string) (Resolver, error) {
 	}, nil
 }
 
-func (r *DOHResolver) Lookup(questions []dns.Question) ([]Response, error) {
+func (d *DOHResolver) Lookup(questions []dns.Question) ([]Response, error) {
 	var (
 		messages  = prepareMessages(questions)
 		responses []Response
@@ -38,10 +38,10 @@ func (r *DOHResolver) Lookup(questions []dns.Question) ([]Response, error) {
 		if err != nil {
 			return nil, err
 		}
-		for _, srv := range r.servers {
+		for _, srv := range d.servers {
 			now := time.Now()
 			// Make an HTTP POST request to the DNS server with the DNS message as wire format bytes in the body.
-			resp, err := r.client.Post(srv, "application/dns-message", bytes.NewBuffer(b))
+			resp, err := d.client.Post(srv, "application/dns-message", bytes.NewBuffer(b))
 			if err != nil {
 				return nil, err
 			}

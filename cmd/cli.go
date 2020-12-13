@@ -8,14 +8,13 @@ import (
 
 var (
 	// Version and date of the build. This is injected at build-time.
-	buildVersion   = "unknown"
-	buildDate      = "unknown"
-	verboseEnabled = false
+	buildVersion = "unknown"
+	buildDate    = "unknown"
 )
 
 func main() {
 	var (
-		logger = initLogger(verboseEnabled)
+		logger = initLogger()
 		app    = cli.NewApp()
 	)
 	// Initialize hub.
@@ -89,19 +88,29 @@ func main() {
 			Destination: &hub.QueryFlags.DisplayTimeTaken,
 		},
 		&cli.BoolFlag{
+			Name:        "search",
+			Usage:       "Use the search list provided in resolv.conf. It sets the `ndots` parameter as well unless overriden by `ndots` flag.",
+			Destination: &hub.QueryFlags.UseSearchList,
+		},
+		&cli.IntFlag{
+			Name:        "ndots",
+			Usage:       "Specify the ndots paramter",
+			DefaultText: "Default value is that set in `/etc/resolv.conf` or 1 if no `ndots` statement is present.",
+			Destination: &hub.QueryFlags.Ndots,
+		},
+		&cli.BoolFlag{
 			Name:        "json",
 			Aliases:     []string{"J"},
 			Usage:       "Set the output format as JSON",
 			Destination: &hub.QueryFlags.ShowJSON,
 		},
 		&cli.BoolFlag{
-			Name:        "verbose",
+			Name:        "debug",
 			Usage:       "Enable verbose logging",
-			Destination: &verboseEnabled,
+			Destination: &hub.QueryFlags.Verbose,
 			DefaultText: "false",
 		},
 	}
-
 	app.Before = hub.loadQueryArgs
 	app.Action = func(c *cli.Context) error {
 		if len(hub.QueryFlags.QNames.Value()) == 0 {
@@ -110,6 +119,7 @@ func main() {
 		hub.Lookup(c)
 		return nil
 	}
+
 	// Run the app.
 	hub.Logger.Debug("Starting doggo...")
 	err := app.Run(os.Args)

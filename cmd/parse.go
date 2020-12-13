@@ -4,10 +4,20 @@ import (
 	"strings"
 
 	"github.com/miekg/dns"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
 func (hub *Hub) loadQueryArgs(c *cli.Context) error {
+	// set log level
+	if c.Bool("debug") {
+		// Set logger level
+		hub.Logger.SetLevel(logrus.DebugLevel)
+	} else {
+		hub.Logger.SetLevel(logrus.InfoLevel)
+	}
+	hub.cliContext = c
+
 	err := hub.loadFreeArgs(c)
 	if err != nil {
 		cli.Exit("Error parsing arguments", -1)

@@ -14,12 +14,13 @@ import (
 
 // Output has a list of fields which are produced for the output
 type Output struct {
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	Class     string `json:"class"`
-	TTL       string `json:"ttl"`
-	Address   string `json:"address"`
-	TimeTaken string `json:"rtt"`
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	Class      string `json:"class"`
+	TTL        string `json:"ttl"`
+	Address    string `json:"address"`
+	TimeTaken  string `json:"rtt"`
+	Nameserver string `json:"nameserver"`
 }
 
 type Query struct {
@@ -113,12 +114,13 @@ func collectOutput(responses []resolvers.Response) []Output {
 			qtype := dns.Type(h.Rrtype).String()
 			rtt := fmt.Sprintf("%dms", r.RTT.Milliseconds())
 			o := Output{
-				Name:      name,
-				Type:      qtype,
-				TTL:       ttl,
-				Class:     qclass,
-				Address:   addr,
-				TimeTaken: rtt,
+				Name:       name,
+				Type:       qtype,
+				TTL:        ttl,
+				Class:      qclass,
+				Address:    addr,
+				TimeTaken:  rtt,
+				Nameserver: r.Nameserver,
 			}
 			out = append(out, o)
 		}
