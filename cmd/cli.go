@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
@@ -13,23 +12,6 @@ var (
 	buildDate      = "unknown"
 	verboseEnabled = false
 )
-
-// initLogger initializes logger
-func initLogger(verbose bool) *logrus.Logger {
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.TextFormatter{
-		DisableTimestamp:       true,
-		DisableLevelTruncation: true,
-	})
-	// Set logger level
-	if verbose {
-		logger.SetLevel(logrus.DebugLevel)
-		logger.Debug("verbose logging enabled")
-	} else {
-		logger.SetLevel(logrus.InfoLevel)
-	}
-	return logger
-}
 
 func main() {
 	var (
@@ -100,6 +82,11 @@ func main() {
 			Aliases:     []string{"4"},
 			Usage:       "Use IPv4 only",
 			Destination: &hub.QueryFlags.UseIPv4,
+		},
+		&cli.BoolFlag{
+			Name:        "time",
+			Usage:       "Display how long it took for the response to arrive",
+			Destination: &hub.QueryFlags.DisplayTimeTaken,
 		},
 		&cli.BoolFlag{
 			Name:        "verbose",
