@@ -20,6 +20,7 @@ func (hub *Hub) loadQueryArgs() error {
 		hub.Logger.WithError(err).Error("Error parsing nameservers")
 		hub.Logger.Exit(2)
 	}
+
 	hub.loadFallbacks()
 	return err
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -34,12 +35,11 @@ func (hub *Hub) prepareQuestions() error {
 			domains []string
 			ndots   int
 		)
-		ndots = 1
-
+		ndots = hub.QueryFlags.Ndots
 		// If `search` flag is specified then fetch the search list
 		// from `resolv.conf` and set the
 		if hub.QueryFlags.UseSearchList {
-			list, n, err := fetchDomainList(name, false, hub.QueryFlags.Ndots)
+			list, n, err := fetchDomainList(name, ndots)
 			if err != nil {
 				return err
 			}
@@ -69,13 +69,15 @@ func (hub *Hub) prepareQuestions() error {
 	return nil
 }
 
-func fetchDomainList(d string, isNdotsSet bool, ndots int) ([]string, int, error) {
+func fetchDomainList(d string, ndots int) ([]string, int, error) {
+	fmt.Println(ndots)
 	cfg, err := dns.ClientConfigFromFile(resolvers.DefaultResolvConfPath)
 	if err != nil {
 		return nil, 0, err
 	}
-	// if user specified a custom ndots parameter, override it
-	if isNdotsSet {
+	// if it's the default value
+	if cfg.Ndots == 1 {
+		// override what the user gave. If the user didn't give any setting then it's 1 by default.
 		cfg.Ndots = ndots
 	}
 	return cfg.NameList(d), cfg.Ndots, nil

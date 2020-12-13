@@ -42,7 +42,7 @@ func main() {
 
 	// Resolver Options
 	f.Bool("search", false, "Use the search list provided in resolv.conf. It sets the `ndots` parameter as well unless overriden by `ndots` flag.")
-	f.Int("ndots", 1, "Specify the ndots paramter")
+	f.Int("ndots", 1, "Specify the ndots paramter. Default value is taken from resolv.conf and fallbacks to 1 if ndots statement is missing in resolv.conf")
 
 	// Output Options
 	f.BoolP("json", "J", false, "Set the output format as JSON")
@@ -67,6 +67,7 @@ func main() {
 	} else {
 		hub.Logger.SetLevel(logrus.InfoLevel)
 	}
+
 	// Run the app.
 	hub.Logger.Debug("Starting doggo 🐶")
 

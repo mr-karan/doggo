@@ -2,7 +2,7 @@
 
 ## Resolver
 - [x] Create a DNS Resolver struct
-- [x]] Add methods to initialise the config, set defaults
+- [x] Add methods to initialise the config, set defaults
 - [x] Add a resolve method
 - [x] Make it separate from Hub
 - [x] Parse output into separate fields
@@ -15,14 +15,12 @@
   - [x] Major records supported
 
 ## CLI Features
-- [ ] `digfile`
-- [ ] `ndots` support
+- [x] `ndots` support
 - [x] `search list` support
 - [x] JSON output
 - [x] Colorized output
 - [x] Table output
 - [x] Parsing options free-form
-- [x] Remove urfave/cli in favour of `flag`
 
 ## CLI Grunt
 - [x] Query args
@@ -35,6 +33,7 @@
   - [ ] Add different commands
 - [x] Add client transport options
 - [x] Fix an issue while loading free form args, where the same records are being added twice
+- [x] Remove urfave/cli in favour of `pflag + koanf`
 
 ## Tests
 
@@ -53,3 +52,4 @@
 ## v1.0
 
 - [ ] Support obscure protocal tweaks in `dig`
+- [ ] `digfile`
