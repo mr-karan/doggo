@@ -1,129 +1,76 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/knadh/koanf"
+	"github.com/knadh/koanf/providers/posflag"
+	flag "github.com/spf13/pflag"
 )
 
 var (
 	// Version and date of the build. This is injected at build-time.
 	buildVersion = "unknown"
 	buildDate    = "unknown"
+	k            = koanf.New(".")
 )
 
 func main() {
 	var (
 		logger = initLogger()
-		app    = cli.NewApp()
 	)
+
 	// Initialize hub.
 	hub := NewHub(logger, buildVersion)
 
-	// Configure CLI app.
-	app.Name = "doggo"
-	app.Usage = "Command-line DNS Client"
-	app.Version = buildVersion
-
-	// Register command line flags.
-	app.Flags = []cli.Flag{
-		&cli.StringSliceFlag{
-			Name:        "query",
-			Usage:       "Domain name to query",
-			Destination: hub.QueryFlags.QNames,
-		},
-		&cli.StringSliceFlag{
-			Name:        "type",
-			Usage:       "Type of DNS record to be queried (A, AAAA, MX etc)",
-			Destination: hub.QueryFlags.QTypes,
-		},
-		&cli.StringSliceFlag{
-			Name:        "nameserver",
-			Usage:       "Address of the nameserver to send packets to",
-			Destination: hub.QueryFlags.Nameservers,
-		},
-		&cli.StringSliceFlag{
-			Name:        "class",
-			Usage:       "Network class of the DNS record to be queried (IN, CH, HS etc)",
-			Destination: hub.QueryFlags.QClasses,
-		},
-		&cli.BoolFlag{
-			Name:    "udp",
-			Usage:   "Use the DNS protocol over UDP",
-			Aliases: []string{"U"},
-		},
-		&cli.BoolFlag{
-			Name:        "tcp",
-			Usage:       "Use the DNS protocol over TCP",
-			Aliases:     []string{"T"},
-			Destination: &hub.QueryFlags.UseTCP,
-		},
-		&cli.BoolFlag{
-			Name:        "https",
-			Usage:       "Use the DNS-over-HTTPS protocol",
-			Aliases:     []string{"H"},
-			Destination: &hub.QueryFlags.IsDOH,
-		},
-		&cli.BoolFlag{
-			Name:        "tls",
-			Usage:       "Use the DNS-over-TLS",
-			Aliases:     []string{"S"},
-			Destination: &hub.QueryFlags.IsDOT,
-		},
-		&cli.BoolFlag{
-			Name:        "ipv6",
-			Aliases:     []string{"6"},
-			Usage:       "Use IPv6 only",
-			Destination: &hub.QueryFlags.UseIPv6,
-		},
-		&cli.BoolFlag{
-			Name:        "ipv4",
-			Aliases:     []string{"4"},
-			Usage:       "Use IPv4 only",
-			Destination: &hub.QueryFlags.UseIPv4,
-		},
-		&cli.BoolFlag{
-			Name:        "time",
-			Usage:       "Display how long it took for the response to arrive",
-			Destination: &hub.QueryFlags.DisplayTimeTaken,
-		},
-		&cli.BoolFlag{
-			Name:        "search",
-			Usage:       "Use the search list provided in resolv.conf. It sets the `ndots` parameter as well unless overriden by `ndots` flag.",
-			Destination: &hub.QueryFlags.UseSearchList,
-		},
-		&cli.IntFlag{
-			Name:        "ndots",
-			Usage:       "Specify the ndots paramter",
-			DefaultText: "Default value is that set in `/etc/resolv.conf` or 1 if no `ndots` statement is present.",
-			Destination: &hub.QueryFlags.Ndots,
-		},
-		&cli.BoolFlag{
-			Name:        "json",
-			Aliases:     []string{"J"},
-			Usage:       "Set the output format as JSON",
-			Destination: &hub.QueryFlags.ShowJSON,
-		},
-		&cli.BoolFlag{
-			Name:        "debug",
-			Usage:       "Enable verbose logging",
-			Destination: &hub.QueryFlags.Verbose,
-			DefaultText: "false",
-		},
+	// Configure Flags
+	// Use the POSIX compliant pflag lib instead of Go's flag lib.
+	f := flag.NewFlagSet("config", flag.ContinueOnError)
+	f.Usage = func() {
+		fmt.Println(f.FlagUsages())
+		os.Exit(0)
 	}
-	app.Before = hub.loadQueryArgs
-	app.Action = func(c *cli.Context) error {
-		if len(hub.QueryFlags.QNames.Value()) == 0 {
-			cli.ShowAppHelpAndExit(c, 0)
-		}
-		hub.Lookup(c)
-		return nil
+	// Path to one or more config files to load into koanf along with some config params.
+	f.StringSliceP("query", "q", []string{}, "Domain name to query")
+	f.StringSliceP("type", "t", []string{}, "Type of DNS record to be queried (A, AAAA, MX etc)")
+	f.StringSliceP("class", "c", []string{}, "Network class of the DNS record to be queried (IN, CH, HS etc)")
+	f.StringSliceP("nameservers", "n", []string{}, "Address of the nameserver to send packets to")
+
+	// Protocol Options
+	f.BoolP("udp", "U", false, "Use the DNS protocol over UDP")
+	f.BoolP("tcp", "T", false, "Use the DNS protocol over TCP")
+	f.BoolP("doh", "H", false, "Use the DNS-over-HTTPS protocol")
+	f.BoolP("dot", "S", false, "Use the DNS-over-TLS")
+
+	// Resolver Options
+	f.Bool("search", false, "Use the search list provided in resolv.conf. It sets the `ndots` parameter as well unless overriden by `ndots` flag.")
+	f.Int("ndots", 1, "Specify the ndots paramter")
+
+	// Output Options
+	f.BoolP("json", "J", false, "Set the output format as JSON")
+	f.Bool("time", false, "Display how long it took for the response to arrive")
+	f.Bool("debug", false, "Enable debug mode")
+
+	// Parse and Load Flags
+	f.Parse(os.Args[1:])
+	if err := k.Load(posflag.Provider(f, ".", k), nil); err != nil {
+		hub.Logger.Fatalf("error loading flags: %v", err)
+		fmt.Println(f.FlagUsages())
+		os.Exit(0)
 	}
 
 	// Run the app.
 	hub.Logger.Debug("Starting doggo...")
-	err := app.Run(os.Args)
-	if err != nil {
-		logger.Errorf("oops! we encountered an issue: %s", err)
+
+	// Parse Query Args
+	hub.loadQueryArgs()
+
+	// Start App
+	if len(hub.QueryFlags.QNames) == 0 {
+		fmt.Println(f.FlagUsages())
+		os.Exit(0)
 	}
+	hub.Lookup()
+
 }

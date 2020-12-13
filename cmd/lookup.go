@@ -6,11 +6,10 @@ import (
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 )
 
 // Lookup sends the DNS queries to the server.
-func (hub *Hub) Lookup(c *cli.Context) error {
+func (hub *Hub) Lookup() error {
 	err := hub.prepareQuestions()
 	if err != nil {
 		return err
@@ -30,16 +29,17 @@ func (hub *Hub) prepareQuestions() error {
 	var (
 		question dns.Question
 	)
-	for _, name := range hub.QueryFlags.QNames.Value() {
+	for _, name := range hub.QueryFlags.QNames {
 		var (
 			domains []string
 			ndots   int
 		)
+		ndots = 1
 
 		// If `search` flag is specified then fetch the search list
 		// from `resolv.conf` and set the
 		if hub.QueryFlags.UseSearchList {
-			list, n, err := fetchDomainList(name, hub.cliContext.IsSet("ndots"), hub.QueryFlags.Ndots)
+			list, n, err := fetchDomainList(name, false, hub.QueryFlags.Ndots)
 			if err != nil {
 				return err
 			}
@@ -55,10 +55,10 @@ func (hub *Hub) prepareQuestions() error {
 			}).Debug("Attmepting to resolve")
 			question.Name = d
 			// iterate on a list of query types.
-			for _, q := range hub.QueryFlags.QTypes.Value() {
+			for _, q := range hub.QueryFlags.QTypes {
 				question.Qtype = dns.StringToType[strings.ToUpper(q)]
 				// iterate on a list of query classes.
-				for _, c := range hub.QueryFlags.QClasses.Value() {
+				for _, c := range hub.QueryFlags.QClasses {
 					question.Qclass = dns.StringToClass[strings.ToUpper(c)]
 					// append a new question for each possible pair.
 					hub.Questions = append(hub.Questions, question)

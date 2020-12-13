@@ -1,32 +1,35 @@
 package main
 
 import (
+	"os"
 	"strings"
 
 	"github.com/miekg/dns"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 )
 
-func (hub *Hub) loadQueryArgs(c *cli.Context) error {
+func (hub *Hub) loadQueryArgs() error {
 	// set log level
-	if c.Bool("debug") {
+	if k.Bool("debug") {
 		// Set logger level
 		hub.Logger.SetLevel(logrus.DebugLevel)
 	} else {
 		hub.Logger.SetLevel(logrus.InfoLevel)
 	}
-	hub.cliContext = c
 
-	err := hub.loadFreeArgs(c)
+	err := hub.loadNamedArgs()
+
+	err = hub.loadFreeArgs()
 	if err != nil {
-		cli.Exit("Error parsing arguments", -1)
+		hub.Logger.WithError(err).Error("Error parsing arguments")
+		hub.Logger.Exit(2)
 	}
-	err = hub.initResolver(c)
+	err = hub.initResolver()
 	if err != nil {
-		cli.Exit("Error parsing nameservers", -1)
+		hub.Logger.WithError(err).Error("Error parsing nameservers")
+		hub.Logger.Exit(2)
 	}
-	hub.loadFallbacks(c)
+	hub.loadFallbacks()
 	return err
 }
 
@@ -37,29 +40,44 @@ func (hub *Hub) loadQueryArgs(c *cli.Context) error {
 // pattern we deduce the arguments and map it to internal query
 // options. In case an argument isn't able to fit in any of the existing
 // pattern it is considered to be a "query name".
-func (hub *Hub) loadFreeArgs(c *cli.Context) error {
-	for _, arg := range c.Args().Slice() {
+func (hub *Hub) loadFreeArgs() error {
+	args := os.Args[1:]
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "--") || strings.HasPrefix(arg, "-") {
+			continue
+		}
 		if strings.HasPrefix(arg, "@") {
-			hub.QueryFlags.Nameservers.Set(strings.Trim(arg, "@"))
+			hub.QueryFlags.Nameservers = append(hub.QueryFlags.Nameservers, strings.Trim(arg, "@"))
 		} else if _, ok := dns.StringToType[strings.ToUpper(arg)]; ok {
-			hub.QueryFlags.QTypes.Set(arg)
+			hub.QueryFlags.QTypes = append(hub.QueryFlags.QTypes, arg)
 		} else if _, ok := dns.StringToClass[strings.ToUpper(arg)]; ok {
-			hub.QueryFlags.QClasses.Set(arg)
+			hub.QueryFlags.QClasses = append(hub.QueryFlags.QClasses, arg)
 		} else {
 			// if nothing matches, consider it's a query name.
-			hub.QueryFlags.QNames.Set(arg)
+			hub.QueryFlags.QNames = append(hub.QueryFlags.QNames, arg)
 		}
+	}
+	return nil
+}
+
+// loadNamedArgs checks for all flags and loads their
+// values inside the Hub.
+func (hub *Hub) loadNamedArgs() error {
+	// Unmarshall flags to the struct.
+	err := k.Unmarshal("", &hub.QueryFlags)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
 // loadFallbacks sets fallbacks for options
 // that are not specified by the user.
-func (hub *Hub) loadFallbacks(c *cli.Context) {
-	if len(hub.QueryFlags.QTypes.Value()) == 0 {
-		hub.QueryFlags.QTypes.Set("A")
+func (hub *Hub) loadFallbacks() {
+	if len(hub.QueryFlags.QTypes) == 0 {
+		hub.QueryFlags.QTypes = append(hub.QueryFlags.QTypes, "A")
 	}
-	if len(hub.QueryFlags.QClasses.Value()) == 0 {
-		hub.QueryFlags.QClasses.Set("IN")
+	if len(hub.QueryFlags.QClasses) == 0 {
+		hub.QueryFlags.QClasses = append(hub.QueryFlags.QClasses, "IN")
 	}
 }

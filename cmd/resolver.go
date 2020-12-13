@@ -4,22 +4,21 @@ import (
 	"runtime"
 
 	"github.com/mr-karan/doggo/pkg/resolvers"
-	"github.com/urfave/cli/v2"
 )
 
 // initResolver checks for various flags and initialises
 // the correct resolver based on the config.
-func (hub *Hub) initResolver(c *cli.Context) error {
+func (hub *Hub) initResolver() error {
 	// check if DOH flag is set.
 	if hub.QueryFlags.IsDOH {
-		rslvr, err := resolvers.NewDOHResolver(hub.QueryFlags.Nameservers.Value())
+		rslvr, err := resolvers.NewDOHResolver(hub.QueryFlags.Nameservers)
 		if err != nil {
 			return err
 		}
 		hub.Resolver = rslvr
 		return nil
 	}
-	if len(hub.QueryFlags.Nameservers.Value()) == 0 {
+	if len(hub.QueryFlags.Nameservers) == 0 {
 		if runtime.GOOS == "windows" {
 			// TODO: Add a method for reading system default nameserver in windows.
 		} else {
@@ -31,7 +30,7 @@ func (hub *Hub) initResolver(c *cli.Context) error {
 			return nil
 		}
 	} else {
-		rslvr, err := resolvers.NewClassicResolver(hub.QueryFlags.Nameservers.Value(), resolvers.ClassicResolverOpts{
+		rslvr, err := resolvers.NewClassicResolver(hub.QueryFlags.Nameservers, resolvers.ClassicResolverOpts{
 			UseIPv4: hub.QueryFlags.UseIPv4,
 			UseIPv6: hub.QueryFlags.UseIPv6,
 			UseTLS:  hub.QueryFlags.IsDOT,

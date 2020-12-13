@@ -10,6 +10,7 @@
 - [x] Add DOH support
 - [x] Add DOT support
 - [x] Add DNS protocol on TCP mode support.
+- [ ] Error on NXDomain (Realted upstream [bug](https://github.com/miekg/dns/issues/1198))
 
 ## CLI Features
 - [ ] `digfile`
@@ -18,6 +19,8 @@
 - [x] JSON output
 - [x] Colorized output
 - [x] Table output
+- [ ] Parsing options free-form
+- [x] Remove urfave/cli in favour of `flag`
 
 ## CLI Grunt
 - [x] Query args
@@ -31,8 +34,8 @@
 ## Documentation
 
 ## Release Checklist
-- [ ] Add packages to all package managers
-- [ ] Snap
-- [ ] Homebrew
-- [ ] Alpine Linux
-- [ ] ARM support too
+- [ ] Goreleaser
+  - [ ] Snap
+  - [ ] Homebrew
+  - [ ] ARM
+
