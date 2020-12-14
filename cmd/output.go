@@ -41,7 +41,6 @@ func (hub *Hub) outputJSON(out []Output, msgs []resolvers.Response) {
 	// get the questions
 	queries := make([]Query, 0, len(msgs))
 	for _, ques := range hub.Questions {
-		fmt.Println(ques.Qtype)
 		q := Query{
 			Name:  ques.Name,
 			Type:  dns.TypeToString[ques.Qtype],

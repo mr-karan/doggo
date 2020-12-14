@@ -10,9 +10,7 @@
 - [x] Add DOH support
 - [x] Add DOT support
 - [x] Add DNS protocol on TCP mode support.
-- [ ] Error on NXDomain (Realted upstream [bug](https://github.com/miekg/dns/issues/1198))
-- [ ] Support all DNS records?
-  - [x] Major records supported
+- [x] Major records supported
 
 ## CLI Features
 - [x] `ndots` support
@@ -27,18 +25,27 @@
 - [x] Neatly package them to load args in different functions
 - [x] Upper case is not mandatory for query type/classes
 - [x] Output
-- [ ] Custom Help Text
+- [x] Custom Help Text
   - [x] Add examples
-  - [ ] Colorize
-  - [ ] Add different commands
+  - [x] Colorize
+  - [x] Add different commands
 - [x] Add client transport options
 - [x] Fix an issue while loading free form args, where the same records are being added twice
 - [x] Remove urfave/cli in favour of `pflag + koanf`
 
+## Refactors
+
+- [ ] Don't abuse Hub as global. Refactor methods to be independent of hub.
+- [ ] Add meaningful comments where required.
+
 ## Tests
+- [ ] Add tests for Command Line Usage. 
 
 ## Documentation
-
+- [ ] README
+  - [ ] Usage
+  - [ ] Installation
+  - [ ] Features
 - [ ] Mkdocs init project
   - [ ] Custom Index (Landing Page)
 
@@ -47,9 +54,10 @@
   - [ ] Snap
   - [ ] Homebrew
   - [ ] ARM
-
-
-## v1.0
+  - [ ] Docker
+## Future Release
 
 - [ ] Support obscure protocal tweaks in `dig`
 - [ ] `digfile`
+- [ ] Support more DNS Record Types
+- [ ] Error on NXDomain (Realted upstream [bug](https://github.com/miekg/dns/issues/1198))

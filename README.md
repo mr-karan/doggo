@@ -2,5 +2,5 @@
 
 _Command-line DNS client written in Golang_
 
-# WIP
+![](www/static/main.png)
 
