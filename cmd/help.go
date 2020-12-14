@@ -8,7 +8,7 @@ import (
 // AppHelpTemplate is the text template to customise the Help output.
 // Uses text/template to render templates.
 var AppHelpTemplate = `NAME:
-  {{.Name}} {{.Description}}
+  🐶 {{.Name}} - {{.Description}}
 
 USAGE:
   {{.Name}} [OPTIONS] [--] <arguments>

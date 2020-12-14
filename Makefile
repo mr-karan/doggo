@@ -1,4 +1,4 @@
-DOGGO-BIN := doggo.bin
+DOGGO-BIN := doggo
 
 HASH := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date '+%Y-%m-%d %H:%M:%S')

@@ -41,9 +41,10 @@ func (hub *Hub) outputJSON(out []Output, msgs []resolvers.Response) {
 	// get the questions
 	queries := make([]Query, 0, len(msgs))
 	for _, ques := range hub.Questions {
+		fmt.Println(ques.Qtype)
 		q := Query{
 			Name:  ques.Name,
-			Type:  dns.ClassToString[ques.Qtype],
+			Type:  dns.TypeToString[ques.Qtype],
 			Class: dns.ClassToString[ques.Qclass],
 		}
 		queries = append(queries, q)
@@ -100,7 +101,7 @@ func (hub *Hub) outputTerminal(out []Output) {
 		case "AAAA":
 			typOut = blue(o.Type)
 		case "MX":
-			typOut = cyan(o.Type)
+			typOut = red(o.Type)
 		case "NS":
 			typOut = cyan(o.Type)
 		case "CNAME":
@@ -108,7 +109,7 @@ func (hub *Hub) outputTerminal(out []Output) {
 		case "TXT":
 			typOut = yellow(o.Type)
 		default:
-			typOut = red(o.Type)
+			typOut = blue(o.Type)
 		}
 		output := []string{green(o.Name), typOut, o.Class, o.TTL, o.Address, o.Nameserver}
 		// Print how long it took
@@ -163,7 +164,7 @@ func collectOutput(responses []resolvers.Response) []Output {
 			case *dns.TXT:
 				addr = t.String()
 			case *dns.NS:
-				addr = t.String()
+				addr = t.Ns
 			case *dns.MX:
 				addr = strconv.Itoa(int(t.Preference)) + " " + t.Mx
 			case *dns.SOA:
