@@ -2,8 +2,11 @@ package resolvers
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/miekg/dns"
@@ -15,10 +18,26 @@ type DOHResolver struct {
 	servers []string
 }
 
+type DOHResolverOpts struct {
+	Timeout time.Duration
+}
+
 // NewDOHResolver accepts a list of nameservers and configures a DOH based resolver.
-func NewDOHResolver(servers []string) (Resolver, error) {
+func NewDOHResolver(servers []string, opts DOHResolverOpts) (Resolver, error) {
+	if len(servers) == 0 {
+		return nil, errors.New(`no DOH server specified`)
+	}
+	for _, s := range servers {
+		u, err := url.ParseRequestURI(s)
+		if err != nil {
+			return nil, fmt.Errorf("%s is not a valid HTTPS nameserver", s)
+		}
+		if u.Scheme != "https" {
+			return nil, fmt.Errorf("missing https in %s", s)
+		}
+	}
 	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: opts.Timeout,
 	}
 	return &DOHResolver{
 		client:  httpClient,
@@ -46,7 +65,7 @@ func (d *DOHResolver) Lookup(questions []dns.Question) ([]Response, error) {
 				return nil, err
 			}
 			if resp.StatusCode != http.StatusOK {
-				return nil, err
+				return nil, fmt.Errorf("error from nameserver %s", resp.Status)
 			}
 			rtt := time.Since(now)
 			// extract the binary response in DNS Message.

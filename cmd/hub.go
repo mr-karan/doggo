@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/sirupsen/logrus"
@@ -13,26 +15,27 @@ type Hub struct {
 	QueryFlags QueryFlags
 	FreeArgs   []string
 	Questions  []dns.Question
-	Resolver   resolvers.Resolver
+	Resolver   []resolvers.Resolver
 }
 
 // QueryFlags is used store the value of CLI flags.
 type QueryFlags struct {
-	QNames           []string `koanf:"query"`
-	QTypes           []string `koanf:"type"`
-	QClasses         []string `koanf:"class"`
-	Nameservers      []string `koanf:"nameserver"`
-	IsDOH            bool     `koanf:"doh"`
-	IsDOT            bool     `koanf:"dot"`
-	IsUDP            bool     `koanf:"udp"`
-	UseTCP           bool     `koanf:"tcp"`
-	UseIPv4          bool     `koanf:"ipv4"`
-	UseIPv6          bool     `koanf:"ipv6"`
-	DisplayTimeTaken bool     `koanf:"time"`
-	ShowJSON         bool     `koanf:"json"`
-	UseSearchList    bool     `koanf:"search"`
-	Ndots            int      `koanf:"ndots"`
-	Color            bool     `koanf:"color"`
+	QNames           []string      `koanf:"query"`
+	QTypes           []string      `koanf:"type"`
+	QClasses         []string      `koanf:"class"`
+	Nameservers      []string      `koanf:"nameserver"`
+	IsDOH            bool          `koanf:"doh"`
+	IsDOT            bool          `koanf:"dot"`
+	IsUDP            bool          `koanf:"udp"`
+	IsTCP            bool          `koanf:"tcp"`
+	UseIPv4          bool          `koanf:"ipv4"`
+	UseIPv6          bool          `koanf:"ipv6"`
+	DisplayTimeTaken bool          `koanf:"time"`
+	ShowJSON         bool          `koanf:"json"`
+	UseSearchList    bool          `koanf:"search"`
+	Ndots            int           `koanf:"ndots"`
+	Color            bool          `koanf:"color"`
+	Timeout          time.Duration `koanf:"timeout"`
 }
 
 // NewHub initializes an instance of Hub which holds app wide configuration.
@@ -55,7 +58,7 @@ func NewHub(logger *logrus.Logger, buildVersion string) *Hub {
 func initLogger() *logrus.Logger {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{
-		DisableTimestamp:       true,
+		FullTimestamp:          true,
 		DisableLevelTruncation: true,
 	})
 	return logger

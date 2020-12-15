@@ -41,6 +41,7 @@ func main() {
 	f.BoolP("dot", "S", false, "Use the DNS-over-TLS")
 
 	// Resolver Options
+	f.Int("timeout", 5, "Sets the timeout for a query to T seconds. The default timeout is 5 seconds.")
 	f.Bool("search", false, "Use the search list provided in resolv.conf. It sets the `ndots` parameter as well unless overriden by `ndots` flag.")
 	f.Int("ndots", 1, "Specify the ndots paramter. Default value is taken from resolv.conf and fallbacks to 1 if ndots statement is missing in resolv.conf")
 
@@ -72,12 +73,19 @@ func main() {
 	hub.Logger.Debug("Starting doggo 🐶")
 
 	// Parse Query Args
-	hub.loadQueryArgs()
-
+	err := hub.loadQueryArgs()
+	if err != nil {
+		hub.Logger.WithError(err).Error("error parsing flags/arguments")
+		hub.Logger.Exit(2)
+	}
 	// Start App
 	if len(hub.QueryFlags.QNames) == 0 {
 		f.Usage()
+		hub.Logger.Exit(0)
 	}
-	hub.Lookup()
-
+	err = hub.Lookup()
+	if err != nil {
+		hub.Logger.WithError(err).Error("error looking up DNS records")
+		hub.Logger.Exit(2)
+	}
 }

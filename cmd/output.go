@@ -37,9 +37,9 @@ type JSONResponse struct {
 	Response `json:"responses"`
 }
 
-func (hub *Hub) outputJSON(out []Output, msgs []resolvers.Response) {
+func (hub *Hub) outputJSON(out []Output) {
 	// get the questions
-	queries := make([]Query, 0, len(msgs))
+	queries := make([]Query, 0)
 	for _, ques := range hub.Questions {
 		q := Query{
 			Name:  ques.Name,
@@ -122,73 +122,77 @@ func (hub *Hub) outputTerminal(out []Output) {
 
 // Output takes a list of `dns.Answers` and based
 // on the output format specified displays the information.
-func (hub *Hub) Output(responses []resolvers.Response) {
+func (hub *Hub) Output(responses [][]resolvers.Response) {
 	out := collectOutput(responses)
 	if len(out) == 0 {
 		hub.Logger.Info("No records found")
 		hub.Logger.Exit(0)
 	}
 	if hub.QueryFlags.ShowJSON {
-		hub.outputJSON(out, responses)
+		hub.outputJSON(out)
 	} else {
 		hub.outputTerminal(out)
 	}
 }
 
-func collectOutput(responses []resolvers.Response) []Output {
+func collectOutput(responses [][]resolvers.Response) []Output {
 	var out []Output
-	// gather Output from the DNS Messages
-	for _, r := range responses {
-		var addr string
-		for _, a := range r.Message.Answer {
-			switch t := a.(type) {
-			case *dns.A:
-				addr = t.A.String()
-			case *dns.AAAA:
-				addr = t.AAAA.String()
-			case *dns.CNAME:
-				addr = t.Target
-			case *dns.CAA:
-				addr = t.Tag + " " + t.Value
-			case *dns.HINFO:
-				addr = t.Cpu + " " + t.Os
-			// case *dns.LOC:
-			// 	addr = t.String()
-			case *dns.PTR:
-				addr = t.Ptr
-			case *dns.SRV:
-				addr = strconv.Itoa(int(t.Priority)) + " " +
-					strconv.Itoa(int(t.Weight)) + " " +
-					t.Target + ":" + strconv.Itoa(int(t.Port))
-			case *dns.TXT:
-				addr = t.String()
-			case *dns.NS:
-				addr = t.Ns
-			case *dns.MX:
-				addr = strconv.Itoa(int(t.Preference)) + " " + t.Mx
-			case *dns.SOA:
-				addr = t.String()
-			case *dns.NAPTR:
-				addr = t.String()
-			}
+	// for each resolver
+	for _, rslvr := range responses {
+		// get the response
+		for _, r := range rslvr {
+			var addr string
+			for _, a := range r.Message.Answer {
+				switch t := a.(type) {
+				case *dns.A:
+					addr = t.A.String()
+				case *dns.AAAA:
+					addr = t.AAAA.String()
+				case *dns.CNAME:
+					addr = t.Target
+				case *dns.CAA:
+					addr = t.Tag + " " + t.Value
+				case *dns.HINFO:
+					addr = t.Cpu + " " + t.Os
+				// case *dns.LOC:
+				// 	addr = t.String()
+				case *dns.PTR:
+					addr = t.Ptr
+				case *dns.SRV:
+					addr = strconv.Itoa(int(t.Priority)) + " " +
+						strconv.Itoa(int(t.Weight)) + " " +
+						t.Target + ":" + strconv.Itoa(int(t.Port))
+				case *dns.TXT:
+					addr = t.String()
+				case *dns.NS:
+					addr = t.Ns
+				case *dns.MX:
+					addr = strconv.Itoa(int(t.Preference)) + " " + t.Mx
+				case *dns.SOA:
+					addr = t.String()
+				case *dns.NAPTR:
+					addr = t.String()
+				}
 
-			h := a.Header()
-			name := h.Name
-			qclass := dns.Class(h.Class).String()
-			ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
-			qtype := dns.Type(h.Rrtype).String()
-			rtt := fmt.Sprintf("%dms", r.RTT.Milliseconds())
-			o := Output{
-				Name:       name,
-				Type:       qtype,
-				TTL:        ttl,
-				Class:      qclass,
-				Address:    addr,
-				TimeTaken:  rtt,
-				Nameserver: r.Nameserver,
+				h := a.Header()
+				name := h.Name
+				qclass := dns.Class(h.Class).String()
+				ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
+				qtype := dns.Type(h.Rrtype).String()
+				rtt := fmt.Sprintf("%dms", r.RTT.Milliseconds())
+				o := Output{
+					Name:       name,
+					Type:       qtype,
+					TTL:        ttl,
+					Class:      qclass,
+					Address:    addr,
+					TimeTaken:  rtt,
+					Nameserver: r.Nameserver,
+				}
+				out = append(out, o)
 			}
-			out = append(out, o)
 		}
 	}
+
 	return out
 }

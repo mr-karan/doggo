@@ -7,22 +7,20 @@ import (
 )
 
 func (hub *Hub) loadQueryArgs() error {
-
 	err := hub.loadNamedArgs()
-
+	if err != nil {
+		return err
+	}
 	err = hub.loadFreeArgs()
 	if err != nil {
-		hub.Logger.WithError(err).Error("Error parsing arguments")
-		hub.Logger.Exit(2)
+		return err
 	}
 	err = hub.initResolver()
 	if err != nil {
-		hub.Logger.WithError(err).Error("Error parsing nameservers")
-		hub.Logger.Exit(2)
+		return err
 	}
-
 	hub.loadFallbacks()
-	return err
+	return nil
 }
 
 // loadFreeArgs tries to parse all the arguments

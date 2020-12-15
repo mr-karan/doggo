@@ -11,6 +11,9 @@
 - [x] Add DOT support
 - [x] Add DNS protocol on TCP mode support.
 - [x] Major records supported
+- [x] Support multiple resolvers
+  - [x] Take multiple transport options and initialise resolvers accordingly. 
+- [ ] Add timeout support
 
 ## CLI Features
 - [x] `ndots` support
@@ -37,7 +40,9 @@
 
 - [ ] Don't abuse Hub as global. Refactor methods to be independent of hub.
 - [ ] Add meaningful comments where required.
-
+- [ ] Meaningful error messages
+- [ ] Better debug logs
+- [ ] 
 ## Tests
 - [ ] Add tests for Command Line Usage. 
 
@@ -55,9 +60,15 @@
   - [ ] Homebrew
   - [ ] ARM
   - [ ] Docker
+
+---
 ## Future Release
 
 - [ ] Support obscure protocal tweaks in `dig`
 - [ ] `digfile`
 - [ ] Support more DNS Record Types
 - [ ] Error on NXDomain (Realted upstream [bug](https://github.com/miekg/dns/issues/1198))
+- [ ] Shell completions
+  - [ ] bash
+  - [ ] zsh
+  - [ ] fish

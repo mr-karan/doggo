@@ -1,7 +1,7 @@
 package main
 
 import (
-	"runtime"
+	"time"
 
 	"github.com/mr-karan/doggo/pkg/resolvers"
 )
@@ -11,36 +11,39 @@ import (
 func (hub *Hub) initResolver() error {
 	// check if DOH flag is set.
 	if hub.QueryFlags.IsDOH {
-		rslvr, err := resolvers.NewDOHResolver(hub.QueryFlags.Nameservers)
-		if err != nil {
-			return err
-		}
-		hub.Resolver = rslvr
-		return nil
-	}
-	if len(hub.QueryFlags.Nameservers) == 0 {
-		if runtime.GOOS == "windows" {
-			// TODO: Add a method for reading system default nameserver in windows.
-		} else {
-			rslvr, err := resolvers.NewSystemResolver(resolvers.DefaultResolvConfPath)
-			if err != nil {
-				return err
-			}
-			hub.Resolver = rslvr
-			return nil
-		}
-	} else {
-		rslvr, err := resolvers.NewClassicResolver(hub.QueryFlags.Nameservers, resolvers.ClassicResolverOpts{
-			UseIPv4: hub.QueryFlags.UseIPv4,
-			UseIPv6: hub.QueryFlags.UseIPv6,
-			UseTLS:  hub.QueryFlags.IsDOT,
-			UseTCP:  hub.QueryFlags.UseTCP,
+		hub.Logger.Debug("initiating DOH resolver")
+		rslvr, err := resolvers.NewDOHResolver(hub.QueryFlags.Nameservers, resolvers.DOHResolverOpts{
+			Timeout: hub.QueryFlags.Timeout * time.Second,
 		})
 		if err != nil {
 			return err
 		}
-		hub.Resolver = rslvr
-		return nil
+		hub.Resolver = append(hub.Resolver, rslvr)
+	}
+	if hub.QueryFlags.IsTCP {
+		hub.Logger.Debug("initiating TCP resolver")
+		rslvr, err := resolvers.NewTCPResolver(hub.QueryFlags.Nameservers, resolvers.TCPResolverOpts{
+			IPv4Only: hub.QueryFlags.UseIPv4,
+			IPv6Only: hub.QueryFlags.UseIPv6,
+			Timeout:  hub.QueryFlags.Timeout * time.Second,
+		})
+		if err != nil {
+			return err
+		}
+		hub.Resolver = append(hub.Resolver, rslvr)
+	}
+	// If so far no resolver has been set, then fallback to UDP.
+	if hub.QueryFlags.IsUDP || len(hub.Resolver) == 0 {
+		hub.Logger.Debug("initiating UDP resolver")
+		rslvr, err := resolvers.NewUDPResolver(hub.QueryFlags.Nameservers, resolvers.UDPResolverOpts{
+			IPv4Only: hub.QueryFlags.UseIPv4,
+			IPv6Only: hub.QueryFlags.UseIPv6,
+			Timeout:  hub.QueryFlags.Timeout * time.Second,
+		})
+		if err != nil {
+			return err
+		}
+		hub.Resolver = append(hub.Resolver, rslvr)
 	}
 	return nil
 }

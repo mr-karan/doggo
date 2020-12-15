@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -14,9 +15,17 @@ func (hub *Hub) Lookup() error {
 	if err != nil {
 		return err
 	}
-	responses, err := hub.Resolver.Lookup(hub.Questions)
-	if err != nil {
-		return err
+	// for each type of resolver do a DNS lookup
+	responses := make([][]resolvers.Response, 0, len(hub.Questions))
+	for _, r := range hub.Resolver {
+		resp, err := r.Lookup(hub.Questions)
+		if err != nil {
+			return err
+		}
+		responses = append(responses, resp)
+	}
+	if len(responses) == 0 {
+		return errors.New(`no DNS records found`)
 	}
 	hub.Output(responses)
 	return nil

@@ -7,14 +7,14 @@ import (
 )
 
 // Resolver implements the configuration for a DNS
-// Client. Different types of client like (UDP/TCP/DOH/DOT)
-// can be initialised.
+// Client. Different types of providers can load
+// a DNS Resolver satisfying this interface.
 type Resolver interface {
 	Lookup([]dns.Question) ([]Response, error)
 }
 
 // Response represents a custom output format
-// which wraps certain metadata about the DNS query
+// for DNS queries. It wraps metadata about the DNS query
 // and the DNS Answer as well.
 type Response struct {
 	Message    dns.Msg
