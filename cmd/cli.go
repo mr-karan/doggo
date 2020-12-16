@@ -35,12 +35,6 @@ func main() {
 	f.StringSliceP("class", "c", []string{}, "Network class of the DNS record to be queried (IN, CH, HS etc)")
 	f.StringSliceP("nameserver", "n", []string{}, "Address of the nameserver to send packets to")
 
-	// Protocol Options
-	f.BoolP("udp", "U", false, "Use the DNS protocol over UDP")
-	f.BoolP("tcp", "T", false, "Use the DNS protocol over TCP")
-	f.BoolP("doh", "H", false, "Use the DNS-over-HTTPS protocol")
-	f.BoolP("dot", "S", false, "Use the DNS-over-TLS")
-
 	// Resolver Options
 	f.Int("timeout", 5, "Sets the timeout for a query to T seconds. The default timeout is 5 seconds.")
 	f.Bool("search", false, "Use the search list provided in resolv.conf. It sets the `ndots` parameter as well unless overriden by `ndots` flag.")

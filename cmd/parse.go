@@ -28,9 +28,6 @@ func (hub *Hub) loadQueryArgs() error {
 // pattern it is considered to be a "query name".
 func (hub *Hub) loadFreeArgs() error {
 	for _, arg := range hub.FreeArgs {
-		if strings.HasPrefix(arg, "--") || strings.HasPrefix(arg, "-") {
-			continue
-		}
 		if strings.HasPrefix(arg, "@") {
 			hub.QueryFlags.Nameservers = append(hub.QueryFlags.Nameservers, strings.Trim(arg, "@"))
 		} else if _, ok := dns.StringToType[strings.ToUpper(arg)]; ok {

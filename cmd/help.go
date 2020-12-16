@@ -34,12 +34,6 @@ var AppHelpTemplate = `{{ "NAME" | color "" "heading" }}:
   {{"-n, --nameserver=ADDR" | color "yellow" ""}}       Address of a specific nameserver to send queries to (9.9.9.9, 1.1.1.1 etc)
   {{"-c, --class=CLASS" | color "yellow" ""}}           Network class of the DNS record (IN, CH, HS etc)
 
-{{ "Protocol Options" | color "" "heading" }}:
-  {{"-U, --udp " | color "yellow" ""}}                  Send queries via DNS over UDP protocol
-  {{"-T, --tcp " | color "yellow" ""}}                  Send queries via DNS over TCP protocol
-  {{"-S, --dot " | color "yellow" ""}}                  Send queries via DNS over TLS (DoT) protocol
-  {{"-H, --doh" | color "yellow" ""}}                   Send queries via DNS over HTTPS (DoH) protocol
-
 {{ "Output Options" | color "" "heading" }}:
   {{"-J, --json " | color "yellow" ""}}                 Format the output as JSON
   {{"--color   " | color "yellow" ""}}                  Defaults to true. Set --color=false to disable colored output

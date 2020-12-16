@@ -19,6 +19,10 @@ const (
 	DefaultTLSPort = "853"
 	// DefaultUDPPort specifies the default port for a DNS server connecting over UDP
 	DefaultUDPPort = "53"
+	UDPResolver    = "udp"
+	DOHResolver    = "doh"
+	TCPResolver    = "tcp"
+	DOTResolver    = "dot"
 )
 
 // initResolver checks for various flags and initialises
@@ -26,7 +30,7 @@ const (
 func (hub *Hub) initResolver() error {
 	// for each nameserver, initialise the correct resolver
 	for _, ns := range hub.Nameservers {
-		if ns.Type == "doh" {
+		if ns.Type == DOHResolver {
 			hub.Logger.Debug("initiating DOH resolver")
 			rslvr, err := resolvers.NewDOHResolver(ns.Address, resolvers.DOHResolverOpts{
 				Timeout: hub.QueryFlags.Timeout * time.Second,
@@ -36,7 +40,7 @@ func (hub *Hub) initResolver() error {
 			}
 			hub.Resolver = append(hub.Resolver, rslvr)
 		}
-		if ns.Type == "tcp" {
+		if ns.Type == TCPResolver {
 			hub.Logger.Debug("initiating TCP resolver")
 			rslvr, err := resolvers.NewTCPResolver(ns.Address, resolvers.TCPResolverOpts{
 				IPv4Only: hub.QueryFlags.UseIPv4,
@@ -48,7 +52,7 @@ func (hub *Hub) initResolver() error {
 			}
 			hub.Resolver = append(hub.Resolver, rslvr)
 		}
-		if ns.Type == "udp" {
+		if ns.Type == UDPResolver {
 			hub.Logger.Debug("initiating UDP resolver")
 			rslvr, err := resolvers.NewUDPResolver(ns.Address, resolvers.UDPResolverOpts{
 				IPv4Only: hub.QueryFlags.UseIPv4,
@@ -80,13 +84,13 @@ func getDefaultServers() ([]Nameserver, error) {
 		// handle IPv6
 		if ip != nil && ip.To4() != nil {
 			ns := Nameserver{
-				Type:    "udp",
+				Type:    UDPResolver,
 				Address: fmt.Sprintf("%s:%s", s, cfg.Port),
 			}
 			servers = append(servers, ns)
 		} else {
 			ns := Nameserver{
-				Type:    "udp",
+				Type:    UDPResolver,
 				Address: fmt.Sprintf("[%s]:%s", s, cfg.Port),
 			}
 			servers = append(servers, ns)
@@ -98,7 +102,7 @@ func getDefaultServers() ([]Nameserver, error) {
 func initNameserver(n string) (Nameserver, error) {
 	// Instantiate a dumb UDP resolver as a fallback.
 	ns := Nameserver{
-		Type:    "udp",
+		Type:    UDPResolver,
 		Address: n,
 	}
 	u, err := url.Parse(n)
@@ -106,19 +110,19 @@ func initNameserver(n string) (Nameserver, error) {
 		return ns, err
 	}
 	if u.Scheme == "https" {
+		ns.Type = DOHResolver
 		ns.Address = u.String()
-		ns.Type = "doh"
 	}
 	if u.Scheme == "tcp" {
+		ns.Type = TCPResolver
 		if i := net.ParseIP(n); i != nil {
 			// if no port specified in nameserver, append defaults.
 			n = net.JoinHostPort(n, DefaultTLSPort)
 		}
 		ns.Address = u.String()
-		ns.Type = "tcp"
 	}
 	if u.Scheme == "udp" {
-		ns.Type = "udp"
+		ns.Type = UDPResolver
 		if u.Port() == "" {
 			ns.Address = net.JoinHostPort(u.Hostname(), DefaultUDPPort)
 		} else {

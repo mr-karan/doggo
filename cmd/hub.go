@@ -25,10 +25,6 @@ type QueryFlags struct {
 	QTypes           []string      `koanf:"type"`
 	QClasses         []string      `koanf:"class"`
 	Nameservers      []string      `koanf:"nameserver"`
-	IsDOH            bool          `koanf:"doh"`
-	IsDOT            bool          `koanf:"dot"`
-	IsUDP            bool          `koanf:"udp"`
-	IsTCP            bool          `koanf:"tcp"`
 	UseIPv4          bool          `koanf:"ipv4"`
 	UseIPv6          bool          `koanf:"ipv6"`
 	DisplayTimeTaken bool          `koanf:"time"`
