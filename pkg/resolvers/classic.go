@@ -6,33 +6,47 @@ import (
 	"github.com/miekg/dns"
 )
 
-// TCPResolver represents the config options for setting up a Resolver.
-type TCPResolver struct {
+// ClassicResolver represents the config options for setting up a Resolver.
+type ClassicResolver struct {
 	client *dns.Client
 	server string
 }
 
-// TCPResolverOpts represents the config options for setting up a TCPResolver.
-type TCPResolverOpts struct {
+// ClassicResolverOpts holds options for setting up a Classic resolver.
+type ClassicResolverOpts struct {
 	IPv4Only bool
 	IPv6Only bool
 	Timeout  time.Duration
+	UseTLS   bool
+	UseTCP   bool
 }
 
-// NewTCPResolver accepts a list of nameservers and configures a DNS resolver.
-func NewTCPResolver(server string, opts TCPResolverOpts) (Resolver, error) {
+// NewClassicResolver accepts a list of nameservers and configures a DNS resolver.
+func NewClassicResolver(server string, opts ClassicResolverOpts) (Resolver, error) {
+	net := "udp"
 	client := &dns.Client{
 		Timeout: opts.Timeout,
+		Net:     "udp",
 	}
 
-	client.Net = "tcp"
+	if opts.UseTCP {
+		net = "tcp"
+	}
+
 	if opts.IPv4Only {
-		client.Net = "tcp4"
+		net = net + "4"
 	}
 	if opts.IPv6Only {
-		client.Net = "tcp6"
+		net = net + "6"
 	}
-	return &TCPResolver{
+
+	if opts.UseTLS {
+		net = net + "-tls"
+	}
+
+	client.Net = net
+
+	return &ClassicResolver{
 		client: client,
 		server: server,
 	}, nil
@@ -41,7 +55,7 @@ func NewTCPResolver(server string, opts TCPResolverOpts) (Resolver, error) {
 // Lookup prepare a list of DNS messages to be sent to the server.
 // It's possible to send multiple question in one message
 // but some nameservers are not able to
-func (r *TCPResolver) Lookup(questions []dns.Question) ([]Response, error) {
+func (r *ClassicResolver) Lookup(questions []dns.Question) ([]Response, error) {
 	var (
 		messages  = prepareMessages(questions)
 		responses []Response
@@ -52,9 +66,8 @@ func (r *TCPResolver) Lookup(questions []dns.Question) ([]Response, error) {
 		if err != nil {
 			return nil, err
 		}
-		msg.Answer = in.Answer
 		rsp := Response{
-			Message:    msg,
+			Message:    *in,
 			RTT:        rtt,
 			Nameserver: r.server,
 		}

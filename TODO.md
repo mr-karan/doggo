@@ -6,11 +6,11 @@
 - [x] Add a resolve method
 - [x] Make it separate from Hub
 - [x] Parse output into separate fields
-- [ ] Test IPv6/IPv4 only options
+- [x] Test IPv6/IPv4 only options
 - [x] Add DOH support
-- [ ] Add DOT support
-- [ ] Add DNS protocol on TCP mode support.
-  - [ ] Change lookup method.
+- [x] Add DOT support
+- [x] Add DNS protocol on TCP mode support.
+  - [x] Change lookup method.
 - [x] Major records supported
 - [x] Support multiple resolvers
   - [x] Take multiple transport options and initialise resolvers accordingly. 
@@ -37,7 +37,7 @@
 - [x] Add client transport options
 - [x] Fix an issue while loading free form args, where the same records are being added twice
 - [x] Remove urfave/cli in favour of `pflag + koanf`
-- [ ] Flags - Remove uneeded ones
+- [x] Flags - Remove uneeded ones
 ## Refactors
 
 - [ ] Don't abuse Hub as global. Refactor methods to be independent of hub.

@@ -19,6 +19,7 @@ const (
 	DefaultTLSPort = "853"
 	// DefaultUDPPort specifies the default port for a DNS server connecting over UDP
 	DefaultUDPPort = "53"
+	DefaultTCPPort = "53"
 	UDPResolver    = "udp"
 	DOHResolver    = "doh"
 	TCPResolver    = "tcp"
@@ -40,12 +41,28 @@ func (hub *Hub) initResolver() error {
 			}
 			hub.Resolver = append(hub.Resolver, rslvr)
 		}
-		if ns.Type == TCPResolver {
-			hub.Logger.Debug("initiating TCP resolver")
-			rslvr, err := resolvers.NewTCPResolver(ns.Address, resolvers.TCPResolverOpts{
+		if ns.Type == DOTResolver {
+			hub.Logger.Debug("initiating DOT resolver")
+			rslvr, err := resolvers.NewClassicResolver(ns.Address, resolvers.ClassicResolverOpts{
 				IPv4Only: hub.QueryFlags.UseIPv4,
 				IPv6Only: hub.QueryFlags.UseIPv6,
 				Timeout:  hub.QueryFlags.Timeout * time.Second,
+				UseTLS:   true,
+				UseTCP:   true,
+			})
+			if err != nil {
+				return err
+			}
+			hub.Resolver = append(hub.Resolver, rslvr)
+		}
+		if ns.Type == TCPResolver {
+			hub.Logger.Debug("initiating TCP resolver")
+			rslvr, err := resolvers.NewClassicResolver(ns.Address, resolvers.ClassicResolverOpts{
+				IPv4Only: hub.QueryFlags.UseIPv4,
+				IPv6Only: hub.QueryFlags.UseIPv6,
+				Timeout:  hub.QueryFlags.Timeout * time.Second,
+				UseTLS:   false,
+				UseTCP:   true,
 			})
 			if err != nil {
 				return err
@@ -54,10 +71,12 @@ func (hub *Hub) initResolver() error {
 		}
 		if ns.Type == UDPResolver {
 			hub.Logger.Debug("initiating UDP resolver")
-			rslvr, err := resolvers.NewUDPResolver(ns.Address, resolvers.UDPResolverOpts{
+			rslvr, err := resolvers.NewClassicResolver(ns.Address, resolvers.ClassicResolverOpts{
 				IPv4Only: hub.QueryFlags.UseIPv4,
 				IPv6Only: hub.QueryFlags.UseIPv6,
 				Timeout:  hub.QueryFlags.Timeout * time.Second,
+				UseTLS:   false,
+				UseTCP:   false,
 			})
 			if err != nil {
 				return err
@@ -113,13 +132,21 @@ func initNameserver(n string) (Nameserver, error) {
 		ns.Type = DOHResolver
 		ns.Address = u.String()
 	}
+	if u.Scheme == "tls" {
+		ns.Type = DOTResolver
+		if u.Port() == "" {
+			ns.Address = net.JoinHostPort(u.Hostname(), DefaultTLSPort)
+		} else {
+			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
+		}
+	}
 	if u.Scheme == "tcp" {
 		ns.Type = TCPResolver
-		if i := net.ParseIP(n); i != nil {
-			// if no port specified in nameserver, append defaults.
-			n = net.JoinHostPort(n, DefaultTLSPort)
+		if u.Port() == "" {
+			ns.Address = net.JoinHostPort(u.Hostname(), DefaultTCPPort)
+		} else {
+			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
 		}
-		ns.Address = u.String()
 	}
 	if u.Scheme == "udp" {
 		ns.Type = UDPResolver
