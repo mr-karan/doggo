@@ -15,6 +15,7 @@
 - [x] Support multiple resolvers
   - [x] Take multiple transport options and initialise resolvers accordingly. 
 - [x] Add timeout support
+- [x] Support SOA/NXDOMAIN
 
 ## CLI Features
 - [x] `ndots` support
@@ -36,7 +37,7 @@
 - [x] Add client transport options
 - [x] Fix an issue while loading free form args, where the same records are being added twice
 - [x] Remove urfave/cli in favour of `pflag + koanf`
-
+- [ ] Flags - Remove uneeded ones
 ## Refactors
 
 - [ ] Don't abuse Hub as global. Refactor methods to be independent of hub.

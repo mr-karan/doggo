@@ -107,6 +107,8 @@ func (hub *Hub) outputTerminal(out []Output) {
 			typOut = yellow(o.Type)
 		case "TXT":
 			typOut = yellow(o.Type)
+		case "SOA":
+			typOut = red(o.Type)
 		default:
 			typOut = blue(o.Type)
 		}
@@ -140,9 +142,18 @@ func collectOutput(responses [][]resolvers.Response) []Output {
 			var addr string
 			if r.Message.Rcode != dns.RcodeSuccess {
 				for _, ns := range r.Message.Ns {
-					blah, ok := ns.(*dns.SOA)
-					fmt.Println(blah, ok)
-					blah.String()
+					// check for SOA record
+					soa, ok := ns.(*dns.SOA)
+					if !ok {
+						// skip this message
+						continue
+					}
+					addr = soa.Ns + " " + soa.Mbox +
+						" " + strconv.FormatInt(int64(soa.Serial), 10) +
+						" " + strconv.FormatInt(int64(soa.Refresh), 10) +
+						" " + strconv.FormatInt(int64(soa.Retry), 10) +
+						" " + strconv.FormatInt(int64(soa.Expire), 10) +
+						" " + strconv.FormatInt(int64(soa.Minttl), 10)
 					h := ns.Header()
 					name := h.Name
 					qclass := dns.Class(h.Class).String()
