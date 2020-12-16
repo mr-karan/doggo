@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/knadh/koanf"
@@ -76,6 +77,36 @@ func main() {
 	err := hub.loadQueryArgs()
 	if err != nil {
 		hub.Logger.WithError(err).Error("error parsing flags/arguments")
+		hub.Logger.Exit(2)
+	}
+
+	// Load Nameservers
+	for _, srv := range hub.QueryFlags.Nameservers {
+		ns, err := initNameserver(srv)
+		if err != nil {
+			hub.Logger.WithError(err).Errorf("error parsing nameserver: %s", ns)
+			hub.Logger.Exit(2)
+		}
+		if ns.Address != "" && ns.Type != "" {
+			fmt.Println("appending", ns.Address, ns.Type)
+			hub.Nameservers = append(hub.Nameservers, ns)
+		}
+	}
+
+	// fallback to system nameserver
+	if len(hub.Nameservers) == 0 {
+		ns, err := getDefaultServers()
+		if err != nil {
+			hub.Logger.WithError(err).Errorf("error fetching system default nameserver")
+			hub.Logger.Exit(2)
+		}
+		hub.Nameservers = ns
+	}
+
+	// Load Resolvers
+	err = hub.initResolver()
+	if err != nil {
+		hub.Logger.WithError(err).Error("error loading resolver")
 		hub.Logger.Exit(2)
 	}
 	// Start App

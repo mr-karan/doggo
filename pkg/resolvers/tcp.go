@@ -1,21 +1,15 @@
 package resolvers
 
 import (
-	"net"
 	"time"
 
 	"github.com/miekg/dns"
 )
 
-const (
-	// DefaultTLSPort specifies the default port for a DNS server connecting over TCP over TLS
-	DefaultTLSPort = "853"
-)
-
 // TCPResolver represents the config options for setting up a Resolver.
 type TCPResolver struct {
-	client  *dns.Client
-	servers []string
+	client *dns.Client
+	server string
 }
 
 // TCPResolverOpts represents the config options for setting up a TCPResolver.
@@ -26,30 +20,9 @@ type TCPResolverOpts struct {
 }
 
 // NewTCPResolver accepts a list of nameservers and configures a DNS resolver.
-func NewTCPResolver(servers []string, opts TCPResolverOpts) (Resolver, error) {
+func NewTCPResolver(server string, opts TCPResolverOpts) (Resolver, error) {
 	client := &dns.Client{
 		Timeout: opts.Timeout,
-	}
-	var nameservers []string
-
-	// load list of nameservers to the config
-	if len(servers) == 0 {
-		ns, err := getDefaultServers()
-		if err != nil {
-			return nil, err
-		}
-		nameservers = ns
-	} else {
-		// load the list of servers that user specified.
-		for _, srv := range servers {
-			if i := net.ParseIP(srv); i != nil {
-				// if no port specified in nameserver, append defaults.
-				nameservers = append(nameservers, net.JoinHostPort(srv, DefaultTLSPort))
-			} else {
-				// use the port user specified.
-				nameservers = append(nameservers, srv)
-			}
-		}
 	}
 
 	client.Net = "tcp"
@@ -60,8 +33,8 @@ func NewTCPResolver(servers []string, opts TCPResolverOpts) (Resolver, error) {
 		client.Net = "tcp6"
 	}
 	return &TCPResolver{
-		client:  client,
-		servers: nameservers,
+		client: client,
+		server: server,
 	}, nil
 }
 
@@ -75,19 +48,17 @@ func (r *TCPResolver) Lookup(questions []dns.Question) ([]Response, error) {
 	)
 
 	for _, msg := range messages {
-		for _, srv := range r.servers {
-			in, rtt, err := r.client.Exchange(&msg, srv)
-			if err != nil {
-				return nil, err
-			}
-			msg.Answer = in.Answer
-			rsp := Response{
-				Message:    msg,
-				RTT:        rtt,
-				Nameserver: srv,
-			}
-			responses = append(responses, rsp)
+		in, rtt, err := r.client.Exchange(&msg, r.server)
+		if err != nil {
+			return nil, err
 		}
+		msg.Answer = in.Answer
+		rsp := Response{
+			Message:    msg,
+			RTT:        rtt,
+			Nameserver: r.server,
+		}
+		responses = append(responses, rsp)
 	}
 	return responses, nil
 }

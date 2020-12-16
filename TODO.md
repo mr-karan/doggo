@@ -8,12 +8,13 @@
 - [x] Parse output into separate fields
 - [ ] Test IPv6/IPv4 only options
 - [x] Add DOH support
-- [x] Add DOT support
-- [x] Add DNS protocol on TCP mode support.
+- [ ] Add DOT support
+- [ ] Add DNS protocol on TCP mode support.
+  - [ ] Change lookup method.
 - [x] Major records supported
 - [x] Support multiple resolvers
   - [x] Take multiple transport options and initialise resolvers accordingly. 
-- [ ] Add timeout support
+- [x] Add timeout support
 
 ## CLI Features
 - [x] `ndots` support
@@ -42,7 +43,6 @@
 - [ ] Add meaningful comments where required.
 - [ ] Meaningful error messages
 - [ ] Better debug logs
-- [ ] 
 ## Tests
 - [ ] Add tests for Command Line Usage. 
 

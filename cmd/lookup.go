@@ -78,7 +78,7 @@ func (hub *Hub) prepareQuestions() error {
 }
 
 func fetchDomainList(d string, ndots int) ([]string, int, error) {
-	cfg, err := dns.ClientConfigFromFile(resolvers.DefaultResolvConfPath)
+	cfg, err := dns.ClientConfigFromFile(DefaultResolvConfPath)
 	if err != nil {
 		return nil, 0, err
 	}

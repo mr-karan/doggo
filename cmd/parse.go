@@ -15,10 +15,6 @@ func (hub *Hub) loadQueryArgs() error {
 	if err != nil {
 		return err
 	}
-	err = hub.initResolver()
-	if err != nil {
-		return err
-	}
 	hub.loadFallbacks()
 	return nil
 }

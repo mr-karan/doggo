@@ -124,10 +124,6 @@ func (hub *Hub) outputTerminal(out []Output) {
 // on the output format specified displays the information.
 func (hub *Hub) Output(responses [][]resolvers.Response) {
 	out := collectOutput(responses)
-	if len(out) == 0 {
-		hub.Logger.Info("No records found")
-		hub.Logger.Exit(0)
-	}
 	if hub.QueryFlags.ShowJSON {
 		hub.outputJSON(out)
 	} else {
@@ -142,6 +138,29 @@ func collectOutput(responses [][]resolvers.Response) []Output {
 		// get the response
 		for _, r := range rslvr {
 			var addr string
+			if r.Message.Rcode != dns.RcodeSuccess {
+				for _, ns := range r.Message.Ns {
+					blah, ok := ns.(*dns.SOA)
+					fmt.Println(blah, ok)
+					blah.String()
+					h := ns.Header()
+					name := h.Name
+					qclass := dns.Class(h.Class).String()
+					ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
+					qtype := dns.Type(h.Rrtype).String()
+					rtt := fmt.Sprintf("%dms", r.RTT.Milliseconds())
+					o := Output{
+						Name:       name,
+						Type:       qtype,
+						TTL:        ttl,
+						Class:      qclass,
+						Address:    addr,
+						TimeTaken:  rtt,
+						Nameserver: r.Nameserver,
+					}
+					out = append(out, o)
+				}
+			}
 			for _, a := range r.Message.Answer {
 				switch t := a.(type) {
 				case *dns.A:

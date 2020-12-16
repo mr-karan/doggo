@@ -10,12 +10,13 @@ import (
 
 // Hub represents the structure for all app wide functions and structs.
 type Hub struct {
-	Logger     *logrus.Logger
-	Version    string
-	QueryFlags QueryFlags
-	FreeArgs   []string
-	Questions  []dns.Question
-	Resolver   []resolvers.Resolver
+	Logger      *logrus.Logger
+	Version     string
+	QueryFlags  QueryFlags
+	FreeArgs    []string
+	Questions   []dns.Question
+	Resolver    []resolvers.Resolver
+	Nameservers []Nameserver
 }
 
 // QueryFlags is used store the value of CLI flags.
@@ -38,6 +39,13 @@ type QueryFlags struct {
 	Timeout          time.Duration `koanf:"timeout"`
 }
 
+// Nameserver represents the type of Nameserver
+// along with it's address.
+type Nameserver struct {
+	Address string
+	Type    string
+}
+
 // NewHub initializes an instance of Hub which holds app wide configuration.
 func NewHub(logger *logrus.Logger, buildVersion string) *Hub {
 	// Initialise Resolver
@@ -50,6 +58,7 @@ func NewHub(logger *logrus.Logger, buildVersion string) *Hub {
 			QClasses:    []string{},
 			Nameservers: []string{},
 		},
+		Nameservers: []Nameserver{},
 	}
 	return hub
 }
