@@ -50,7 +50,7 @@ func main() {
 	f.Bool("color", true, "Show colored output")
 	f.Bool("debug", false, "Enable debug mode")
 
-	// Parse and Load Flags
+	// Parse and Load Flags.
 	err := f.Parse(os.Args[1:])
 	if err != nil {
 		hub.Logger.WithError(err).Error("error parsing flags")
@@ -81,40 +81,43 @@ func main() {
 	// which will be parsed separately.
 	hub.UnparsedArgs = f.Args()
 
-	// Parse Query Args
+	// Parse Query Args.
 	err = hub.loadQueryArgs()
 	if err != nil {
 		hub.Logger.WithError(err).Error("error parsing flags/arguments")
 		hub.Logger.Exit(2)
 	}
 
-	// Load Nameservers
+	// Load Nameservers.
 	err = hub.loadNameservers()
 	if err != nil {
 		hub.Logger.WithError(err).Error("error loading nameservers")
 		hub.Logger.Exit(2)
 	}
 
-	// Load Resolvers
+	// Load Resolvers.
 	err = hub.loadResolvers()
 	if err != nil {
 		hub.Logger.WithError(err).Error("error loading resolver")
 		hub.Logger.Exit(2)
 	}
 
-	// Start App
 	// Run the app.
 	hub.Logger.Debug("Starting doggo 🐶")
-
 	if len(hub.QueryFlags.QNames) == 0 {
 		f.Usage()
 		hub.Logger.Exit(0)
 	}
 
 	// Resolve Queries.
-	err = hub.Lookup()
+	responses, err := hub.Lookup()
 	if err != nil {
 		hub.Logger.WithError(err).Error("error looking up DNS records")
 		hub.Logger.Exit(2)
 	}
+	//Send the output.
+	hub.Output(responses)
+
+	// Quitting.
+	hub.Logger.Exit(0)
 }

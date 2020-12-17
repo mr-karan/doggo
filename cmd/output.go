@@ -12,7 +12,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-// Output has a list of fields which are produced for the output
 type Output struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`
@@ -182,8 +181,6 @@ func collectOutput(responses [][]resolvers.Response) []Output {
 					addr = t.Tag + " " + t.Value
 				case *dns.HINFO:
 					addr = t.Cpu + " " + t.Os
-				// case *dns.LOC:
-				// 	addr = t.String()
 				case *dns.PTR:
 					addr = t.Ptr
 				case *dns.SRV:

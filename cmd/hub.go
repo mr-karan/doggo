@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Hub represents the structure for all app wide functions and structs.
+// Hub represents the structure for all app wide configuration.
 type Hub struct {
 	Logger       *logrus.Logger
 	Version      string
@@ -21,7 +21,8 @@ type Hub struct {
 	flag         *pflag.FlagSet
 }
 
-// QueryFlags is used store the value of CLI flags.
+// QueryFlags is used store the query params
+// supplied by the user.
 type QueryFlags struct {
 	QNames           []string      `koanf:"query"`
 	QTypes           []string      `koanf:"type"`
@@ -39,7 +40,7 @@ type QueryFlags struct {
 }
 
 // Nameserver represents the type of Nameserver
-// along with it's address.
+// along with the server address.
 type Nameserver struct {
 	Address string
 	Type    string
@@ -47,7 +48,6 @@ type Nameserver struct {
 
 // NewHub initializes an instance of Hub which holds app wide configuration.
 func NewHub(logger *logrus.Logger, buildVersion string) *Hub {
-	// Initialise Resolver
 	hub := &Hub{
 		Logger:  logger,
 		Version: buildVersion,

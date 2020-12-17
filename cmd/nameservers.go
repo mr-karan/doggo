@@ -10,6 +10,21 @@ import (
 	"github.com/miekg/dns"
 )
 
+const (
+	//DefaultResolvConfPath specifies path to default resolv config file on UNIX.
+	DefaultResolvConfPath = "/etc/resolv.conf"
+	// DefaultTLSPort specifies the default port for a DNS server connecting over TCP over TLS
+	DefaultTLSPort = "853"
+	// DefaultUDPPort specifies the default port for a DNS server connecting over UDP
+	DefaultUDPPort = "53"
+	// DefaultTCPPort specifies the default port for a DNS server connecting over TCP
+	DefaultTCPPort = "53"
+	UDPResolver    = "udp"
+	DOHResolver    = "doh"
+	TCPResolver    = "tcp"
+	DOTResolver    = "dot"
+)
+
 // loadNameservers reads all the user given
 // nameservers and loads to Hub.
 func (hub *Hub) loadNameservers() error {
@@ -34,7 +49,6 @@ func (hub *Hub) loadNameservers() error {
 		if !hub.QueryFlags.isNdotsSet {
 			hub.QueryFlags.Ndots = ndots
 		}
-		// hub.QueryFlags.Ndots = ndots
 		hub.Nameservers = append(hub.Nameservers, ns...)
 	}
 	return nil
@@ -74,7 +88,7 @@ func getDefaultServers() ([]Nameserver, int, error) {
 }
 
 func initNameserver(n string) (Nameserver, error) {
-	// Instantiate a dumb UDP resolver as a fallback.
+	// Instantiate a UDP resolver with default port as a fallback.
 	ns := Nameserver{
 		Type:    UDPResolver,
 		Address: net.JoinHostPort(n, DefaultUDPPort),

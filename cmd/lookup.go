@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"runtime"
 	"strings"
 
@@ -11,10 +10,13 @@ import (
 )
 
 // Lookup sends the DNS queries to the server.
-func (hub *Hub) Lookup() error {
+// It prepares a list of `dns.Questions` and sends
+// to all resolvers. It returns a list of []resolver.Response from
+// each resolver
+func (hub *Hub) Lookup() ([][]resolvers.Response, error) {
 	questions, err := hub.prepareQuestions()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	hub.Questions = questions
 	// for each type of resolver do a DNS lookup
@@ -22,15 +24,11 @@ func (hub *Hub) Lookup() error {
 	for _, r := range hub.Resolver {
 		resp, err := r.Lookup(hub.Questions)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		responses = append(responses, resp)
 	}
-	if len(responses) == 0 {
-		return errors.New(`no DNS records found`)
-	}
-	hub.Output(responses)
-	return nil
+	return responses, nil
 }
 
 // prepareQuestions takes a list of hostnames and some
@@ -60,8 +58,9 @@ func (hub *Hub) prepareQuestions() ([]dns.Question, error) {
 				"domain": d,
 				"ndots":  hub.QueryFlags.Ndots,
 			}).Debug("Attmepting to resolve")
-			question := dns.Question{}
-			question.Name = d
+			question := dns.Question{
+				Name: d,
+			}
 			// iterate on a list of query types.
 			for _, q := range hub.QueryFlags.QTypes {
 				question.Qtype = dns.StringToType[strings.ToUpper(q)]
@@ -69,7 +68,6 @@ func (hub *Hub) prepareQuestions() ([]dns.Question, error) {
 				for _, c := range hub.QueryFlags.QClasses {
 					question.Qclass = dns.StringToClass[strings.ToUpper(c)]
 					// append a new question for each possible pair.
-
 					questions = append(questions, question)
 				}
 			}

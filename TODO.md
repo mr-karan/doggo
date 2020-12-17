@@ -38,14 +38,10 @@
 - [x] Fix an issue while loading free form args, where the same records are being added twice
 - [x] Remove urfave/cli in favour of `pflag + koanf`
 - [x] Flags - Remove uneeded ones
-## Refactors
 
-- [ ] Don't abuse Hub as global. Refactor methods to be independent of hub.
-- [ ] Add meaningful comments where required.
-- [ ] Meaningful error messages
-- [ ] Better debug logs
 ## Tests
-- [ ] Add tests for Command Line Usage. 
+- [ ] Add tests for Resolvers.
+- [ ] Add tests for CLI Output. 
 
 ## Documentation
 - [ ] README
@@ -73,3 +69,5 @@
   - [ ] bash
   - [ ] zsh
   - [ ] fish
+- [ ] Support non RFC Compliant DOH Google response (_ugh_)
+
