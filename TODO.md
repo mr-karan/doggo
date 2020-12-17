@@ -63,7 +63,7 @@
   - [ ] Docker
 
 ---
-## Future Release
+# Future Release
 
 - [ ] Support obscure protocal tweaks in `dig`
 - [ ] `digfile`

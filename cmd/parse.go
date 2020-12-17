@@ -4,30 +4,36 @@ import (
 	"strings"
 
 	"github.com/miekg/dns"
+	flag "github.com/spf13/pflag"
 )
 
 func (hub *Hub) loadQueryArgs() error {
-	err := hub.loadNamedArgs()
+	// Appends a list of unparsed args to
+	// internal query flags.
+	err := hub.loadUnparsedArgs()
 	if err != nil {
 		return err
 	}
-	err = hub.loadFreeArgs()
-	if err != nil {
-		return err
-	}
+	// check if ndots is set
+	hub.QueryFlags.isNdotsSet = isFlagPassed("ndots", hub.flag)
+
+	// Load all fallbacks in internal query flags.
 	hub.loadFallbacks()
 	return nil
 }
 
-// loadFreeArgs tries to parse all the arguments
-// given to the CLI. These arguments don't have any specific
+// loadUnparsedArgs tries to parse all the arguments
+// which are unparsed by `flag` library. These arguments don't have any specific
 // order so we have to deduce based on the pattern of argument.
 // For eg, a nameserver must always begin with `@`. In this
-// pattern we deduce the arguments and map it to internal query
-// options. In case an argument isn't able to fit in any of the existing
-// pattern it is considered to be a "query name".
-func (hub *Hub) loadFreeArgs() error {
-	for _, arg := range hub.FreeArgs {
+// pattern we deduce the arguments and append it to the
+// list of internal query flags.
+// In case an argument isn't able to fit in any of the existing
+// pattern it is considered to be a "hostname".
+// Eg of unparsed argument: `dig mrkaran.dev @1.1.1.1 AAAA`
+// where `@1.1.1.1` and `AAAA` are "unparsed" args.
+func (hub *Hub) loadUnparsedArgs() error {
+	for _, arg := range hub.UnparsedArgs {
 		if strings.HasPrefix(arg, "@") {
 			hub.QueryFlags.Nameservers = append(hub.QueryFlags.Nameservers, strings.Trim(arg, "@"))
 		} else if _, ok := dns.StringToType[strings.ToUpper(arg)]; ok {
@@ -42,19 +48,9 @@ func (hub *Hub) loadFreeArgs() error {
 	return nil
 }
 
-// loadNamedArgs checks for all flags and loads their
-// values inside the Hub.
-func (hub *Hub) loadNamedArgs() error {
-	// Unmarshall flags to the struct.
-	err := k.Unmarshal("", &hub.QueryFlags)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // loadFallbacks sets fallbacks for options
-// that are not specified by the user.
+// that are not specified by the user but necessary
+// for the resolver.
 func (hub *Hub) loadFallbacks() {
 	if len(hub.QueryFlags.QTypes) == 0 {
 		hub.QueryFlags.QTypes = append(hub.QueryFlags.QTypes, "A")
@@ -62,4 +58,16 @@ func (hub *Hub) loadFallbacks() {
 	if len(hub.QueryFlags.QClasses) == 0 {
 		hub.QueryFlags.QClasses = append(hub.QueryFlags.QClasses, "IN")
 	}
+}
+
+// isFlagPassed checks if the flag is supplied by
+//user or not.
+func isFlagPassed(name string, f *flag.FlagSet) bool {
+	found := false
+	f.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
 }

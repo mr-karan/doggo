@@ -7,9 +7,9 @@ import (
 	"github.com/fatih/color"
 )
 
-// AppHelpTemplate is the text template to customise the Help output.
+// appHelpTextTemplate is the text/template to customise the Help output.
 // Uses text/template to render templates.
-var AppHelpTemplate = `{{ "NAME" | color "" "heading" }}:
+var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{ .Name | color "green" "bold" }} 🐶 {{.Description}}
 
 {{ "USAGE" | color "" "heading" }}:
@@ -72,12 +72,14 @@ func renderCustomHelp() {
 			}
 			return formatter.SprintFunc()(str)
 		},
-	}).Parse(AppHelpTemplate)
+	}).Parse(appHelpTextTemplate)
 	if err != nil {
+		// should ideally never happen.
 		panic(err)
 	}
 	err = tmpl.Execute(os.Stdout, helpTmplVars)
 	if err != nil {
+		// should ideally never happen.
 		panic(err)
 	}
 	os.Exit(0)

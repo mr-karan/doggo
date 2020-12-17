@@ -15,14 +15,14 @@ build: ## Build the doggo binary
 run: build ## Build and Execute the binary after the build step
 	./bin/${DOGGO-BIN}
 
-fresh: clean build
-
+.PHONY: clean
 clean:
 	go clean
 	- rm -f ./bin/${BIN}
 
-# pack-releases runns stuffbin packing on a given list of
-# binaries. This is used with goreleaser for packing
-# release builds for cross-build targets.
-pack-releases:
-	$(foreach var,$(RELEASE_BUILDS),stuffbin -a stuff -in ${var} -out ${var} ${STATIC} $(var);)
+.PHONY: lint
+lint:
+	golangci-lint run
+
+.PHONY: fresh
+fresh: clean build

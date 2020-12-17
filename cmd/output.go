@@ -140,37 +140,35 @@ func collectOutput(responses [][]resolvers.Response) []Output {
 		// get the response
 		for _, r := range rslvr {
 			var addr string
-			if r.Message.Rcode != dns.RcodeSuccess {
-				for _, ns := range r.Message.Ns {
-					// check for SOA record
-					soa, ok := ns.(*dns.SOA)
-					if !ok {
-						// skip this message
-						continue
-					}
-					addr = soa.Ns + " " + soa.Mbox +
-						" " + strconv.FormatInt(int64(soa.Serial), 10) +
-						" " + strconv.FormatInt(int64(soa.Refresh), 10) +
-						" " + strconv.FormatInt(int64(soa.Retry), 10) +
-						" " + strconv.FormatInt(int64(soa.Expire), 10) +
-						" " + strconv.FormatInt(int64(soa.Minttl), 10)
-					h := ns.Header()
-					name := h.Name
-					qclass := dns.Class(h.Class).String()
-					ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
-					qtype := dns.Type(h.Rrtype).String()
-					rtt := fmt.Sprintf("%dms", r.RTT.Milliseconds())
-					o := Output{
-						Name:       name,
-						Type:       qtype,
-						TTL:        ttl,
-						Class:      qclass,
-						Address:    addr,
-						TimeTaken:  rtt,
-						Nameserver: r.Nameserver,
-					}
-					out = append(out, o)
+			for _, ns := range r.Message.Ns {
+				// check for SOA record
+				soa, ok := ns.(*dns.SOA)
+				if !ok {
+					// skip this message
+					continue
 				}
+				addr = soa.Ns + " " + soa.Mbox +
+					" " + strconv.FormatInt(int64(soa.Serial), 10) +
+					" " + strconv.FormatInt(int64(soa.Refresh), 10) +
+					" " + strconv.FormatInt(int64(soa.Retry), 10) +
+					" " + strconv.FormatInt(int64(soa.Expire), 10) +
+					" " + strconv.FormatInt(int64(soa.Minttl), 10)
+				h := ns.Header()
+				name := h.Name
+				qclass := dns.Class(h.Class).String()
+				ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
+				qtype := dns.Type(h.Rrtype).String()
+				rtt := fmt.Sprintf("%dms", r.RTT.Milliseconds())
+				o := Output{
+					Name:       name,
+					Type:       qtype,
+					TTL:        ttl,
+					Class:      qclass,
+					Address:    addr,
+					TimeTaken:  rtt,
+					Nameserver: r.Nameserver,
+				}
+				out = append(out, o)
 			}
 			for _, a := range r.Message.Answer {
 				switch t := a.(type) {
