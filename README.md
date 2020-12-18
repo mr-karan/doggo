@@ -62,6 +62,10 @@ You can supply all arguments to the CLI directly to `docker run` command. Eg:
 $ sudo snap install doggo
 ```
 
+**NOTE**: Since the [confinement](https://snapcraft.io/docs/snap-confinement) mode is strict as of now, it cannot access your host's `/etc/resolv.conf`.
+I'll be making a request in the Snap forums soon so that it can be manually reviewed and allowed to use `--classic`. Until then, please specify a namesever manually
+if using `snap`.
+
 ### From Source
 
 You need to have `go` installed in your system.
@@ -70,9 +74,7 @@ You need to have `go` installed in your system.
 $ go get github.com/mr-karan/doggo/cmd/doggo
 ```
 
-**NOTE**: Since the [confinement](https://snapcraft.io/docs/snap-confinement) mode is strict as of now, it cannot access your host's `/etc/resolv.conf`.
-I'll be making a request in the Snap forums soon so that it can be manually reviewed and allowed to use `--classic`. Until then, please specify a namesever manually
-if using `snap`.
+The binary will be available at `$GOPATH/bin/doggo`.
 
 ## Usage Examples
 
