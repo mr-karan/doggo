@@ -39,8 +39,8 @@ func main() {
 
 	// Resolver Options
 	f.Int("timeout", 5, "Sets the timeout for a query to T seconds. The default timeout is 5 seconds.")
-	f.Bool("search", true, "Use the search list provided in resolv.conf. It sets the `ndots` parameter as well unless overriden by `ndots` flag.")
-	f.Int("ndots", 0, "Specify the ndots paramter. Default value is taken from resolv.conf and fallbacks to 1 if ndots statement is missing in resolv.conf")
+	f.Bool("search", true, "Use the search list provided in resolv.conf. It sets the `ndots` parameter as well unless overridden by `ndots` flag.")
+	f.Int("ndots", 0, "Specify the ndots parameter. Default value is taken from resolv.conf and fallbacks to 1 if ndots statement is missing in resolv.conf")
 	f.BoolP("ipv4", "4", false, "Use IPv4 only")
 	f.BoolP("ipv6", "6", false, "Use IPv6 only")
 

@@ -12,7 +12,7 @@
 
 **doggo** is a modern command-line DNS client (like _dig_) written in Golang. It outputs information in a neat concise manner and supports protocols like DoH, DoT as well.
 
-It's totally inspired from [dog](https://github.com/ogham/dog/) which is written in Rust. I wanted to add some features to it but since I don't know Rust, I found it as a nice oppurtunity
+It's totally inspired from [dog](https://github.com/ogham/dog/) which is written in Rust. I wanted to add some features to it but since I don't know Rust, I found it as a nice opportunity
 to experiment with writing a DNS Client from scratch in `Go` myself. Hence the name `dog` +`go` => **doggo**.
 
 ## Features
@@ -63,7 +63,7 @@ $ sudo snap install doggo
 ```
 
 **NOTE**: Since the [confinement](https://snapcraft.io/docs/snap-confinement) mode is strict as of now, it cannot access your host's `/etc/resolv.conf`.
-I'll be making a request in the Snap forums soon so that it can be manually reviewed and allowed to use `--classic`. Until then, please specify a namesever manually
+I'll be making a request in the Snap forums soon so that it can be manually reviewed and allowed to use `--classic`. Until then, please specify a nameserver manually
 if using `snap`.
 
 ### From Source
@@ -200,7 +200,7 @@ URL scheme of the server is used to identify which resolver to use for lookups. 
 ### Resolver Options
 
 ```
-  --ndots=INT        Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise.
+  --ndots=INT        Specify ndots parameter. Takes value from /etc/resolv.conf if using the system nameserver or 1 otherwise.
   --search           Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list.
   --timeout          Specify timeout (in seconds) for the resolver to return a response.
   -4 --ipv4          Use IPv4 only.
