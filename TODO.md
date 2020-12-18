@@ -37,7 +37,7 @@
 - [x] Add client transport options
 - [x] Fix an issue while loading free form args, where the same records are being added twice
 - [x] Remove urfave/cli in favour of `pflag + koanf`
-- [x] Flags - Remove uneeded ones
+- [x] Flags - Remove unneeded ones
 
 ## Documentation
 - [x] README
@@ -53,10 +53,10 @@
 ---
 # Future Release
 
-- [ ] Support obscure protocal tweaks in `dig`
+- [ ] Support obscure protocol tweaks in `dig`
 - [ ] `digfile`
 - [ ] Support more DNS Record Types
-- [ ] Error on NXDomain (Realted upstream [bug](https://github.com/miekg/dns/issues/1198))
+- [ ] Error on NXDomain (Related upstream [bug](https://github.com/miekg/dns/issues/1198))
 - [ ] Shell completions
   - [ ] bash
   - [ ] zsh

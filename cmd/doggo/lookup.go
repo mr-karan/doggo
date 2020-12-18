@@ -57,7 +57,7 @@ func (hub *Hub) prepareQuestions() ([]dns.Question, error) {
 			hub.Logger.WithFields(logrus.Fields{
 				"domain": d,
 				"ndots":  hub.QueryFlags.Ndots,
-			}).Debug("Attmepting to resolve")
+			}).Debug("Attempting to resolve")
 			question := dns.Question{
 				Name: d,
 			}
