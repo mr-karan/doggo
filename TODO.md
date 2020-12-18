@@ -47,10 +47,9 @@
 
 
 ## Release Checklist
-- [ ] Goreleaser
-  - [ ] Snap
-  - [ ] Homebrew
-  - [ ] Docker
+- [x] Goreleaser
+  - [x] Snap
+  - [x] Docker
 ---
 # Future Release
 
@@ -67,3 +66,4 @@
 - [ ] Add tests for CLI Output. 
 - [ ] Mkdocs init project
   - [ ] Custom Index (Landing Page)
+- [ ] Homebrew - Goreleaser

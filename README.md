@@ -5,7 +5,7 @@
   <p align="center">
     🐶 <i>Command-line DNS client for humans</i>
   </p>
-  <img src="www/static/usage.png" alt="doggo CLI usage">
+  <img src="www/static/doggo.png" alt="doggo CLI usage">
 </p>
 
 ---
@@ -101,7 +101,7 @@ github.com.     MX      IN      3600s   5 alt2.aspmx.l.google.com.      9.9.9.9:
 github.com.     MX      IN      3600s   1 aspmx.l.google.com.           9.9.9.9:53
 ```
 
-**Query DNS records for archive.org using Cloudflare DoH resolver**
+**Query DNS records for `archive.org` using Cloudflare DoH resolver**
 
 ```bash
 $ doggo archive.org @https://cloudflare-dns.com/dns-query 
@@ -109,7 +109,7 @@ NAME            TYPE    CLASS   TTL     ADDRESS         NAMESERVER
 archive.org.    A       IN      41s     207.241.224.2   https://cloudflare-dns.com/dns-query
 ```
 
-**Query DNS records for internetfreedom.in with JSON output**
+**Query DNS records for `internetfreedom.in` with JSON output**
 
 ```bash
 $ doggo internetfreedom.in --json | jq
@@ -155,7 +155,7 @@ $ doggo internetfreedom.in --json | jq
 }
 ```
 
-**Query DNS records for duckduckgo.com and show RTT (Round Trip Time)**
+**Query DNS records for `duckduckgo.com` and show RTT (Round Trip Time)**
 
 ```bash
 $ doggo duckduckgo.com --time                
