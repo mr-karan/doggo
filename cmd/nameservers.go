@@ -46,7 +46,7 @@ func (hub *Hub) loadNameservers() error {
 		if err != nil {
 			return fmt.Errorf("error fetching system default nameserver")
 		}
-		if !hub.QueryFlags.isNdotsSet {
+		if hub.QueryFlags.Ndots == 0 {
 			hub.QueryFlags.Ndots = ndots
 		}
 		hub.Nameservers = append(hub.Nameservers, ns...)

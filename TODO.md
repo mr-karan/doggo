@@ -39,25 +39,18 @@
 - [x] Remove urfave/cli in favour of `pflag + koanf`
 - [x] Flags - Remove uneeded ones
 
-## Tests
-- [ ] Add tests for Resolvers.
-- [ ] Add tests for CLI Output. 
-
 ## Documentation
-- [ ] README
-  - [ ] Usage
-  - [ ] Installation
-  - [ ] Features
-- [ ] Mkdocs init project
-  - [ ] Custom Index (Landing Page)
+- [x] README
+  - [x] Usage
+  - [x] Installation
+  - [x] Features
+
 
 ## Release Checklist
 - [ ] Goreleaser
   - [ ] Snap
   - [ ] Homebrew
-  - [ ] ARM
   - [ ] Docker
-
 ---
 # Future Release
 
@@ -70,4 +63,7 @@
   - [ ] zsh
   - [ ] fish
 - [ ] Support non RFC Compliant DOH Google response (_ugh_)
-
+- [ ] Add tests for Resolvers.
+- [ ] Add tests for CLI Output. 
+- [ ] Mkdocs init project
+  - [ ] Custom Index (Landing Page)
