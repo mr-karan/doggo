@@ -24,14 +24,14 @@ archives:
       - README.md
       - LICENSE
 
-# snapcrafts:
-#   - name_template: "{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
-#     summary: DNS Command-line client.
-#     description: |
-#       doggo is a command-line DNS client written in Go. It supports protocols like DoH, DoT and output formats like JSON.
-#     grade: stable
-#     confinement: strict
-#     publish: true
+snapcrafts:
+  - name_template: "{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    summary: Command-line DNS client.
+    description: |
+      doggo is a command-line DNS client written in Go. It supports protocols like DoH, DoT and output formats like JSON.
+    grade: stable
+    confinement: strict
+    publish: true
 
 dockers:
 - image_templates:
@@ -45,6 +45,7 @@ dockers:
   - "ARCH=amd64"
 - image_templates:
   - "ghcr.io/mr-karan/doggo:{{ .Tag }}-arm64v8"
+  - "ghcr.io/mr-karan/doggo:latest-arm64v8"
   binaries:
   - doggo
   goarch: arm64
@@ -52,8 +53,3 @@ dockers:
   build_flag_templates:
   - "--build-arg"
   - "ARCH=arm64v8"
-docker_manifests:
-- name_template: mr-karan/doggo:{{ .Tag }}
-  image_templates:
-  - mr-karan/doggo:{{ .Tag }}-amd64
-  - mr-karan/doggo:{{ .Tag }}-arm64v8
