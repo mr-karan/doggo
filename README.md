@@ -10,31 +10,64 @@
 
 ---
 
-`doggo` is a modern command-line DNS client (like _dig_) written in Golang. It outputs information in a neat concise manner and supports protocols like DoH, DoT as well.
+**doggo** is a modern command-line DNS client (like _dig_) written in Golang. It outputs information in a neat concise manner and supports protocols like DoH, DoT as well.
 
 It's totally inspired from [dog](https://github.com/ogham/dog/) which is written in Rust. I wanted to add some features to it but since I don't know Rust, I found it as a nice oppurtunity
-to experiment with writing a DNS Client from scratch in `Go` myself. Hence the name `dog` +`go` => `doggo`.
+to experiment with writing a DNS Client from scratch in `Go` myself. Hence the name `dog` +`go` => **doggo**.
 
 ## Features
 
-- Human readable output - Supports colors and tabular format.
-- Supports JSON format - useful for writing scripts.
+- Human readable output - supports **colors** and **tabular** format.
+- Supports **JSON** format - can be useful while writing scripts.
 - Has support for multiple transport protocols:
   - DNS over **HTTPS** (DoH)
   - DNS over **TLS** (DoT)
   - DNS over **TCP**
   - DNS over **UDP**
 - Supports **ndots** and **search** configurations from `resolv.conf` or command-line arguments.
-- Supports multiple resolvers in one go.
+- Supports multiple resolvers at once.
 - Supports IPv4 **and** IPv6 _both_.
 
 ## Installation
 
-### Binary (Recommended)
+### Binary
 
+```shell
+$ cd "$(mktemp -d)"
+$ curl -sL "https://github.com/mr-karan/doggo/releases/download/0.0.1/doggo_0.0.1_$(uname)_amd64.tar.gz" | tar xz
+$ mv doggo /usr/local/bin
+# doggo should be available now in your $PATH
+$ doggo
+```
 ### Docker
 
+Images are hosted on Github Container Registry (ghcr.io).
+
+**Pull**
+
+`docker pull ghcr.io/mr-karan/doggo:latest`
+
+**Running**
+
+You can supply all arguments to the CLI directly to `docker run` command. Eg:
+
+`docker run ghcr.io/mr-karan/doggo:latest mrkaran.dev @1.1.1.1 MX`
+
+You can view all the tags [here](https://github.com/users/mr-karan/packages/container/package/doggo). It even supports **ARM** so you can spin up a container on your RPi to do DNS lookups, cause why not.
+
 ### Snap
+
+### Using snap
+
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/doggo)
+
+```sh
+$ sudo snap install doggo
+```
+
+**NOTE**: Since the [confinement](https://snapcraft.io/docs/snap-confinement) mode is strict as of now, it cannot access your host's `/etc/resolv.conf`.
+I'll be making a request in the Snap forums soon so that it can be manually reviewed and allowed to use `--classic`. Until then, please specify a namesever manually
+if using `snap`.
 
 ## Usage Examples
 
@@ -181,7 +214,8 @@ URL scheme of the server is used to identify which resolver to use for lookups. 
 
 ## Contributing
 
-I'm open to accept feature requests and/or issues. I understand `doggo` is a very new DNS Client in the town and there might be some edge cases I am not handling. Please feel free to open issues if you ever come across such a case.
+I'm open to accept feature requests and/or issues. I understand `doggo` is a new DNS Client in the town and there might be some edge cases I am not handling.
+Please feel free to open issues if you ever come across such a case.
 For now I am focussing more on [planned features](TODO.md) for a **stable** v1.0 release _soon_.
 
 ## License
