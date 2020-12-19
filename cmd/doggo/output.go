@@ -20,6 +20,7 @@ type Output struct {
 	Address    string `json:"address"`
 	TimeTaken  string `json:"rtt"`
 	Nameserver string `json:"nameserver"`
+	Status     string `json:"status"`
 }
 
 type Query struct {
@@ -68,6 +69,7 @@ func (hub *Hub) outputTerminal(out []Output) {
 	yellow := color.New(color.FgYellow, color.Bold).SprintFunc()
 	cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
 	red := color.New(color.FgRed, color.Bold).SprintFunc()
+	magenta := color.New(color.FgMagenta, color.Bold).SprintFunc()
 
 	if !hub.QueryFlags.Color {
 		color.NoColor = true // disables colorized output
@@ -78,8 +80,16 @@ func (hub *Hub) outputTerminal(out []Output) {
 	if hub.QueryFlags.DisplayTimeTaken {
 		header = append(header, "Time Taken")
 	}
+	outputStatus := false
+	for _, o := range out {
+		if dns.StringToRcode[o.Status] != dns.RcodeSuccess {
+			header = append(header, "Status")
+			outputStatus = true
+		}
+	}
+
 	table.SetHeader(header)
-	table.SetAutoWrapText(false)
+	table.SetAutoWrapText(true)
 	table.SetAutoFormatHeaders(true)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
@@ -99,7 +109,7 @@ func (hub *Hub) outputTerminal(out []Output) {
 		case "AAAA":
 			typOut = blue(o.Type)
 		case "MX":
-			typOut = red(o.Type)
+			typOut = magenta(o.Type)
 		case "NS":
 			typOut = cyan(o.Type)
 		case "CNAME":
@@ -115,6 +125,9 @@ func (hub *Hub) outputTerminal(out []Output) {
 		// Print how long it took
 		if hub.QueryFlags.DisplayTimeTaken {
 			output = append(output, o.TimeTaken)
+		}
+		if outputStatus {
+			output = append(output, red(o.Status))
 		}
 		table.Append(output)
 	}
@@ -166,6 +179,7 @@ func collectOutput(responses [][]resolvers.Response) []Output {
 					Address:    addr,
 					TimeTaken:  rtt,
 					Nameserver: r.Nameserver,
+					Status:     dns.RcodeToString[r.Message.Rcode],
 				}
 				out = append(out, o)
 			}

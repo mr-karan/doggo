@@ -67,3 +67,4 @@
 - [ ] Mkdocs init project
   - [ ] Custom Index (Landing Page)
 - [ ] Homebrew - Goreleaser
+- [ ] Separate Authority/Answer in JSON output.

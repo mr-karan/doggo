@@ -6,7 +6,6 @@ import (
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/pflag"
 )
 
 // Hub represents the structure for all app wide configuration.
@@ -18,7 +17,6 @@ type Hub struct {
 	Questions    []dns.Question
 	Resolver     []resolvers.Resolver
 	Nameservers  []Nameserver
-	flag         *pflag.FlagSet
 }
 
 // QueryFlags is used store the query params
@@ -36,7 +34,6 @@ type QueryFlags struct {
 	Ndots            int           `koanf:"ndots"`
 	Color            bool          `koanf:"color"`
 	Timeout          time.Duration `koanf:"timeout"`
-	isNdotsSet       bool
 }
 
 // Nameserver represents the type of Nameserver

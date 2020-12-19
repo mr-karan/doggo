@@ -14,6 +14,11 @@ import (
 // to all resolvers. It returns a list of []resolver.Response from
 // each resolver
 func (hub *Hub) Lookup() ([][]resolvers.Response, error) {
+	// check if ndots is 0 (that means it's not supplied by user)
+	if hub.QueryFlags.Ndots == 0 {
+		// set the default as 1
+		hub.QueryFlags.Ndots = 1
+	}
 	questions, err := hub.prepareQuestions()
 	if err != nil {
 		return nil, err
@@ -79,7 +84,7 @@ func (hub *Hub) prepareQuestions() ([]dns.Question, error) {
 func fetchDomainList(d string, ndots int) ([]string, error) {
 	if runtime.GOOS == "windows" {
 		// TODO: Add a method for reading system default nameserver in windows.
-		return []string{d}, nil
+		return []string{dns.Fqdn(d)}, nil
 	}
 	cfg, err := dns.ClientConfigFromFile(DefaultResolvConfPath)
 	if err != nil {

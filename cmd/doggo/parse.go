@@ -14,8 +14,6 @@ func (hub *Hub) loadQueryArgs() error {
 	if err != nil {
 		return err
 	}
-	// check if ndots is set
-	hub.QueryFlags.isNdotsSet = isFlagPassed("ndots", hub.flag)
 
 	// Load all fallbacks in internal query flags.
 	hub.loadFallbacks()

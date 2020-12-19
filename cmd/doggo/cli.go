@@ -26,7 +26,6 @@ func main() {
 
 	// Configure Flags.
 	f := flag.NewFlagSet("config", flag.ContinueOnError)
-	hub.flag = f
 
 	// Custom Help Text.
 	f.Usage = renderCustomHelp
