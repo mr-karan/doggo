@@ -68,16 +68,7 @@ func getDefaultServers() ([]Nameserver, int, error) {
 	}
 	servers := make([]Nameserver, 0, len(cfg.Servers))
 	for _, s := range cfg.Servers {
-		var (
-			ip   = net.ParseIP(s)
-			addr string
-		)
-		// handle IPv6
-		if ip != nil && ip.To4() != nil {
-			addr = fmt.Sprintf("%s:%s", s, cfg.Port)
-		} else {
-			addr = fmt.Sprintf("[%s]:%s", s, cfg.Port)
-		}
+		addr := net.JoinHostPort(s, cfg.Port)
 		ns := Nameserver{
 			Type:    UDPResolver,
 			Address: addr,
