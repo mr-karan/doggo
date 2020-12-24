@@ -54,9 +54,8 @@
 # Future Release
 
 - [ ] Support obscure protocol tweaks in `dig`
-- [ ] `digfile`
+- [ ] Read from file with `-f`
 - [ ] Support more DNS Record Types
-- [ ] Error on NXDomain (Related upstream [bug](https://github.com/miekg/dns/issues/1198))
 - [ ] Shell completions
   - [ ] bash
   - [ ] zsh
@@ -67,4 +66,5 @@
 - [ ] Mkdocs init project
   - [ ] Custom Index (Landing Page)
 - [ ] Homebrew - Goreleaser
-- [ ] Separate Authority/Answer in JSON output.
+- [x] Separate Authority/Answer in JSON output.
+- [x] Error on NXDomain (Related upstream [bug](https://github.com/miekg/dns/issues/1198))
