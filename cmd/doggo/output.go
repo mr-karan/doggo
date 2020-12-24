@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/fatih/color"
 	"github.com/miekg/dns"
@@ -12,50 +11,9 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-type Output struct {
-	Name       string `json:"name"`
-	Type       string `json:"type"`
-	Class      string `json:"class"`
-	TTL        string `json:"ttl"`
-	Address    string `json:"address"`
-	TimeTaken  string `json:"rtt"`
-	Nameserver string `json:"nameserver"`
-	Status     string `json:"status"`
-}
-
-type Query struct {
-	Name  string `json:"name"`
-	Type  string `json:"type"`
-	Class string `json:"class"`
-}
-type Response struct {
-	Output  []Output `json:"answers"`
-	Queries []Query  `json:"queries"`
-}
-
-type JSONResponse struct {
-	Response `json:"responses"`
-}
-
-func (hub *Hub) outputJSON(out []Output) {
-	// get the questions
-	queries := make([]Query, 0)
-	for _, ques := range hub.Questions {
-		q := Query{
-			Name:  ques.Name,
-			Type:  dns.TypeToString[ques.Qtype],
-			Class: dns.ClassToString[ques.Qclass],
-		}
-		queries = append(queries, q)
-	}
-
-	resp := JSONResponse{
-		Response{
-			Output:  out,
-			Queries: queries,
-		},
-	}
-	res, err := json.Marshal(resp)
+func (hub *Hub) outputJSON(rsp []resolvers.Response) {
+	// Pretty print with 4 spaces.
+	res, err := json.MarshalIndent(rsp, "", "    ")
 	if err != nil {
 		hub.Logger.WithError(err).Error("unable to output data in JSON")
 		hub.Logger.Exit(-1)
@@ -63,31 +21,48 @@ func (hub *Hub) outputJSON(out []Output) {
 	fmt.Printf("%s", res)
 }
 
-func (hub *Hub) outputTerminal(out []Output) {
-	green := color.New(color.FgGreen, color.Bold).SprintFunc()
-	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
-	yellow := color.New(color.FgYellow, color.Bold).SprintFunc()
-	cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
-	red := color.New(color.FgRed, color.Bold).SprintFunc()
-	magenta := color.New(color.FgMagenta, color.Bold).SprintFunc()
+func (hub *Hub) outputTerminal(rsp []resolvers.Response) {
+	var (
+		green   = color.New(color.FgGreen, color.Bold).SprintFunc()
+		blue    = color.New(color.FgBlue, color.Bold).SprintFunc()
+		yellow  = color.New(color.FgYellow, color.Bold).SprintFunc()
+		cyan    = color.New(color.FgCyan, color.Bold).SprintFunc()
+		red     = color.New(color.FgRed, color.Bold).SprintFunc()
+		magenta = color.New(color.FgMagenta, color.Bold).SprintFunc()
+	)
 
+	// Disables colorized output if user specified.
 	if !hub.QueryFlags.Color {
-		color.NoColor = true // disables colorized output
+		color.NoColor = true
 	}
 
+	// Conditional Time column.
 	table := tablewriter.NewWriter(os.Stdout)
 	header := []string{"Name", "Type", "Class", "TTL", "Address", "Nameserver"}
 	if hub.QueryFlags.DisplayTimeTaken {
 		header = append(header, "Time Taken")
 	}
+
+	// Show output in case if it's not
+	// a NOERROR.
 	outputStatus := false
-	for _, o := range out {
-		if dns.StringToRcode[o.Status] != dns.RcodeSuccess {
-			header = append(header, "Status")
-			outputStatus = true
+	for _, r := range rsp {
+		for _, a := range r.Authorities {
+			if dns.StringToRcode[a.Status] != dns.RcodeSuccess {
+				outputStatus = true
+			}
+		}
+		for _, a := range r.Answers {
+			if dns.StringToRcode[a.Status] != dns.RcodeSuccess {
+				outputStatus = true
+			}
 		}
 	}
+	if outputStatus {
+		header = append(header, "Status")
+	}
 
+	// Formatting options for the table.
 	table.SetHeader(header)
 	table.SetAutoWrapText(true)
 	table.SetAutoFormatHeaders(true)
@@ -101,137 +76,77 @@ func (hub *Hub) outputTerminal(out []Output) {
 	table.SetTablePadding("\t") // pad with tabs
 	table.SetNoWhiteSpace(true)
 
-	for _, o := range out {
-		var typOut string
-		switch typ := o.Type; typ {
-		case "A":
-			typOut = blue(o.Type)
-		case "AAAA":
-			typOut = blue(o.Type)
-		case "MX":
-			typOut = magenta(o.Type)
-		case "NS":
-			typOut = cyan(o.Type)
-		case "CNAME":
-			typOut = yellow(o.Type)
-		case "TXT":
-			typOut = yellow(o.Type)
-		case "SOA":
-			typOut = red(o.Type)
-		default:
-			typOut = blue(o.Type)
+	for _, r := range rsp {
+		for _, ans := range r.Answers {
+			var typOut string
+			switch typ := ans.Type; typ {
+			case "A":
+				typOut = blue(ans.Type)
+			case "AAAA":
+				typOut = blue(ans.Type)
+			case "MX":
+				typOut = magenta(ans.Type)
+			case "NS":
+				typOut = cyan(ans.Type)
+			case "CNAME":
+				typOut = yellow(ans.Type)
+			case "TXT":
+				typOut = yellow(ans.Type)
+			case "SOA":
+				typOut = red(ans.Type)
+			default:
+				typOut = blue(ans.Type)
+			}
+			output := []string{green(ans.Name), typOut, ans.Class, ans.TTL, ans.Address, ans.Nameserver}
+			// Print how long it took
+			if hub.QueryFlags.DisplayTimeTaken {
+				output = append(output, ans.RTT)
+			}
+			if outputStatus {
+				output = append(output, red(ans.Status))
+			}
+			table.Append(output)
 		}
-		output := []string{green(o.Name), typOut, o.Class, o.TTL, o.Address, o.Nameserver}
-		// Print how long it took
-		if hub.QueryFlags.DisplayTimeTaken {
-			output = append(output, o.TimeTaken)
+		for _, auth := range r.Authorities {
+			var typOut string
+			switch typ := auth.Type; typ {
+			case "A":
+				typOut = blue(auth.Type)
+			case "AAAA":
+				typOut = blue(auth.Type)
+			case "MX":
+				typOut = magenta(auth.Type)
+			case "NS":
+				typOut = cyan(auth.Type)
+			case "CNAME":
+				typOut = yellow(auth.Type)
+			case "TXT":
+				typOut = yellow(auth.Type)
+			case "SOA":
+				typOut = red(auth.Type)
+			default:
+				typOut = blue(auth.Type)
+			}
+			output := []string{green(auth.Name), typOut, auth.Class, auth.TTL, auth.MName, auth.Nameserver}
+			// Print how long it took
+			if hub.QueryFlags.DisplayTimeTaken {
+				output = append(output, auth.RTT)
+			}
+			if outputStatus {
+				output = append(output, red(auth.Status))
+			}
+			table.Append(output)
 		}
-		if outputStatus {
-			output = append(output, red(o.Status))
-		}
-		table.Append(output)
 	}
 	table.Render()
 }
 
 // Output takes a list of `dns.Answers` and based
 // on the output format specified displays the information.
-func (hub *Hub) Output(responses [][]resolvers.Response) {
-	out := collectOutput(responses)
+func (hub *Hub) Output(responses []resolvers.Response) {
 	if hub.QueryFlags.ShowJSON {
-		hub.outputJSON(out)
+		hub.outputJSON(responses)
 	} else {
-		hub.outputTerminal(out)
+		hub.outputTerminal(responses)
 	}
-}
-
-func collectOutput(responses [][]resolvers.Response) []Output {
-	var out []Output
-	// for each resolver
-	for _, rslvr := range responses {
-		// get the response
-		for _, r := range rslvr {
-			var addr string
-			for _, ns := range r.Message.Ns {
-				// check for SOA record
-				soa, ok := ns.(*dns.SOA)
-				if !ok {
-					// skip this message
-					continue
-				}
-				addr = soa.Ns + " " + soa.Mbox +
-					" " + strconv.FormatInt(int64(soa.Serial), 10) +
-					" " + strconv.FormatInt(int64(soa.Refresh), 10) +
-					" " + strconv.FormatInt(int64(soa.Retry), 10) +
-					" " + strconv.FormatInt(int64(soa.Expire), 10) +
-					" " + strconv.FormatInt(int64(soa.Minttl), 10)
-				h := ns.Header()
-				name := h.Name
-				qclass := dns.Class(h.Class).String()
-				ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
-				qtype := dns.Type(h.Rrtype).String()
-				rtt := fmt.Sprintf("%dms", r.RTT.Milliseconds())
-				o := Output{
-					Name:       name,
-					Type:       qtype,
-					TTL:        ttl,
-					Class:      qclass,
-					Address:    addr,
-					TimeTaken:  rtt,
-					Nameserver: r.Nameserver,
-					Status:     dns.RcodeToString[r.Message.Rcode],
-				}
-				out = append(out, o)
-			}
-			for _, a := range r.Message.Answer {
-				switch t := a.(type) {
-				case *dns.A:
-					addr = t.A.String()
-				case *dns.AAAA:
-					addr = t.AAAA.String()
-				case *dns.CNAME:
-					addr = t.Target
-				case *dns.CAA:
-					addr = t.Tag + " " + t.Value
-				case *dns.HINFO:
-					addr = t.Cpu + " " + t.Os
-				case *dns.PTR:
-					addr = t.Ptr
-				case *dns.SRV:
-					addr = strconv.Itoa(int(t.Priority)) + " " +
-						strconv.Itoa(int(t.Weight)) + " " +
-						t.Target + ":" + strconv.Itoa(int(t.Port))
-				case *dns.TXT:
-					addr = t.String()
-				case *dns.NS:
-					addr = t.Ns
-				case *dns.MX:
-					addr = strconv.Itoa(int(t.Preference)) + " " + t.Mx
-				case *dns.SOA:
-					addr = t.String()
-				case *dns.NAPTR:
-					addr = t.String()
-				}
-
-				h := a.Header()
-				name := h.Name
-				qclass := dns.Class(h.Class).String()
-				ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
-				qtype := dns.Type(h.Rrtype).String()
-				rtt := fmt.Sprintf("%dms", r.RTT.Milliseconds())
-				o := Output{
-					Name:       name,
-					Type:       qtype,
-					TTL:        ttl,
-					Class:      qclass,
-					Address:    addr,
-					TimeTaken:  rtt,
-					Nameserver: r.Nameserver,
-				}
-				out = append(out, o)
-			}
-		}
-	}
-
-	return out
 }

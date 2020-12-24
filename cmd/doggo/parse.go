@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/miekg/dns"
-	flag "github.com/spf13/pflag"
 )
 
 func (hub *Hub) loadQueryArgs() error {
@@ -14,7 +13,6 @@ func (hub *Hub) loadQueryArgs() error {
 	if err != nil {
 		return err
 	}
-
 	// Load all fallbacks in internal query flags.
 	hub.loadFallbacks()
 	return nil
@@ -56,16 +54,4 @@ func (hub *Hub) loadFallbacks() {
 	if len(hub.QueryFlags.QClasses) == 0 {
 		hub.QueryFlags.QClasses = append(hub.QueryFlags.QClasses, "IN")
 	}
-}
-
-// isFlagPassed checks if the flag is supplied by
-//user or not.
-func isFlagPassed(name string, f *flag.FlagSet) bool {
-	found := false
-	f.Visit(func(f *flag.Flag) {
-		if f.Name == name {
-			found = true
-		}
-	})
-	return found
 }

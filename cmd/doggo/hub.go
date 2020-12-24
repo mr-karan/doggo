@@ -16,6 +16,7 @@ type Hub struct {
 	UnparsedArgs []string
 	Questions    []dns.Question
 	Resolver     []resolvers.Resolver
+	ResolverOpts resolvers.Options
 	Nameservers  []Nameserver
 }
 

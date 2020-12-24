@@ -42,12 +42,16 @@ func (hub *Hub) loadNameservers() error {
 	// fallback to system nameserver
 	// in case no nameserver is specified by user.
 	if len(hub.Nameservers) == 0 {
-		ns, ndots, err := getDefaultServers()
+		ns, ndots, search, err := getDefaultServers()
 		if err != nil {
 			return fmt.Errorf("error fetching system default nameserver")
 		}
+		// override if user hasn't specified any value.
 		if hub.QueryFlags.Ndots == 0 {
-			hub.QueryFlags.Ndots = ndots
+			hub.ResolverOpts.Ndots = ndots
+		}
+		if len(search) > 0 && hub.QueryFlags.UseSearchList {
+			hub.ResolverOpts.SearchList = search
 		}
 		hub.Nameservers = append(hub.Nameservers, ns...)
 	}
@@ -55,16 +59,16 @@ func (hub *Hub) loadNameservers() error {
 }
 
 // getDefaultServers reads the `resolv.conf`
-// file and returns a list of nameservers.
-func getDefaultServers() ([]Nameserver, int, error) {
+// file and returns a list of nameservers with it's config.
+func getDefaultServers() ([]Nameserver, int, []string, error) {
 	if runtime.GOOS == "windows" {
 		// TODO: Add a method for reading system default nameserver in windows.
-		return nil, 0, errors.New(`unable to read default nameservers in this machine`)
+		return nil, 0, nil, errors.New(`unable to read default nameservers in this machine`)
 	}
 	// if no nameserver is provided, take it from `resolv.conf`
 	cfg, err := dns.ClientConfigFromFile(DefaultResolvConfPath)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, nil, err
 	}
 	servers := make([]Nameserver, 0, len(cfg.Servers))
 	for _, s := range cfg.Servers {
@@ -75,7 +79,7 @@ func getDefaultServers() ([]Nameserver, int, error) {
 		}
 		servers = append(servers, ns)
 	}
-	return servers, cfg.Ndots, nil
+	return servers, cfg.Ndots, cfg.Search, nil
 }
 
 func initNameserver(n string) (Nameserver, error) {
