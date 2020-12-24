@@ -110,18 +110,6 @@ func (hub *Hub) outputTerminal(rsp []resolvers.Response) {
 		for _, auth := range r.Authorities {
 			var typOut string
 			switch typ := auth.Type; typ {
-			case "A":
-				typOut = blue(auth.Type)
-			case "AAAA":
-				typOut = blue(auth.Type)
-			case "MX":
-				typOut = magenta(auth.Type)
-			case "NS":
-				typOut = cyan(auth.Type)
-			case "CNAME":
-				typOut = yellow(auth.Type)
-			case "TXT":
-				typOut = yellow(auth.Type)
 			case "SOA":
 				typOut = red(auth.Type)
 			default:
