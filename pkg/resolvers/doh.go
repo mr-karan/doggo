@@ -9,20 +9,18 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/sirupsen/logrus"
 )
 
 // DOHResolver represents the config options for setting up a DOH based resolver.
 type DOHResolver struct {
-	client *http.Client
-	server string
-}
-
-type DOHResolverOpts struct {
-	Timeout time.Duration
+	client          *http.Client
+	server          string
+	resolverOptions Options
 }
 
 // NewDOHResolver accepts a nameserver address and configures a DOH based resolver.
-func NewDOHResolver(server string, opts DOHResolverOpts) (Resolver, error) {
+func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 	// do basic validation
 	u, err := url.ParseRequestURI(server)
 	if err != nil {
@@ -32,52 +30,72 @@ func NewDOHResolver(server string, opts DOHResolverOpts) (Resolver, error) {
 		return nil, fmt.Errorf("missing https in %s", server)
 	}
 	httpClient := &http.Client{
-		Timeout: opts.Timeout,
+		Timeout: resolverOpts.Timeout,
 	}
 	return &DOHResolver{
-		client: httpClient,
-		server: server,
+		client:          httpClient,
+		server:          server,
+		resolverOptions: resolverOpts,
 	}, nil
 }
 
-func (d *DOHResolver) Lookup(questions []dns.Question) ([]Response, error) {
+// Lookup takes a dns.Question and sends them to DNS Server.
+// It parses the Response from the server in a custom output format.
+func (r *DOHResolver) Lookup(question dns.Question) (Response, error) {
 	var (
-		messages  = prepareMessages(questions)
-		responses []Response
+		rsp      Response
+		messages = prepareMessages(question, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
 	)
 
 	for _, msg := range messages {
+		r.resolverOptions.Logger.WithFields(logrus.Fields{
+			"domain":     msg.Question[0].Name,
+			"ndots":      r.resolverOptions.Ndots,
+			"nameserver": r.server,
+		}).Debug("Attempting to resolve")
 		// get the DNS Message in wire format.
 		b, err := msg.Pack()
 		if err != nil {
-			return nil, err
+			return rsp, err
 		}
 		now := time.Now()
 		// Make an HTTP POST request to the DNS server with the DNS message as wire format bytes in the body.
-		resp, err := d.client.Post(d.server, "application/dns-message", bytes.NewBuffer(b))
+		resp, err := r.client.Post(r.server, "application/dns-message", bytes.NewBuffer(b))
 		if err != nil {
-			return nil, err
+			return rsp, err
 		}
 		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("error from nameserver %s", resp.Status)
+			return rsp, fmt.Errorf("error from nameserver %s", resp.Status)
 		}
 		rtt := time.Since(now)
 		// extract the binary response in DNS Message.
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, err
+			return rsp, err
 		}
 
 		err = msg.Unpack(body)
 		if err != nil {
-			return nil, err
+			return rsp, err
 		}
-		rsp := Response{
-			Message:    msg,
-			RTT:        rtt,
-			Nameserver: d.server,
+		// pack questions in output.
+		for _, q := range msg.Question {
+			ques := Question{
+				Name:  q.Name,
+				Class: dns.ClassToString[q.Qclass],
+				Type:  dns.TypeToString[q.Qtype],
+			}
+			rsp.Questions = append(rsp.Questions, ques)
 		}
-		responses = append(responses, rsp)
+		// get the authorities and answers.
+		output := parseMessage(&msg, rtt, r.server)
+		rsp.Authorities = output.Authorities
+		rsp.Answers = output.Answers
+
+		if len(output.Answers) > 0 {
+			// stop iterating the searchlist.
+			break
+		}
 	}
-	return responses, nil
+	return rsp, nil
 }

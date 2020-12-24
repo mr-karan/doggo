@@ -2,9 +2,12 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/providers/posflag"
+	"github.com/miekg/dns"
+	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 )
@@ -87,12 +90,28 @@ func main() {
 		hub.Logger.Exit(2)
 	}
 
+	// Load Questions.
+	for _, n := range hub.QueryFlags.QNames {
+		for _, t := range hub.QueryFlags.QTypes {
+			for _, c := range hub.QueryFlags.QClasses {
+				hub.Questions = append(hub.Questions, dns.Question{
+					Name:   n,
+					Qtype:  dns.StringToType[strings.ToUpper(t)],
+					Qclass: dns.StringToClass[strings.ToUpper(c)],
+				})
+			}
+		}
+	}
+
 	// Load Nameservers.
 	err = hub.loadNameservers()
 	if err != nil {
 		hub.Logger.WithError(err).Error("error loading nameservers")
 		hub.Logger.Exit(2)
 	}
+
+	// Load Resolver Options.
+	hub.loadResolverOptions()
 
 	// Load Resolvers.
 	err = hub.loadResolvers()
@@ -109,12 +128,17 @@ func main() {
 	}
 
 	// Resolve Queries.
-	responses, err := hub.Lookup()
-	if err != nil {
-		hub.Logger.WithError(err).Error("error looking up DNS records")
-		hub.Logger.Exit(2)
+	var responses []resolvers.Response
+	for _, q := range hub.Questions {
+		for _, rslv := range hub.Resolver {
+			resp, err := rslv.Lookup(q)
+			if err != nil {
+				hub.Logger.WithError(err).Error("error looking up DNS records")
+				hub.Logger.Exit(2)
+			}
+			responses = append(responses, resp)
+		}
 	}
-	//Send the output.
 	hub.Output(responses)
 
 	// Quitting.
