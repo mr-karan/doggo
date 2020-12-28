@@ -32,9 +32,13 @@ to experiment with writing a DNS Client from scratch in `Go` myself. Hence the n
 
 ### Binary
 
+You can grab the latest binaries for Linux, MacOS and Windows from the [Releases](https://github.com/mr-karan/doggo/releases) section.
+
+For eg, to pull the latest Linux binary:
+
 ```shell
 $ cd "$(mktemp -d)"
-$ curl -sL "https://github.com/mr-karan/doggo/releases/download/v0.1.0/doggo_0.1.0_linux_amd64.tar.gz" | tar xz
+$ curl -sL "https://github.com/mr-karan/doggo/releases/download/v0.2.0/doggo_0.2.0_linux_amd64.tar.gz" | tar xz
 $ mv doggo /usr/local/bin
 # doggo should be available now in your $PATH
 $ doggo
