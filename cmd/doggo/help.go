@@ -33,9 +33,9 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   Fallbacks to UDP resolver if no scheme is present.
 
   {{"@udp://" | color "yellow" ""}}        eg: @1.1.1.1 initiates a {{"UDP" | color "cyan" ""}} resolver for 1.1.1.1:53.
-  {{"@tcp://" | color "yellow" ""}}        eg: @1.1.1.1 initiates a {{"TCP" | color "cyan" ""}} resolver for 1.1.1.1:53.
+  {{"@tcp://" | color "yellow" ""}}        eg: @tcp://1.1.1.1 initiates a {{"TCP" | color "cyan" ""}} resolver for 1.1.1.1:53.
   {{"@https://" | color "yellow" ""}}      eg: @https://cloudflare-dns.com/dns-query initiates a {{"DOH" | color "cyan" ""}} resolver for Cloudflare DoH server.
-  {{"@tls://" | color "yellow" ""}}        eg: @1.1.1.1 initiates a {{"DoT" | color "cyan" ""}} resolver for 1.1.1.1:853.
+  {{"@tls://" | color "yellow" ""}}        eg: @tls://1.1.1.1 initiates a {{"DoT" | color "cyan" ""}} resolver for 1.1.1.1:853.
 
 {{ "Query Options" | color "" "heading" }}:
   {{"-q, --query=HOSTNAME" | color "yellow" ""}}        Hostname to query the DNS records for (eg {{"mrkaran.dev" | color "cyan" ""}}).
