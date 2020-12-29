@@ -33,9 +33,7 @@ func (hub *Hub) loadResolvers() error {
 	for _, ns := range hub.Nameservers {
 		if ns.Type == DOHResolver {
 			hub.Logger.Debug("initiating DOH resolver")
-			rslvr, err := resolvers.NewDOHResolver(ns.Address, resolvers.Options{
-				Timeout: hub.QueryFlags.Timeout * time.Second,
-			})
+			rslvr, err := resolvers.NewDOHResolver(ns.Address, resolverOpts)
 			if err != nil {
 				return err
 			}
