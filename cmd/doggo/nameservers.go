@@ -1,18 +1,14 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/url"
-	"runtime"
 
-	"github.com/miekg/dns"
+	"github.com/mr-karan/doggo/pkg/config"
 )
 
 const (
-	//DefaultResolvConfPath specifies path to default resolv config file on UNIX.
-	DefaultResolvConfPath = "/etc/resolv.conf"
 	// DefaultTLSPort specifies the default port for a DNS server connecting over TCP over TLS
 	DefaultTLSPort = "853"
 	// DefaultUDPPort specifies the default port for a DNS server connecting over UDP
@@ -58,28 +54,20 @@ func (hub *Hub) loadNameservers() error {
 	return nil
 }
 
-// getDefaultServers reads the `resolv.conf`
-// file and returns a list of nameservers with it's config.
 func getDefaultServers() ([]Nameserver, int, []string, error) {
-	if runtime.GOOS == "windows" {
-		// TODO: Add a method for reading system default nameserver in windows.
-		return nil, 0, nil, errors.New(`unable to read default nameservers in this machine`)
-	}
-	// if no nameserver is provided, take it from `resolv.conf`
-	cfg, err := dns.ClientConfigFromFile(DefaultResolvConfPath)
+	dnsServers, ndots, search, err := config.GetDefaultServers()
 	if err != nil {
 		return nil, 0, nil, err
 	}
-	servers := make([]Nameserver, 0, len(cfg.Servers))
-	for _, s := range cfg.Servers {
-		addr := net.JoinHostPort(s, cfg.Port)
+	servers := make([]Nameserver, 0, len(dnsServers))
+	for _, s := range dnsServers {
 		ns := Nameserver{
 			Type:    UDPResolver,
-			Address: addr,
+			Address: net.JoinHostPort(s, DefaultUDPPort),
 		}
 		servers = append(servers, ns)
 	}
-	return servers, cfg.Ndots, cfg.Search, nil
+	return servers, ndots, search, nil
 }
 
 func initNameserver(n string) (Nameserver, error) {
