@@ -1,7 +1,6 @@
 package config
 
 import (
-	"net"
 	"os"
 	"syscall"
 	"unsafe"
@@ -9,8 +8,11 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// GAA_FLAG_INCLUDE_GATEWAYS Return the addresses of default gateways.
+// This flag is supported on Windows Vista and later.
 const GAA_FLAG_INCLUDE_GATEWAYS = 0x00000080
 
+// IpAdapterWinsServerAddress structure in a linked list of Windows Internet Name Service (WINS) server addresses for the adapter.
 type IpAdapterWinsServerAddress struct {
 	Length  uint32
 	_       uint32
@@ -18,6 +20,7 @@ type IpAdapterWinsServerAddress struct {
 	Address windows.SocketAddress
 }
 
+// IpAdapterGatewayAddress structure in a linked list of gateways for the adapter.
 type IpAdapterGatewayAddress struct {
 	Length  uint32
 	_       uint32
@@ -25,6 +28,8 @@ type IpAdapterGatewayAddress struct {
 	Address windows.SocketAddress
 }
 
+// IpAdapterAddresses structure is the header node for a linked list of addresses for a particular adapter.
+// This structure can simultaneously be used as part of a linked list of IP_ADAPTER_ADDRESSES structures.
 type IpAdapterAddresses struct {
 	Length                uint32
 	IfIndex               uint32
@@ -49,7 +54,7 @@ type IpAdapterAddresses struct {
 	/* more fields might be present here. */
 	TransmitLinkSpeed      uint64
 	ReceiveLinkSpeed       uint64
-	FirstWINSServerAddress *IpAdapterWinsServerAddress
+	FirstWinsServerAddress *IpAdapterWinsServerAddress
 	FirstGatewayAddress    *IpAdapterGatewayAddress
 }
 
@@ -81,16 +86,7 @@ func adapterAddresses() ([]*IpAdapterAddresses, error) {
 	return aas, nil
 }
 
-/// As per [RFC 3879], the whole `FEC0::/10` prefix is
-/// deprecated. New software must not support site-local
-/// addresses.
-///
-/// [RFC 3879]: https://tools.ietf.org/html/rfc3879
-func isUnicastLinkLocal(ip net.IP) bool {
-	return len(ip) == net.IPv6len && ip[0] == 0xfe && ip[1] == 0xc0
-}
-
-func GetDefaultDnsServers() ([]string, error) {
+func getDefaultDNSServers() ([]string, error) {
 	ifs, err := adapterAddresses()
 	if err != nil {
 		return nil, err
@@ -116,8 +112,9 @@ func GetDefaultDnsServers() ([]string, error) {
 	return dnsServers, nil
 }
 
+// GetDefaultServers get system default nameserver
 func GetDefaultServers() ([]string, int, []string, error) {
 	// TODO: DNS Suffix
-	servers, err := GetDefaultDnsServers()
+	servers, err := getDefaultDNSServers()
 	return servers, 0, nil, err
 }
