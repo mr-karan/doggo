@@ -35,6 +35,8 @@ func (hub *Hub) loadNameservers() error {
 		}
 	}
 
+	// Set `ndots` to the user specified value.
+	hub.ResolverOpts.Ndots = hub.QueryFlags.Ndots
 	// fallback to system nameserver
 	// in case no nameserver is specified by user.
 	if len(hub.Nameservers) == 0 {
@@ -42,14 +44,20 @@ func (hub *Hub) loadNameservers() error {
 		if err != nil {
 			return fmt.Errorf("error fetching system default nameserver")
 		}
-		// override if user hasn't specified any value.
-		if hub.QueryFlags.Ndots == 0 {
+		// `-1` indicates the flag is not set.
+		// use from config if user hasn't specified any value.
+		if hub.ResolverOpts.Ndots == -1 {
 			hub.ResolverOpts.Ndots = ndots
 		}
 		if len(search) > 0 && hub.QueryFlags.UseSearchList {
 			hub.ResolverOpts.SearchList = search
 		}
 		hub.Nameservers = append(hub.Nameservers, ns...)
+	}
+	// if the user hasn't given any override of `ndots` AND has
+	// given a custom nameserver. Set `ndots` to 1 as the fallback value
+	if hub.ResolverOpts.Ndots == -1 {
+		hub.ResolverOpts.Ndots = 1
 	}
 	return nil
 }
