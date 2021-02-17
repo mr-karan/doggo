@@ -57,7 +57,7 @@ func (hub *Hub) loadNameservers() error {
 	// if the user hasn't given any override of `ndots` AND has
 	// given a custom nameserver. Set `ndots` to 1 as the fallback value
 	if hub.ResolverOpts.Ndots == -1 {
-		hub.ResolverOpts.Ndots = 1
+		hub.ResolverOpts.Ndots = 0
 	}
 	return nil
 }

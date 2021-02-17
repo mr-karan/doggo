@@ -10,14 +10,6 @@ import (
 // to configure a resolver from the query args.
 func (hub *Hub) loadResolverOptions() {
 	hub.ResolverOpts.Timeout = hub.QueryFlags.Timeout
-	// in case `ndots` is not set by `/etc/resolv.conf` while parsing
-	// the config for a system default namseserver.
-	if hub.ResolverOpts.Ndots == 0 {
-		// in case the user has not specified any `ndots` arg.
-		if hub.QueryFlags.Ndots == 0 {
-			hub.ResolverOpts.Ndots = 1
-		}
-	}
 }
 
 // loadResolvers loads differently configured
