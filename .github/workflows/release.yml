@@ -3,36 +3,31 @@ name: goreleaser
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      -
-        name: Set up Go
+      - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
-      -
-        name: Login to GitHub Container Registry
+          go-version: 1.16
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_GORELEASER_TOKEN }}
-      - 
-        name: Install Snapcraft and Log In
+      - name: Install Snapcraft and Log In
         uses: samuelmeuli/action-snapcraft@v1
         with:
           snapcraft_token: ${{ secrets.SNAPCRAFT_TOKEN }}
-      -
-        name: Run GoReleaser
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
