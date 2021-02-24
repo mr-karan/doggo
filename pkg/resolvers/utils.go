@@ -3,6 +3,7 @@ package resolvers
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/miekg/dns"
@@ -107,49 +108,21 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 	}
 	// Parse Answers section.
 	for _, a := range msg.Answer {
-		addr := ""
-		switch t := a.(type) {
-		case *dns.A:
-			addr = t.A.String()
-		case *dns.AAAA:
-			addr = t.AAAA.String()
-		case *dns.CNAME:
-			addr = t.Target
-		case *dns.CAA:
-			addr = t.Tag + " " + t.Value
-		case *dns.HINFO:
-			addr = t.Cpu + " " + t.Os
-		case *dns.PTR:
-			addr = t.Ptr
-		case *dns.SRV:
-			addr = strconv.Itoa(int(t.Priority)) + " " +
-				strconv.Itoa(int(t.Weight)) + " " +
-				t.Target + ":" + strconv.Itoa(int(t.Port))
-		case *dns.TXT:
-			addr = t.String()
-		case *dns.NS:
-			addr = t.Ns
-		case *dns.MX:
-			addr = strconv.Itoa(int(t.Preference)) + " " + t.Mx
-		case *dns.SOA:
-			addr = t.String()
-		case *dns.NAPTR:
-			addr = t.String()
-		}
-		h := a.Header()
-		name := h.Name
-		qclass := dns.Class(h.Class).String()
-		ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
-		qtype := dns.Type(h.Rrtype).String()
-		ans := Answer{
-			Name:       name,
-			Type:       qtype,
-			TTL:        ttl,
-			Class:      qclass,
-			Address:    addr,
-			RTT:        timeTaken,
-			Nameserver: server,
-		}
+		var (
+			h = a.Header()
+			// Source https://github.com/jvns/dns-lookup/blob/main/dns.go#L121.
+			parts = strings.Split(a.String(), "\t")
+			ans   = Answer{
+				Name:       h.Name,
+				Type:       dns.Type(h.Rrtype).String(),
+				TTL:        strconv.FormatInt(int64(h.Ttl), 10) + "s",
+				Class:      dns.Class(h.Class).String(),
+				Address:    parts[len(parts)-1],
+				RTT:        timeTaken,
+				Nameserver: server,
+			}
+		)
+
 		resp.Answers = append(resp.Answers, ans)
 	}
 	return resp
