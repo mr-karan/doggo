@@ -55,16 +55,13 @@
 
 - [ ] Support obscure protocol tweaks in `dig`
 - [ ] Read from file with `-f`
-- [ ] Support more DNS Record Types
+- [x] Support more DNS Record Types
 - [ ] Shell completions
   - [ ] bash
   - [ ] zsh
   - [ ] fish
-- [ ] Support non RFC Compliant DOH Google response (_ugh_)
 - [ ] Add tests for Resolvers.
 - [ ] Add tests for CLI Output. 
-- [ ] Mkdocs init project
-  - [ ] Custom Index (Landing Page)
 - [ ] Homebrew - Goreleaser
 - [x] Separate Authority/Answer in JSON output.
 - [x] Error on NXDomain (Related upstream [bug](https://github.com/miekg/dns/issues/1198))
