@@ -4,16 +4,20 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/mr-karan/doggo/pkg/models"
 	"github.com/sirupsen/logrus"
 )
 
 // Options represent a set of common options
 // to configure a Resolver.
 type Options struct {
-	SearchList []string
-	Ndots      int
-	Timeout    time.Duration
-	Logger     *logrus.Logger
+	Nameservers []models.Nameserver
+	UseIPv4     bool
+	UseIPv6     bool
+	SearchList  []string
+	Ndots       int
+	Timeout     time.Duration
+	Logger      *logrus.Logger
 }
 
 // Resolver implements the configuration for a DNS
@@ -58,4 +62,71 @@ type Authority struct {
 	Status     string `json:"status"`
 	RTT        string `json:"rtt"`
 	Nameserver string `json:"nameserver"`
+}
+
+// LoadResolvers loads differently configured
+// resolvers based on a list of nameserver.
+func LoadResolvers(opts Options) ([]Resolver, error) {
+	var resolverOpts = Options{
+		Timeout:    opts.Timeout,
+		Ndots:      opts.Ndots,
+		SearchList: opts.SearchList,
+		Logger:     opts.Logger,
+	}
+	// for each nameserver, initialise the correct resolver
+	rslvrs := make([]Resolver, 0, len(opts.Nameservers))
+	for _, ns := range opts.Nameservers {
+		if ns.Type == models.DOHResolver {
+			opts.Logger.Debug("initiating DOH resolver")
+			rslvr, err := NewDOHResolver(ns.Address, resolverOpts)
+			if err != nil {
+				return rslvrs, err
+			}
+			rslvrs = append(rslvrs, rslvr)
+		}
+		if ns.Type == models.DOTResolver {
+			opts.Logger.Debug("initiating DOT resolver")
+			rslvr, err := NewClassicResolver(ns.Address,
+				ClassicResolverOpts{
+					IPv4Only: opts.UseIPv4,
+					IPv6Only: opts.UseIPv6,
+					UseTLS:   true,
+					UseTCP:   true,
+				}, resolverOpts)
+
+			if err != nil {
+				return rslvrs, err
+			}
+			rslvrs = append(rslvrs, rslvr)
+		}
+		if ns.Type == models.TCPResolver {
+			opts.Logger.Debug("initiating TCP resolver")
+			rslvr, err := NewClassicResolver(ns.Address,
+				ClassicResolverOpts{
+					IPv4Only: opts.UseIPv4,
+					IPv6Only: opts.UseIPv6,
+					UseTLS:   false,
+					UseTCP:   true,
+				}, resolverOpts)
+			if err != nil {
+				return rslvrs, err
+			}
+			rslvrs = append(rslvrs, rslvr)
+		}
+		if ns.Type == models.UDPResolver {
+			opts.Logger.Debug("initiating UDP resolver")
+			rslvr, err := NewClassicResolver(ns.Address,
+				ClassicResolverOpts{
+					IPv4Only: opts.UseIPv4,
+					IPv6Only: opts.UseIPv6,
+					UseTLS:   false,
+					UseTCP:   false,
+				}, resolverOpts)
+			if err != nil {
+				return rslvrs, err
+			}
+			rslvrs = append(rslvrs, rslvr)
+		}
+	}
+	return rslvrs, nil
 }
