@@ -6,19 +6,7 @@ import (
 	"net/url"
 
 	"github.com/mr-karan/doggo/pkg/config"
-)
-
-const (
-	// DefaultTLSPort specifies the default port for a DNS server connecting over TCP over TLS
-	DefaultTLSPort = "853"
-	// DefaultUDPPort specifies the default port for a DNS server connecting over UDP
-	DefaultUDPPort = "53"
-	// DefaultTCPPort specifies the default port for a DNS server connecting over TCP
-	DefaultTCPPort = "53"
-	UDPResolver    = "udp"
-	DOHResolver    = "doh"
-	TCPResolver    = "tcp"
-	DOTResolver    = "dot"
+	"github.com/mr-karan/doggo/pkg/models"
 )
 
 // loadNameservers reads all the user given
@@ -62,56 +50,56 @@ func (hub *Hub) loadNameservers() error {
 	return nil
 }
 
-func getDefaultServers() ([]Nameserver, int, []string, error) {
+func getDefaultServers() ([]models.Nameserver, int, []string, error) {
 	dnsServers, ndots, search, err := config.GetDefaultServers()
 	if err != nil {
 		return nil, 0, nil, err
 	}
-	servers := make([]Nameserver, 0, len(dnsServers))
+	servers := make([]models.Nameserver, 0, len(dnsServers))
 	for _, s := range dnsServers {
-		ns := Nameserver{
-			Type:    UDPResolver,
-			Address: net.JoinHostPort(s, DefaultUDPPort),
+		ns := models.Nameserver{
+			Type:    models.UDPResolver,
+			Address: net.JoinHostPort(s, models.DefaultUDPPort),
 		}
 		servers = append(servers, ns)
 	}
 	return servers, ndots, search, nil
 }
 
-func initNameserver(n string) (Nameserver, error) {
+func initNameserver(n string) (models.Nameserver, error) {
 	// Instantiate a UDP resolver with default port as a fallback.
-	ns := Nameserver{
-		Type:    UDPResolver,
-		Address: net.JoinHostPort(n, DefaultUDPPort),
+	ns := models.Nameserver{
+		Type:    models.UDPResolver,
+		Address: net.JoinHostPort(n, models.DefaultUDPPort),
 	}
 	u, err := url.Parse(n)
 	if err != nil {
 		return ns, err
 	}
 	if u.Scheme == "https" {
-		ns.Type = DOHResolver
+		ns.Type = models.DOHResolver
 		ns.Address = u.String()
 	}
 	if u.Scheme == "tls" {
-		ns.Type = DOTResolver
+		ns.Type = models.DOTResolver
 		if u.Port() == "" {
-			ns.Address = net.JoinHostPort(u.Hostname(), DefaultTLSPort)
+			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultTLSPort)
 		} else {
 			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
 		}
 	}
 	if u.Scheme == "tcp" {
-		ns.Type = TCPResolver
+		ns.Type = models.TCPResolver
 		if u.Port() == "" {
-			ns.Address = net.JoinHostPort(u.Hostname(), DefaultTCPPort)
+			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultTCPPort)
 		} else {
 			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
 		}
 	}
 	if u.Scheme == "udp" {
-		ns.Type = UDPResolver
+		ns.Type = models.UDPResolver
 		if u.Port() == "" {
-			ns.Address = net.JoinHostPort(u.Hostname(), DefaultUDPPort)
+			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultUDPPort)
 		} else {
 			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
 		}

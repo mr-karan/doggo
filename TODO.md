@@ -61,7 +61,7 @@
   - [ ] zsh
   - [ ] fish
 - [ ] Add tests for Resolvers.
-- [ ] Add tests for CLI Output. 
+- [ ] Add tests for CLI Output.
 - [ ] Homebrew - Goreleaser
 - [x] Separate Authority/Answer in JSON output.
 - [x] Error on NXDomain (Related upstream [bug](https://github.com/miekg/dns/issues/1198))

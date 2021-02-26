@@ -3,11 +3,13 @@ package main
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/providers/posflag"
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/resolvers"
+	"github.com/mr-karan/doggo/pkg/utils"
 	"github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 )
@@ -20,7 +22,7 @@ var (
 
 func main() {
 	var (
-		logger = initLogger()
+		logger = utils.InitLogger()
 		k      = koanf.New(".")
 	)
 
@@ -110,15 +112,21 @@ func main() {
 		hub.Logger.Exit(2)
 	}
 
-	// Load Resolver Options.
-	hub.loadResolverOptions()
-
 	// Load Resolvers.
-	err = hub.loadResolvers()
+	rslvrs, err := resolvers.LoadResolvers(resolvers.Options{
+		Nameservers: hub.Nameservers,
+		UseIPv4:     hub.QueryFlags.UseIPv4,
+		UseIPv6:     hub.QueryFlags.UseIPv6,
+		SearchList:  hub.ResolverOpts.SearchList,
+		Ndots:       hub.ResolverOpts.Ndots,
+		Timeout:     hub.QueryFlags.Timeout * time.Second,
+		Logger:      hub.Logger,
+	})
 	if err != nil {
 		hub.Logger.WithError(err).Error("error loading resolver")
 		hub.Logger.Exit(2)
 	}
+	hub.Resolvers = rslvrs
 
 	// Run the app.
 	hub.Logger.Debug("Starting doggo 🐶")
@@ -130,7 +138,7 @@ func main() {
 	// Resolve Queries.
 	var responses []resolvers.Response
 	for _, q := range hub.Questions {
-		for _, rslv := range hub.Resolver {
+		for _, rslv := range hub.Resolvers {
 			resp, err := rslv.Lookup(q)
 			if err != nil {
 				hub.Logger.WithError(err).Error("error looking up DNS records")
