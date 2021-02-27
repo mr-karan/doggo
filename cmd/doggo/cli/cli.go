@@ -2,12 +2,11 @@ package main
 
 import (
 	"os"
-	"strings"
 	"time"
 
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/providers/posflag"
-	"github.com/miekg/dns"
+	"github.com/mr-karan/doggo/internal/app"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/mr-karan/doggo/pkg/utils"
 	"github.com/sirupsen/logrus"
@@ -26,8 +25,8 @@ func main() {
 		k      = koanf.New(".")
 	)
 
-	// Initialize hub.
-	hub := NewHub(logger, buildVersion)
+	// Initialize app.
+	app := app.New(logger, buildVersion)
 
 	// Configure Flags.
 	f := flag.NewFlagSet("config", flag.ContinueOnError)
@@ -39,7 +38,7 @@ func main() {
 	f.StringSliceP("query", "q", []string{}, "Domain name to query")
 	f.StringSliceP("type", "t", []string{}, "Type of DNS record to be queried (A, AAAA, MX etc)")
 	f.StringSliceP("class", "c", []string{}, "Network class of the DNS record to be queried (IN, CH, HS etc)")
-	f.StringSliceP("nameserver", "n", []string{}, "Address of the nameserver to send packets to")
+	f.StringSliceP("nameservers", "n", []string{}, "Address of the nameserver to send packets to")
 
 	// Resolver Options
 	f.Int("timeout", 5, "Sets the timeout for a query to T seconds. The default timeout is 5 seconds.")
@@ -57,98 +56,88 @@ func main() {
 	// Parse and Load Flags.
 	err := f.Parse(os.Args[1:])
 	if err != nil {
-		hub.Logger.WithError(err).Error("error parsing flags")
-		hub.Logger.Exit(2)
+		app.Logger.WithError(err).Error("error parsing flags")
+		app.Logger.Exit(2)
 	}
 	if err = k.Load(posflag.Provider(f, ".", k), nil); err != nil {
-		hub.Logger.WithError(err).Error("error loading flags")
+		app.Logger.WithError(err).Error("error loading flags")
 		f.Usage()
-		hub.Logger.Exit(2)
+		app.Logger.Exit(2)
 	}
 
 	// Set log level.
 	if k.Bool("debug") {
 		// Set logger level
-		hub.Logger.SetLevel(logrus.DebugLevel)
+		app.Logger.SetLevel(logrus.DebugLevel)
 	} else {
-		hub.Logger.SetLevel(logrus.InfoLevel)
+		app.Logger.SetLevel(logrus.InfoLevel)
 	}
 
-	// Unmarshall flags to the hub.
-	err = k.Unmarshal("", &hub.QueryFlags)
+	// Unmarshall flags to the app.
+	err = k.Unmarshal("", &app.QueryFlags)
 	if err != nil {
-		hub.Logger.WithError(err).Error("error loading args")
-		hub.Logger.Exit(2)
+		app.Logger.WithError(err).Error("error loading args")
+		app.Logger.Exit(2)
 	}
 
 	// Load all `non-flag` arguments
 	// which will be parsed separately.
-	hub.UnparsedArgs = f.Args()
+	nsvrs, qt, qc, qn := loadUnparsedArgs(f.Args())
+	app.QueryFlags.Nameservers = append(app.QueryFlags.Nameservers, nsvrs...)
+	app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, qt...)
+	app.QueryFlags.QClasses = append(app.QueryFlags.QClasses, qc...)
+	app.QueryFlags.QNames = append(app.QueryFlags.QNames, qn...)
 
-	// Parse Query Args.
-	err = hub.loadQueryArgs()
-	if err != nil {
-		hub.Logger.WithError(err).Error("error parsing flags/arguments")
-		hub.Logger.Exit(2)
-	}
+	// Load fallbacks.
+	app.LoadFallbacks()
 
 	// Load Questions.
-	for _, n := range hub.QueryFlags.QNames {
-		for _, t := range hub.QueryFlags.QTypes {
-			for _, c := range hub.QueryFlags.QClasses {
-				hub.Questions = append(hub.Questions, dns.Question{
-					Name:   n,
-					Qtype:  dns.StringToType[strings.ToUpper(t)],
-					Qclass: dns.StringToClass[strings.ToUpper(c)],
-				})
-			}
-		}
-	}
+	app.PrepareQuestions()
 
 	// Load Nameservers.
-	err = hub.loadNameservers()
+	err = app.LoadNameservers()
 	if err != nil {
-		hub.Logger.WithError(err).Error("error loading nameservers")
-		hub.Logger.Exit(2)
+		app.Logger.WithError(err).Error("error loading nameservers")
+		app.Logger.Exit(2)
 	}
 
 	// Load Resolvers.
 	rslvrs, err := resolvers.LoadResolvers(resolvers.Options{
-		Nameservers: hub.Nameservers,
-		UseIPv4:     hub.QueryFlags.UseIPv4,
-		UseIPv6:     hub.QueryFlags.UseIPv6,
-		SearchList:  hub.ResolverOpts.SearchList,
-		Ndots:       hub.ResolverOpts.Ndots,
-		Timeout:     hub.QueryFlags.Timeout * time.Second,
-		Logger:      hub.Logger,
+		Nameservers: app.Nameservers,
+		UseIPv4:     app.QueryFlags.UseIPv4,
+		UseIPv6:     app.QueryFlags.UseIPv6,
+		SearchList:  app.ResolverOpts.SearchList,
+		Ndots:       app.ResolverOpts.Ndots,
+		Timeout:     app.QueryFlags.Timeout * time.Second,
+		Logger:      app.Logger,
 	})
 	if err != nil {
-		hub.Logger.WithError(err).Error("error loading resolver")
-		hub.Logger.Exit(2)
+		app.Logger.WithError(err).Error("error loading resolver")
+		app.Logger.Exit(2)
 	}
-	hub.Resolvers = rslvrs
+	app.Resolvers = rslvrs
 
 	// Run the app.
-	hub.Logger.Debug("Starting doggo 🐶")
-	if len(hub.QueryFlags.QNames) == 0 {
+	app.Logger.Debug("Starting doggo 🐶")
+	if len(app.QueryFlags.QNames) == 0 {
 		f.Usage()
-		hub.Logger.Exit(0)
+		app.Logger.Exit(0)
 	}
 
 	// Resolve Queries.
 	var responses []resolvers.Response
-	for _, q := range hub.Questions {
-		for _, rslv := range hub.Resolvers {
+	for _, q := range app.Questions {
+		for _, rslv := range app.Resolvers {
 			resp, err := rslv.Lookup(q)
 			if err != nil {
-				hub.Logger.WithError(err).Error("error looking up DNS records")
-				hub.Logger.Exit(2)
+				app.Logger.WithError(err).Error("error looking up DNS records")
+				app.Logger.Exit(2)
 			}
 			responses = append(responses, resp)
 		}
 	}
-	hub.Output(responses)
+	app.Output(responses)
 
 	// Quitting.
-	hub.Logger.Exit(0)
+	app.Logger.Exit(0)
 }
