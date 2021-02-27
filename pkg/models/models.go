@@ -18,18 +18,18 @@ const (
 // QueryFlags is used store the query params
 // supplied by the user.
 type QueryFlags struct {
-	QNames           []string      `koanf:"query"`
-	QTypes           []string      `koanf:"type"`
-	QClasses         []string      `koanf:"class"`
-	Nameservers      []string      `koanf:"nameserver"`
-	UseIPv4          bool          `koanf:"ipv4"`
-	UseIPv6          bool          `koanf:"ipv6"`
-	DisplayTimeTaken bool          `koanf:"time"`
-	ShowJSON         bool          `koanf:"json"`
-	UseSearchList    bool          `koanf:"search"`
-	Ndots            int           `koanf:"ndots"`
-	Color            bool          `koanf:"color"`
-	Timeout          time.Duration `koanf:"timeout"`
+	QNames           []string      `koanf:"query" json:"query"`
+	QTypes           []string      `koanf:"type" json:"type"`
+	QClasses         []string      `koanf:"class" json:"class"`
+	Nameservers      []string      `koanf:"nameservers" json:"nameservers"`
+	UseIPv4          bool          `koanf:"ipv4" json:"ipv4"`
+	UseIPv6          bool          `koanf:"ipv6" json:"ipv6"`
+	DisplayTimeTaken bool          `koanf:"time" json:"-"`
+	ShowJSON         bool          `koanf:"json" json:"-"`
+	UseSearchList    bool          `koanf:"search" json:"-"`
+	Ndots            int           `koanf:"ndots" json:"ndots"`
+	Color            bool          `koanf:"color" json:"color"`
+	Timeout          time.Duration `koanf:"timeout" json:"timeout"`
 }
 
 // Nameserver represents the type of Nameserver

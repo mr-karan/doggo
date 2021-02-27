@@ -6,18 +6,6 @@ import (
 	"github.com/miekg/dns"
 )
 
-func (hub *Hub) loadQueryArgs() error {
-	// Appends a list of unparsed args to
-	// internal query flags.
-	err := hub.loadUnparsedArgs()
-	if err != nil {
-		return err
-	}
-	// Load all fallbacks in internal query flags.
-	hub.loadFallbacks()
-	return nil
-}
-
 // loadUnparsedArgs tries to parse all the arguments
 // which are unparsed by `flag` library. These arguments don't have any specific
 // order so we have to deduce based on the pattern of argument.
@@ -28,30 +16,20 @@ func (hub *Hub) loadQueryArgs() error {
 // pattern it is considered to be a "hostname".
 // Eg of unparsed argument: `dig mrkaran.dev @1.1.1.1 AAAA`
 // where `@1.1.1.1` and `AAAA` are "unparsed" args.
-func (hub *Hub) loadUnparsedArgs() error {
-	for _, arg := range hub.UnparsedArgs {
+// Returns a list of nameserver, queryTypes, queryClasses, queryNames.
+func loadUnparsedArgs(args []string) ([]string, []string, []string, []string) {
+	var ns, qt, qc, qn []string
+	for _, arg := range args {
 		if strings.HasPrefix(arg, "@") {
-			hub.QueryFlags.Nameservers = append(hub.QueryFlags.Nameservers, strings.Trim(arg, "@"))
+			ns = append(ns, strings.Trim(arg, "@"))
 		} else if _, ok := dns.StringToType[strings.ToUpper(arg)]; ok {
-			hub.QueryFlags.QTypes = append(hub.QueryFlags.QTypes, arg)
+			qt = append(qt, arg)
 		} else if _, ok := dns.StringToClass[strings.ToUpper(arg)]; ok {
-			hub.QueryFlags.QClasses = append(hub.QueryFlags.QClasses, arg)
+			qc = append(qc, arg)
 		} else {
 			// if nothing matches, consider it's a query name.
-			hub.QueryFlags.QNames = append(hub.QueryFlags.QNames, arg)
+			qn = append(qn, arg)
 		}
 	}
-	return nil
-}
-
-// loadFallbacks sets fallbacks for options
-// that are not specified by the user but necessary
-// for the resolver.
-func (hub *Hub) loadFallbacks() {
-	if len(hub.QueryFlags.QTypes) == 0 {
-		hub.QueryFlags.QTypes = append(hub.QueryFlags.QTypes, "A")
-	}
-	if len(hub.QueryFlags.QClasses) == 0 {
-		hub.QueryFlags.QClasses = append(hub.QueryFlags.QClasses, "IN")
-	}
+	return ns, qt, qc, qn
 }

@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"encoding/json"
@@ -11,17 +11,17 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func (hub *Hub) outputJSON(rsp []resolvers.Response) {
+func (app *App) outputJSON(rsp []resolvers.Response) {
 	// Pretty print with 4 spaces.
 	res, err := json.MarshalIndent(rsp, "", "    ")
 	if err != nil {
-		hub.Logger.WithError(err).Error("unable to output data in JSON")
-		hub.Logger.Exit(-1)
+		app.Logger.WithError(err).Error("unable to output data in JSON")
+		app.Logger.Exit(-1)
 	}
 	fmt.Printf("%s", res)
 }
 
-func (hub *Hub) outputTerminal(rsp []resolvers.Response) {
+func (app *App) outputTerminal(rsp []resolvers.Response) {
 	var (
 		green   = color.New(color.FgGreen, color.Bold).SprintFunc()
 		blue    = color.New(color.FgBlue, color.Bold).SprintFunc()
@@ -32,14 +32,14 @@ func (hub *Hub) outputTerminal(rsp []resolvers.Response) {
 	)
 
 	// Disables colorized output if user specified.
-	if !hub.QueryFlags.Color {
+	if !app.QueryFlags.Color {
 		color.NoColor = true
 	}
 
 	// Conditional Time column.
 	table := tablewriter.NewWriter(os.Stdout)
 	header := []string{"Name", "Type", "Class", "TTL", "Address", "Nameserver"}
-	if hub.QueryFlags.DisplayTimeTaken {
+	if app.QueryFlags.DisplayTimeTaken {
 		header = append(header, "Time Taken")
 	}
 
@@ -99,7 +99,7 @@ func (hub *Hub) outputTerminal(rsp []resolvers.Response) {
 			}
 			output := []string{green(ans.Name), typOut, ans.Class, ans.TTL, ans.Address, ans.Nameserver}
 			// Print how long it took
-			if hub.QueryFlags.DisplayTimeTaken {
+			if app.QueryFlags.DisplayTimeTaken {
 				output = append(output, ans.RTT)
 			}
 			if outputStatus {
@@ -117,7 +117,7 @@ func (hub *Hub) outputTerminal(rsp []resolvers.Response) {
 			}
 			output := []string{green(auth.Name), typOut, auth.Class, auth.TTL, auth.MName, auth.Nameserver}
 			// Print how long it took
-			if hub.QueryFlags.DisplayTimeTaken {
+			if app.QueryFlags.DisplayTimeTaken {
 				output = append(output, auth.RTT)
 			}
 			if outputStatus {
@@ -131,10 +131,10 @@ func (hub *Hub) outputTerminal(rsp []resolvers.Response) {
 
 // Output takes a list of `dns.Answers` and based
 // on the output format specified displays the information.
-func (hub *Hub) Output(responses []resolvers.Response) {
-	if hub.QueryFlags.ShowJSON {
-		hub.outputJSON(responses)
+func (app *App) Output(responses []resolvers.Response) {
+	if app.QueryFlags.ShowJSON {
+		app.outputJSON(responses)
 	} else {
-		hub.outputTerminal(responses)
+		app.outputTerminal(responses)
 	}
 }

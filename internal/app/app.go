@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"github.com/miekg/dns"
@@ -7,21 +7,20 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Hub represents the structure for all app wide configuration.
-type Hub struct {
+// App represents the structure for all app wide configuration.
+type App struct {
 	Logger       *logrus.Logger
 	Version      string
 	QueryFlags   models.QueryFlags
-	UnparsedArgs []string
 	Questions    []dns.Question
 	Resolvers    []resolvers.Resolver
 	ResolverOpts resolvers.Options
 	Nameservers  []models.Nameserver
 }
 
-// NewHub initializes an instance of Hub which holds app wide configuration.
-func NewHub(logger *logrus.Logger, buildVersion string) *Hub {
-	hub := &Hub{
+// NewApp initializes an instance of App which holds app wide configuration.
+func New(logger *logrus.Logger, buildVersion string) App {
+	app := App{
 		Logger:  logger,
 		Version: buildVersion,
 		QueryFlags: models.QueryFlags{
@@ -32,5 +31,5 @@ func NewHub(logger *logrus.Logger, buildVersion string) *Hub {
 		},
 		Nameservers: []models.Nameserver{},
 	}
-	return hub
+	return app
 }
