@@ -23,7 +23,7 @@ run-cli: build-cli ## Build and Execute the CLI binary after the build step.
 
 .PHONY: run-api
 run-api: build-api ## Build and Execute the API binary after the build step.
-	${API_BIN}
+	${API_BIN} --config config-api-sample.toml
 
 .PHONY: clean
 clean:

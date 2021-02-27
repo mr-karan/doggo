@@ -24,12 +24,12 @@ type QueryFlags struct {
 	Nameservers      []string      `koanf:"nameservers" json:"nameservers"`
 	UseIPv4          bool          `koanf:"ipv4" json:"ipv4"`
 	UseIPv6          bool          `koanf:"ipv6" json:"ipv6"`
-	DisplayTimeTaken bool          `koanf:"time" json:"-"`
-	ShowJSON         bool          `koanf:"json" json:"-"`
-	UseSearchList    bool          `koanf:"search" json:"-"`
 	Ndots            int           `koanf:"ndots" json:"ndots"`
 	Color            bool          `koanf:"color" json:"color"`
 	Timeout          time.Duration `koanf:"timeout" json:"timeout"`
+	DisplayTimeTaken bool          `koanf:"time" json:"-"`
+	ShowJSON         bool          `koanf:"json" json:"-"`
+	UseSearchList    bool          `koanf:"search" json:"-"`
 }
 
 // Nameserver represents the type of Nameserver
