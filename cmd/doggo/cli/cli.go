@@ -17,14 +17,11 @@ var (
 	// Version and date of the build. This is injected at build-time.
 	buildVersion = "unknown"
 	buildDate    = "unknown"
+	logger       = utils.InitLogger()
+	k            = koanf.New(".")
 )
 
 func main() {
-	var (
-		logger = utils.InitLogger()
-		k      = koanf.New(".")
-	)
-
 	// Initialize app.
 	app := app.New(logger, buildVersion)
 

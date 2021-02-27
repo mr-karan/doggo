@@ -1,0 +1,9 @@
+[server]
+address = ":8080"
+name = "doggo-api"
+# WARNING If these timeouts are less than 1s,
+# the server connection breaks.
+read_timeout=7000
+write_timeout=7000
+keepalive_timeout=5000
+max_body_size=10000
