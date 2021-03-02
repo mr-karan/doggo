@@ -5,17 +5,29 @@
     <title>Doggo DNS</title>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+
     <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+
+    <style>
+        [v-cloak]>* {
+            display: none;
+        }
+
+        /* [v-cloak]::before {
+            content: "loading...";
+        } */
+
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+
 </head>
 
-<style>
-    body {
-        font-family: 'Poppins', sans-serif;
-    }
-</style>
 <noscript>
     <div class="noscript">
         <h2>This service requires Javascript</h2>
@@ -27,7 +39,7 @@
     <header class="mt-10">
         <h1 class="text-5xl font-black text-center"><span class="text-indigo-700">Doggo</span> DNS</h1>
     </header>
-    <main id="app" class="main flex flex-col flex-grow">
+    <main id="app" v-cloak class="main flex flex-col flex-grow">
         <form @submit.prevent="lookupRecords">
             <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col my-2">
                 <div class="-mx-3 md:flex mb-6">
