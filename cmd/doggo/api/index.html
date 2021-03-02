@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Doggo DNS</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=Poppins:wght@400;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+    }
+</style>
+<noscript>
+    <div class="noscript">
+        <h2>This service requires Javascript</h2>
+        <p>Please enable JavaScript so that the form data can be sent to the API backend.</p>
+    </div>
+</noscript>
+
+<body class="m-4 max-w-screen-lg m-auto">
+    <header class="mt-10">
+        <h1 class="text-5xl font-black text-center"><span class="text-indigo-700">Doggo</span> DNS</h1>
+    </header>
+    <main id="app">
+        <form @submit.prevent="lookupRecords">
+            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col my-2">
+                <div class="-mx-3 md:flex mb-6">
+                    <div class="md:w-1/2 px-3 mb-6 md:mb-0">
+                        <label class="block tracking-wide text-grey-darker text-xs font-bold mb-2">
+                            Domain Name
+                        </label>
+                        <input v-model="queryName"
+                            class="appearance-none block w-full bg-grey-lighter text-grey-darker border border-red rounded py-3 px-4 mb-3"
+                            type="text" placeholder="domain.tld">
+                        <p v-if="emptyNameError" class="text-red-500 text-xs">Please enter a domain name to
+                            query.
+                        </p>
+                    </div>
+                    <div class="md:w-1/2 px-3">
+                        <label class="block tracking-wide text-grey-darker text-xs font-bold mb-2" for="grid-state">
+                            Query Type
+                        </label>
+                        <select
+                            class="block appearance-none w-full bg-grey-lighter border border-grey-lighter text-grey-darker py-3 px-4 pr-8 rounded"
+                            v-model="queryType">
+                            <option>A</option>
+                            <option>AAAA</option>
+                            <option>CNAME</option>
+                            <option>MX</option>
+                            <option>TXT</option>
+                            <option>CAA</option>
+                            <option>NAPTR</option>
+                            <option>NS</option>
+                            <option>PTR</option>
+                            <option>SOA</option>
+                            <option>SRV</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="-mx-3 md:flex mb-2">
+                    <div class="md:w-1/2 px-3">
+                        <label class="block tracking-wide text-grey-darker text-xs font-bold mb-2" for="grid-state">
+                            Nameserver
+                        </label>
+                        <select v-model="nameserverName"
+                            class="block appearance-none w-full bg-grey-lighter border border-grey-lighter text-grey-darker py-3 px-4 pr-8 rounded"
+                            id="grid-state">
+                            <option value="google">Google</option>
+                            <option value="cloudflare">Cloudflare</option>
+                            <option value="quad9">Quad9</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="sm:mt-4 md:w-1/2 px-3">
+                        <label class="block tracking-wide text-grey-darker text-xs font-bold mb-2" for="grid-zip">
+                            Address
+                        </label>
+                        <div v-if="isCustomNS">
+                            <input v-model="customNSAddr" class="appearance-none block w-full bg-grey-lighter text-grey-darker border
+                        border-grey-lighter rounded py-3 px-4" id="grid-zip" type="text"
+                                placeholder="Enter Nameserver address">
+                            <p class="mt-2 text-grey-darker text-xs">To use different protocols like DOH, DOT etc. refer
+                                to the
+                                instructions <a class="font-semibold"
+                                    href="https://github.com/mr-karan/doggo#transport-options">here</a>.</p>
+                        </div>
+                        <div v-else>
+                            <input readonly
+                                class="appearance-none block w-full bg-grey-lighter text-grey-darker border border-grey-lighter rounded py-3 px-4"
+                                id="grid-zip" type="text" :placeholder="getNSAddrValue">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 text-right">
+                    <button type="submit" class="py-2 px-10 text-white rounded-xl bg-indigo-800">Submit</button>
+                </div>
+            </div>
+        </form>
+
+        <!--Responses-->
+        <div v-if="Object.keys(results).length > 0" class="mt-12 flex flex-col">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8 sm:block hidden">
+                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Name
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Address
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Type
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        TTL
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        RTT
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        Nameserver
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr v-for="answer in results">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                        {{answer.name}}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{answer.address}}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            {{answer.type}}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{answer.ttl}}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{answer.rtt}}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{answer.nameserver}}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!--On Mobile-->
+            <ul v-for="answer in results" class="m-4 sm:hidden block bg-indigo-100">
+                <li><span class="p-2 text-gray-500 font-semibold">Name:</span> {{answer.name}}</li>
+                <li><span class="p-2 text-gray-500 font-semibold">Address:</span> {{answer.address}}</li>
+                <li><span class="p-2 text-gray-500 font-semibold">Type:</span> {{answer.type}}</li>
+                <li><span class="p-2 text-gray-500 font-semibold">Nameserver:</span> {{answer.nameserver}}</li>
+                <li><span class="p-2 text-gray-500 font-semibold">TTL:</span> {{answer.ttl}}</li>
+                <li><span class="p-2 text-gray-500 font-semibold">RTT:</span> {{answer.rtt}}</li>
+            </ul>
+        </div>
+
+
+
+        <!--No Answers-->
+        <div v-if="noRecordsFound" class="mt-12 text-center">
+            <p class="text-xl text-gray-900">Oops! Found no records for this query.</p>
+        </div>
+
+        <!--Show Error-->
+        <div v-if="apiErrorMessage" class="mt-12 text-center">
+            <p class="text-xl text-red-500">{{apiErrorMessage}}</p>
+        </div>
+
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+    <script src="assets/main.js"> </script>
+</body>

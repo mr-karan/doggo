@@ -19,7 +19,7 @@ type httpResp struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-func handleIndex(w http.ResponseWriter, r *http.Request) {
+func handleIndexAPI(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, http.StatusOK, "Welcome to Doggo API.")
 	return
 }
@@ -49,6 +49,7 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 		sendErrorResponse(w, fmt.Sprintf("Invalid JSON payload"), http.StatusBadRequest, nil)
 		return
 	}
+
 	app.QueryFlags = qFlags
 	// Load fallbacks.
 	app.LoadFallbacks()
@@ -56,11 +57,17 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	// Load Questions.
 	app.PrepareQuestions()
 
+	if len(app.Questions) == 0 {
+		sendErrorResponse(w, fmt.Sprintf("Missing field `query`."), http.StatusBadRequest, nil)
+		return
+	}
+
 	// Load Nameservers.
 	err = app.LoadNameservers()
 	if err != nil {
 		app.Logger.WithError(err).Error("error loading nameservers")
-		sendErrorResponse(w, fmt.Sprintf("Error lookup up for records"), http.StatusInternalServerError, nil)
+		sendErrorResponse(w, fmt.Sprintf("Error lookuping up for records."), http.StatusInternalServerError, nil)
+		return
 	}
 
 	// Load Resolvers.
@@ -75,8 +82,8 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		app.Logger.WithError(err).Error("error loading resolver")
-		sendErrorResponse(w, fmt.Sprintf("Error lookup up for records"), http.StatusInternalServerError, nil)
-
+		sendErrorResponse(w, fmt.Sprintf("Error lookuping up for records."), http.StatusInternalServerError, nil)
+		return
 	}
 	app.Resolvers = rslvrs
 
@@ -86,7 +93,8 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 			resp, err := rslv.Lookup(q)
 			if err != nil {
 				app.Logger.WithError(err).Error("error looking up DNS records")
-				app.Logger.Exit(2)
+				sendErrorResponse(w, fmt.Sprintf("Error lookuping up for records."), http.StatusInternalServerError, nil)
+				return
 			}
 			responses = append(responses, resp)
 		}
