@@ -23,11 +23,11 @@
     </div>
 </noscript>
 
-<body class="m-4 max-w-screen-lg m-auto">
+<body class="p-10 max-w-screen-lg m-auto min-h-screen flex flex-col">
     <header class="mt-10">
         <h1 class="text-5xl font-black text-center"><span class="text-indigo-700">Doggo</span> DNS</h1>
     </header>
-    <main id="app">
+    <main id="app" class="main flex flex-col flex-grow">
         <form @submit.prevent="lookupRecords">
             <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col my-2">
                 <div class="-mx-3 md:flex mb-6">
@@ -51,15 +51,15 @@
                             v-model="queryType">
                             <option>A</option>
                             <option>AAAA</option>
+                            <option>CAA</option>
                             <option>CNAME</option>
                             <option>MX</option>
-                            <option>TXT</option>
-                            <option>CAA</option>
                             <option>NAPTR</option>
                             <option>NS</option>
                             <option>PTR</option>
                             <option>SOA</option>
                             <option>SRV</option>
+                            <option>TXT</option>
                         </select>
                     </div>
                 </div>
@@ -190,6 +190,15 @@
         </div>
 
     </main>
+
+    <footer class="p-10">
+        <div class="container mx-auto flex flex-col items-center justify-center">
+            <p class="text-xl font-bold">Built with <span style=" color: #4338ca;">&#9829;</span> by <a
+                    href="https://mrkaran.dev"><span class="text-indigo-700 font-semibold">mrkaran</span></a></p>
+            <p class="text-center"><a href="https://github.com/mr-karan/doggo">Source Code</a></p>
+        </div>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
     <script src="assets/main.js"> </script>
 </body>
