@@ -8,11 +8,12 @@ var app = new Vue({
         apiErrorMessage: "",
         queryName: "",
         queryType: "A",
-        nameserverName: "google",
+        nameserverName: "cloudflare",
         customNSAddr: "",
         nsAddrMap: {
             "google": "8.8.8.8",
             "cloudflare": "1.1.1.1",
+            "cloudflare-doh": "https://cloudflare-dns.com/dns-query",
             "quad9": "9.9.9.9",
         }
     },
@@ -36,6 +37,8 @@ var app = new Vue({
                     return "tcp://8.8.8.8:53"
                 case "cloudflare":
                     return "tcp://1.1.1.1:53"
+                case "cloudflare-doh":
+                    return "https://cloudflare-dns.com/dns-query"
                 case "quad9":
                     return "tcp://9.9.9.9:53"
                 case "custom":
