@@ -20,7 +20,11 @@ type httpResp struct {
 }
 
 func handleIndexAPI(w http.ResponseWriter, r *http.Request) {
-	sendResponse(w, http.StatusOK, "Welcome to Doggo API.")
+	var (
+		app = r.Context().Value("app").(app.App)
+	)
+
+	sendResponse(w, http.StatusOK, fmt.Sprintf("Welcome to Doggo API. Version: %s", app.Version))
 	return
 }
 
