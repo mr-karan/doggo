@@ -35,7 +35,7 @@ builds:
       - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
     dir: ./cmd/doggo/api/
     hooks:
-      pre: make build-frontend
+      pre: make deps && make build-frontend
 
 archives:
   - format: tar.gz

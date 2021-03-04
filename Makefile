@@ -19,7 +19,7 @@ build-api:
 
 .PHONY: deps
 deps:
-	npm install -D tailwindcss@latest postcss@latest autoprefixer@latest
+	cd cmd/doggo/api && npm install -D tailwindcss@latest postcss@latest autoprefixer@latest
 
 .PHONY: build
 build: build-api build-cli
