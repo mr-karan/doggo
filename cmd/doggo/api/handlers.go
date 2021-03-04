@@ -70,7 +70,7 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	err = app.LoadNameservers()
 	if err != nil {
 		app.Logger.WithError(err).Error("error loading nameservers")
-		sendErrorResponse(w, fmt.Sprintf("Error lookuping up for records."), http.StatusInternalServerError, nil)
+		sendErrorResponse(w, fmt.Sprintf("Error looking up for records."), http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -86,7 +86,7 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		app.Logger.WithError(err).Error("error loading resolver")
-		sendErrorResponse(w, fmt.Sprintf("Error lookuping up for records."), http.StatusInternalServerError, nil)
+		sendErrorResponse(w, fmt.Sprintf("Error looking up for records."), http.StatusInternalServerError, nil)
 		return
 	}
 	app.Resolvers = rslvrs
@@ -97,7 +97,7 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 			resp, err := rslv.Lookup(q)
 			if err != nil {
 				app.Logger.WithError(err).Error("error looking up DNS records")
-				sendErrorResponse(w, fmt.Sprintf("Error lookuping up for records."), http.StatusInternalServerError, nil)
+				sendErrorResponse(w, fmt.Sprintf("Error looking up for records."), http.StatusInternalServerError, nil)
 				return
 			}
 			responses = append(responses, resp)
