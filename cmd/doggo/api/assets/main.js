@@ -1,95 +1,167 @@
-var app = new Vue({
-    el: '#app',
-    data: {
-        apiURL: "/api/lookup/",
-        results: [],
-        noRecordsFound: false,
-        emptyNameError: false,
-        apiErrorMessage: "",
-        queryName: "",
-        queryType: "A",
-        nameserverName: "cloudflare",
-        customNSAddr: "",
-        nsAddrMap: {
-            "google": "8.8.8.8",
-            "cloudflare": "1.1.1.1",
-            "cloudflare-doh": "https://cloudflare-dns.com/dns-query",
-            "quad9": "9.9.9.9",
-        }
-    },
-    created: function () {
-    },
-    computed: {
-        getNSAddrValue() {
-            return this.nsAddrMap[this.nameserverName]
-        },
-        isCustomNS() {
-            if (this.nameserverName == "custom") {
-                return true
+const $ = document.querySelector.bind(document);
+const $new = document.createElement.bind(document);
+const apiURL = "/api/lookup/";
+const isMobile = window.matchMedia("only screen and (max-width: 760px)").matches;
+const nsAddrMap = {
+    "google": "8.8.8.8",
+    "cloudflare": "1.1.1.1",
+    "cloudflare-doh": "https://cloudflare-dns.com/dns-query",
+    "quad9": "9.9.9.9",
+}
+
+
+function handleNSChange() {
+    if ($('select[name=ns]').value == "custom") {
+        $('div[id=custom_ns]').classList.remove("hidden");
+        $('div[id=ns]').classList.add("hidden");
+    } else {
+        $('div[id=custom_ns]').classList.add("hidden");
+        $('div[id=ns]').classList.remove("hidden");
+        $('input[name=ns]').placeholder = nsAddrMap[$('select[name=ns]').value];
+    }
+}
+
+
+// Source: https://stackoverflow.com/a/1026087.
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+window.addEventListener('DOMContentLoaded', (event) => {
+    handleNSChange();
+});
+
+
+(function () {
+    const fields = ['name', 'address', 'type', 'ttl', 'rtt', 'nameserver'];
+
+    // createRow creates a table row with the given cell values.
+    function createRow(item) {
+        const tr = $new('tr');
+        fields.forEach((f) => {
+            const td = $new('td');
+            td.classList.add("px-6", "py-4", "whitespace-nowrap", "text-sm");
+            if (f == "ttl" || f == "rtt" || f == "nameserver") {
+                td.classList.add("text-gray-500");
+            } else {
+                td.classList.add("text-gray-900");
             }
-            return false
-        }
-    },
-    methods: {
-        prepareNS() {
-            switch (this.nameserverName) {
-                case "google":
-                    return "tcp://8.8.8.8:53"
-                case "cloudflare":
-                    return "tcp://1.1.1.1:53"
-                case "cloudflare-doh":
-                    return "https://cloudflare-dns.com/dns-query"
-                case "quad9":
-                    return "tcp://9.9.9.9:53"
-                case "custom":
-                    return this.customNSAddr
-                default:
-                    return ""
+            if (f == "name") {
+                td.classList.add("font-semibold");
             }
-        },
-        lookupRecords() {
-            // reset variables.
-            this.results = []
-            this.noRecordsFound = false
-            this.emptyNameError = false
-            this.apiErrorMessage = ""
-
-            if (this.queryName == "") {
-                this.emptyNameError = true
-                return
+            if (f == "type") {
+                td.innerHTML = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">' + item[f] + '</span>';
+            } else {
+                td.innerText = item[f];
             }
+            tr.appendChild(td);
+        });
+        return tr;
+    }
 
-            // GET request using fetch with error handling
-            fetch(this.apiURL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    query: [this.queryName,],
-                    type: [this.queryType,],
-                    nameservers: [this.prepareNS(),],
-                }),
-            }).then(async response => {
-                const res = await response.json();
 
-                // check for error response
-                if (!response.ok) {
-                    // get error message from body or default to response statusText
-                    const error = (res && res.message) || response.statusText;
-                    return Promise.reject(error);
-                }
+    // createList creates a table row with the given cell values.
+    function createList(item) {
+        const ul = $new('ul');
+        ul.classList.add("m-4", "block", "bg-indigo-100");
+        fields.forEach((f) => {
+            const li = $new('li');
+            const span = $new('span');
+            span.classList.add("p-2", "text-gray-500", "font-semibold");
+            span.innerText = capitalizeFirstLetter(f) + ': ' + item[f]
+            li.appendChild(span);
+            ul.appendChild(li);
+        });
+        return ul;
+    }
 
-                if (res.data[0].answers == null) {
-                    this.noRecordsFound = true
-                } else {
-                    // Set the answers in the results list.
-                    this.results = res.data[0].answers
-                }
-
-            }).catch(error => {
-                this.apiErrorMessage = error
-            });
+    function prepareNSAddr(ns) {
+        switch (ns) {
+            case "google":
+                return "tcp://8.8.8.8:53"
+            case "cloudflare":
+                return "tcp://1.1.1.1:53"
+            case "cloudflare-doh":
+                return "https://cloudflare-dns.com/dns-query"
+            case "quad9":
+                return "tcp://9.9.9.9:53"
+            case "custom":
+                return $('input[name=custom_ns]').value.trim()
+            default:
+                return ""
         }
     }
-})
+
+    const postForm = body => {
+        return fetch(apiURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const tbl = $('table tbody');
+        const list = $('div[id=mobile-answers-sec]');
+        tbl.innerHTML = '';
+        list.innerHTML = '';
+
+        $('p[id=empty-name-sec]').classList.add("hidden");
+        const errSec = $('div[id=api-error-sec]');
+        errSec.classList.add("hidden");
+
+        const q = $('input[name=q]').value.trim(), typ = $('select[name=type]').value;
+        const ns = $('select[name=ns]').value;
+
+        if (!q) {
+            $('p[id=empty-name-sec]').classList.remove("hidden");
+            throw ('Invalid query name.');
+        }
+
+        if (!q || !typ || !ns) {
+            throw ('Invalid or empty query params.');
+        }
+
+        const nsAddr = prepareNSAddr(ns);
+        const body = JSON.stringify({ query: [q,], type: [typ,], nameservers: [nsAddr,] });
+
+        const response = await postForm(body);
+        const res = await response.json();
+        if (res.status != "success") {
+            // get error message from body or default to response statusText
+            const error = (res && res.message) || response.statusText;
+            errSec.classList.remove("hidden");
+            errSec.innerHTML = '<p class="text-xl text-red-500">' + error + '</p>'
+            throw (error);
+        }
+
+        if (res.data[0].answers == null) {
+            const errSec = $('div[id=api-error-sec]');
+            errSec.classList.remove("hidden");
+            errSec.innerHTML = '<p class="text-xl text-red-500">' + 'No records found!' + '</p>'
+            return null;
+        }
+
+        $('div[id=answer_sec]').classList.remove("hidden");
+
+        if (isMobile === true) {
+            list.classList.remove("hidden");
+            res.data[0].answers.forEach((item) => {
+                console.log("appending", item)
+                list.appendChild(createList(item));
+            });
+
+        } else {
+            res.data[0].answers.forEach((item) => {
+                tbl.appendChild(createRow(item));
+            });
+        }
+
+    };
+
+    document.querySelector('form').addEventListener('submit', handleSubmit);
+})();
