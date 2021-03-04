@@ -39,7 +39,7 @@
                             Domain Name
                         </label>
                         <input name="q"
-                            class="appearance-none block w-full bg-grey-lighter text-grey-darker border border-red rounded py-3 px-4 mb-3"
+                            class="block w-full bg-grey-lighter text-grey-darker border border-red rounded py-3 px-4 mb-3"
                             type="text" placeholder="domain.tld">
                         <p id="empty-name-sec" class="hidden text-red-500 text-xs">Please enter a domain name to
                             query.
@@ -50,7 +50,7 @@
                             Query Type
                         </label>
                         <select
-                            class="block appearance-none w-full bg-grey-lighter border border-grey-lighter text-grey-darker py-3 px-4 pr-8 rounded"
+                            class="block w-full bg-white border border-grey-lighter text-grey-darker py-3 px-4 pr-8 rounded"
                             name="type">
                             <option default>A</option>
                             <option>AAAA</option>
@@ -72,7 +72,7 @@
                             Nameserver
                         </label>
                         <select name="ns"
-                            class="block appearance-none w-full bg-grey-lighter border border-grey-lighter text-grey-darker py-3 px-4 pr-8 rounded"
+                            class="block w-full bg-white border border-grey-lighter text-grey-darker py-3 px-4 pr-8 rounded"
                             onchange="handleNSChange()">>
                             <option default value="cloudflare">Cloudflare</option>
                             <option value="cloudflare-doh">Cloudflare (DOH)</option>
@@ -86,7 +86,7 @@
                             Address
                         </label>
                         <div id="custom_ns" class="hidden">
-                            <input name="custom_ns" class="appearance-none block w-full bg-grey-lighter text-grey-darker border
+                            <input name="custom_ns" class="block w-full bg-white text-grey-darker border
                         border-grey-lighter rounded py-3 px-4" type="text" placeholder="Enter Nameserver address">
                             <p class="mt-2 text-grey-darker text-xs">To use different protocols like DOH, DOT etc. refer
                                 to the
@@ -95,7 +95,7 @@
                         </div>
                         <div id="ns">
                             <input readonly name="ns"
-                                class="appearance-none block w-full bg-grey-lighter text-grey-darker border border-grey-lighter rounded py-3 px-4"
+                                class="block w-full bg-gray-50 text-grey-darker border border-grey-lighter rounded py-3 px-4"
                                 type="text">
                         </div>
                     </div>
