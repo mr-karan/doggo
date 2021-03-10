@@ -34,8 +34,6 @@ builds:
     ldflags:
       - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
     dir: ./cmd/doggo/api/
-    hooks:
-      pre: make deps && make build-frontend
 
 archives:
   - format: tar.gz
