@@ -641,14 +641,14 @@ select {
   background-color: rgba(224, 231, 255, var(--tw-bg-opacity));
 }
 
-.bg-indigo-900 {
-  --tw-bg-opacity: 1;
-  background-color: rgba(49, 46, 129, var(--tw-bg-opacity));
-}
-
-.hover\:bg-indigo-700:hover {
+.bg-indigo-700 {
   --tw-bg-opacity: 1;
   background-color: rgba(67, 56, 202, var(--tw-bg-opacity));
+}
+
+.hover\:bg-indigo-500:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgba(99, 102, 241, var(--tw-bg-opacity));
 }
 
 .border-transparent {
@@ -949,9 +949,9 @@ select {
   --tw-ring-color: rgba(99, 102, 241, var(--tw-ring-opacity));
 }
 
-.focus\:ring-indigo-900:focus {
+.focus\:ring-indigo-700:focus {
   --tw-ring-opacity: 1;
-  --tw-ring-color: rgba(49, 46, 129, var(--tw-ring-opacity));
+  --tw-ring-color: rgba(67, 56, 202, var(--tw-ring-opacity));
 }
 
 .text-left {
