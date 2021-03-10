@@ -2,13 +2,6 @@ const $ = document.querySelector.bind(document);
 const $new = document.createElement.bind(document);
 const apiURL = "/api/lookup/";
 const isMobile = window.matchMedia("only screen and (max-width: 760px)").matches;
-const nsAddrMap = {
-    "google": "8.8.8.8",
-    "cloudflare": "1.1.1.1",
-    "cloudflare-doh": "https://cloudflare-dns.com/dns-query",
-    "quad9": "9.9.9.9",
-}
-
 
 function handleNSChange() {
     if ($('select[name=ns]').value == "custom") {
@@ -17,7 +10,7 @@ function handleNSChange() {
     } else {
         $('div[id=custom_ns]').classList.add("hidden");
         $('div[id=ns]').classList.remove("hidden");
-        $('input[name=ns]').placeholder = nsAddrMap[$('select[name=ns]').value];
+        $('input[name=ns]').placeholder = $('select[name=ns]').value;
     }
 }
 
@@ -60,7 +53,7 @@ window.addEventListener('DOMContentLoaded', (event) => {
     }
 
 
-    // createList creates a table row with the given cell values.
+    // `createList` creates a table row with the given cell values.
     function createList(item) {
         const ul = $new('ul');
         ul.classList.add("m-4", "block", "bg-indigo-100");
@@ -77,18 +70,12 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
     function prepareNSAddr(ns) {
         switch (ns) {
-            case "google":
-                return "tcp://8.8.8.8:53"
-            case "cloudflare":
-                return "tcp://1.1.1.1:53"
-            case "cloudflare-doh":
-                return "https://cloudflare-dns.com/dns-query"
-            case "quad9":
-                return "tcp://9.9.9.9:53"
+            // If it's a custom nameserver, get the value from the user's input.
             case "custom":
                 return $('input[name=custom_ns]').value.trim()
+            // Else get it from the select dropdown field.
             default:
-                return ""
+                return $('select[name=ns]').value.trim()
         }
     }
 

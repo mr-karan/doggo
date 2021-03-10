@@ -70,10 +70,10 @@
                         </label>
                         <select name="ns" onchange="handleNSChange()"
                             class="w-full border-gray-300 rounded-lg shadown-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option default value="cloudflare">Cloudflare</option>
-                            <option value="cloudflare-doh">Cloudflare (DOH)</option>
-                            <option value="google">Google</option>
-                            <option value="quad9">Quad9</option>
+                            <option default value="tcp://1.1.1.1:53">Cloudflare</option>
+                            <option value="https://cloudflare-dns.com/dns-query">Cloudflare (DOH)</option>
+                            <option value="tcp://8.8.8.8:53">Google</option>
+                            <option value="tcp://9.9.9.9:53">Quad9</option>
                             <option value="custom">Custom</option>
                         </select>
                     </div>
