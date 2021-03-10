@@ -9,17 +9,9 @@ VERSION := ${HASH}
 build-cli:
 	go build -o ${CLI_BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" ./cmd/doggo/cli/
 
-.PHONY: build-frontend
-build-frontend:
-	cd cmd/doggo/api && NODE_ENV=production npx tailwindcss build -o ./assets/tailwind.css
-
 .PHONY: build-api
 build-api:
 	go build -o ${API_BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" ./cmd/doggo/api/
-
-.PHONY: deps
-deps:
-	cd cmd/doggo/api && npm install -D tailwindcss@latest postcss@latest autoprefixer@latest
 
 .PHONY: build
 build: build-api build-cli
@@ -29,7 +21,7 @@ run-cli: build-cli ## Build and Execute the CLI binary after the build step.
 	${CLI_BIN}
 
 .PHONY: run-api
-run-api: build-frontend build-api ## Build and Execute the API binary after the build step.
+run-api: build-api ## Build and Execute the API binary after the build step.
 	${API_BIN} --config config-api-sample.toml
 
 .PHONY: clean

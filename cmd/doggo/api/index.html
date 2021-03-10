@@ -1,175 +1,100 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>Doggo DNS</title>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1">
-
-    <link href="assets/tailwind.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
-    </style>
-
+    <link href="assets/style.css" rel="stylesheet">
 </head>
-
-<noscript>
-    <div class="noscript">
-        <h2>This service requires Javascript</h2>
-        <p>Please enable JavaScript so that the form data can be sent to the API backend.</p>
-    </div>
-</noscript>
-
-<body class="p-10 max-w-screen-lg m-auto min-h-screen flex flex-col">
-    <header class="mt-10">
-        <h1 class="text-5xl font-black text-center"><span class="text-indigo-700">Doggo</span> DNS</h1>
+<body>
+<div class="main">
+    <header>
+        <h1 class="logo"><span>Doggo</span> DNS</h1>
     </header>
-    <main id="app" class="main flex flex-col flex-grow">
-        <form>
-            <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 flex flex-col my-2">
-                <div class="-mx-3 md:flex mb-6">
-                    <div class="md:w-1/2 px-3 mb-6 md:mb-0">
-                        <label>
-                            Domain Name
-                        </label>
-                        <input required autofocus name="q" type="text" placeholder="domain.tld"
-                            class="w-full border-gray-300 rounded-lg shadown-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <p id="empty-name-sec" class="hidden text-red-500 text-xs">Please enter a domain name to
-                            query.
-                        </p>
-                    </div>
-                    <div class="md:w-1/2 px-3">
-                        <label>
-                            Query Type
-                        </label>
-                        <select name="type"
-                            class="w-full border-gray-300 rounded-lg shadown-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option default>A</option>
-                            <option>AAAA</option>
-                            <option>CAA</option>
-                            <option>CNAME</option>
-                            <option>MX</option>
-                            <option>NAPTR</option>
-                            <option>NS</option>
-                            <option>PTR</option>
-                            <option>SOA</option>
-                            <option>SRV</option>
-                            <option>TXT</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="-mx-3 md:flex">
-                    <div class="md:w-1/2 px-3 mb-6 md:mb-0">
-                        <label>
-                            Nameserver
-                        </label>
-                        <select name="ns" onchange="handleNSChange()"
-                            class="w-full border-gray-300 rounded-lg shadown-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option default value="tcp://1.1.1.1:53">Cloudflare</option>
-                            <option value="https://cloudflare-dns.com/dns-query">Cloudflare (DOH)</option>
-                            <option value="tcp://8.8.8.8:53">Google</option>
-                            <option value="tcp://9.9.9.9:53">Quad9</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
-                    <div class="md:w-1/2 px-3">
-                        <label for="grid-zip">
-                            Address
-                        </label>
-                        <div id="custom_ns" class="hidden">
-                            <input name="custom_ns" type="text" placeholder="Enter Nameserver address"
-                                class="w-full border-gray-300 rounded-lg shadown-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <p class="mt-2 text-grey-darker text-xs">To use different protocols like DOH, DOT etc. refer
-                                to the
-                                instructions <a class="font-semibold"
-                                    href="https://github.com/mr-karan/doggo#transport-options">here</a>.</p>
-                        </div>
-                        <div id="ns">
-                            <input readonly name="ns" type="text"
-                                class="bg-gray-50 w-full border-gray-300 rounded-lg shadown-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-8 text-right">
-                    <button class="w-full sm:w-auto flex-none bg-indigo-700 hover:bg-indigo-500
-                        text-white text-lg leading-6 font-semibold py-3 px-6 border border-transparent rounded
-                        focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-indigo-700 focus:outline-none
-                        transition-colors duration-400">
-                        Submit
-                    </button>
-                </div>
-            </div>
-        </form>
 
-        <!--Responses-->
-        <div id="answer_sec" class="hidden mt-12 flex flex-col">
-            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8 sm:block hidden">
-                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        Name
-                                    </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        Address
-                                    </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        Type
-                                    </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        TTL
-                                    </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        RTT
-                                    </th>
-                                    <th scope="col"
-                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                        Nameserver
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <!--tr is added by JS-->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <form method="post" id="form" class="box">
+        <div class="row">
+            <div class="field">
+                <label for="domain">Domain name</label>
+                <input id="domain" name="q" placeholder="domain.tld" required autofocus />
             </div>
-            <!--On Mobile-->
-            <div id="mobile-answers-sec" class="hidden">
+            <div class="field">
+                <label for="type">Query type</label>
+                <select id="type" name="type">
+                    <option default>A</option>
+                    <option>AAAA</option>
+                    <option>CAA</option>
+                    <option>CNAME</option>
+                    <option>MX</option>
+                    <option>NAPTR</option>
+                    <option>NS</option>
+                    <option>PTR</option>
+                    <option>SOA</option>
+                    <option>SRV</option>
+                    <option>TXT</option>
+                </select>
             </div>
         </div>
-
-        <!--No Answers-->
-        <div id="no-answers-sec" class="hidden mt-12 text-center">
-            <p class="text-xl text-gray-900">Oops! Found no records for this query.</p>
+        <div class="row">
+            <div class="field">
+                <label for="ns">Nameserver</label>
+                <select id="ns" name="ns">
+                    <option default value="tcp://1.1.1.1:53">Cloudflare</option>
+                    <option value="https://cloudflare-dns.com/dns-query">Cloudflare (DOH)</option>
+                    <option value="tcp://8.8.8.8:53">Google</option>
+                    <option value="tcp://9.9.9.9:53">Quad9</option>
+                    <option value="">Custom</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="address">Nameserver address</label>
+                <input id="address" name="address" type="text" placeholder="tcp://your-ip"
+                    required pattern="(tcp|udp|tls|https):\/\/(.*)" />
+                <p class="help">
+                    To use different protocols like DOH, DOT etc. refer to the instructions
+                    <a href="https://github.com/mr-karan/doggo#transport-options">here</a>.
+                </p>
+            </div>
         </div>
-
-        <!--Show Error-->
-        <div id="api-error-sec" class="hidden mt-12 text-center">
+        <div class="row">
+            <div class="field"><p id="message"></p></div>
+            <div class="field submit">
+                <button type="submit">Submit</button>
+            </div>
         </div>
+    </form>
 
-    </main>
+    <!--Responses-->
+    <table class="box hidden" id="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th class="type">Type</th>
+                <th>TTL</th>
+                <th>RTT</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-    <footer class="p-10">
-        <div class="container mx-auto flex flex-col items-center justify-center">
-            <p class="text-xl font-bold">Built with <span style=" color: #4338ca;">&#9829;</span> by <a
-                    href="https://mrkaran.dev"><span class="text-indigo-700 font-semibold">mrkaran</span></a></p>
-            <p class="text-center"><a href="https://github.com/mr-karan/doggo">Source Code</a></p>
+    <footer >
+        <div>
+            <p>Built with
+                <span>&#9829;</span> by
+                <a href="https://mrkaran.dev"><strong>mrkaran</strong></a>
+            </p>
+            <p><a href="https://github.com/mr-karan/doggo">Source Code</a></p>
         </div>
     </footer>
-
     <script src="assets/main.js"> </script>
+
+    <noscript>
+        <div class="noscript">
+            <h2>This service requires Javascript</h2>
+            <p>Please enable JavaScript so that the form data can be sent to the API backend.</p>
+        </div>
+    </noscript>
+</div>
 </body>
+</html>
