@@ -4,6 +4,8 @@
   <h2 align="center">doggo</h2>
   <p align="center">
     🐶 <i>Command-line DNS client for humans</i>
+    <br/>
+    <a href="https://doggo.mrkaran.dev">doggo.mrkaran.dev</a>
   </p>
   <img src="www/static/doggo.png" alt="doggo CLI usage">
 </p>
@@ -27,6 +29,7 @@ to experiment with writing a DNS Client from scratch in `Go` myself. Hence the n
 - Supports **ndots** and **search** configurations from `resolv.conf` or command-line arguments.
 - Supports multiple resolvers at once.
 - Supports IPv4 **and** IPv6 _both_.
+- Available as a web tool as well: [https://doggo.mrkaran.dev](https://doggo.mrkaran.dev).
 
 ## Installation
 
@@ -34,11 +37,11 @@ to experiment with writing a DNS Client from scratch in `Go` myself. Hence the n
 
 You can grab the latest binaries for Linux, MacOS and Windows from the [Releases](https://github.com/mr-karan/doggo/releases) section.
 
-For eg, to pull the latest Linux binary:
+For eg, to pull the latest `linux-amd64` binary:
 
 ```shell
 $ cd "$(mktemp -d)"
-$ curl -sL "https://github.com/mr-karan/doggo/releases/download/v0.2.0/doggo_0.2.0_linux_amd64.tar.gz" | tar xz
+$ curl -sL "https://github.com/mr-karan/doggo/releases/download/v0.3.7/doggo_0.3.7_linux_amd64.tar.gz" | tar xz
 $ mv doggo /usr/local/bin
 # doggo should be available now in your $PATH
 $ doggo
@@ -76,6 +79,7 @@ You need to have `go` installed in your system.
 
 ```bash
 $ go get github.com/mr-karan/doggo/cmd/doggo
+$ mv $GOPATH/bin/cli $GOPATH/bin/doggo 
 ```
 
 The binary will be available at `$GOPATH/bin/doggo`.

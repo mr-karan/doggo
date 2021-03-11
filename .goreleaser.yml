@@ -52,8 +52,8 @@ snapcrafts:
 
 dockers:
   - image_templates:
-      - "ghcr.io/mr-karan/doggo-cli:{{ .Tag }}"
-      - "ghcr.io/mr-karan/doggo-cli:latest"
+      - "ghcr.io/mr-karan/doggo:{{ .Tag }}"
+      - "ghcr.io/mr-karan/doggo:latest"
     binaries:
       - doggo
     dockerfile: Dockerfile-cli
@@ -61,8 +61,8 @@ dockers:
       - "--build-arg"
       - "ARCH=amd64"
   - image_templates:
-      - "ghcr.io/mr-karan/doggo-cli:{{ .Tag }}-arm64v8"
-      - "ghcr.io/mr-karan/doggo-cli:latest-arm64v8"
+      - "ghcr.io/mr-karan/doggo:{{ .Tag }}-arm64v8"
+      - "ghcr.io/mr-karan/doggo:latest-arm64v8"
     binaries:
       - doggo
     goarch: arm64
