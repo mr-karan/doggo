@@ -54,14 +54,13 @@
 # Future Release
 
 - [ ] Support obscure protocol tweaks in `dig`
-- [ ] Read from file with `-f`
 - [x] Support more DNS Record Types
-- [ ] Shell completions
-  - [ ] bash
-  - [ ] zsh
-  - [ ] fish
+- [x] Shell completions
+  - [x] zsh
+  - [x] fish
 - [ ] Add tests for Resolvers.
 - [ ] Add tests for CLI Output.
 - [ ] Homebrew - Goreleaser
+- [ ] Add support for `dig +trace` like functionality.
 - [x] Separate Authority/Answer in JSON output.
 - [x] Error on NXDomain (Related upstream [bug](https://github.com/miekg/dns/issues/1198))

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -50,6 +51,8 @@ func main() {
 	f.Bool("color", true, "Show colored output")
 	f.Bool("debug", false, "Enable debug mode")
 
+	f.Bool("version", false, "Show version of doggo")
+
 	// Parse and Load Flags.
 	err := f.Parse(os.Args[1:])
 	if err != nil {
@@ -60,6 +63,12 @@ func main() {
 		app.Logger.WithError(err).Error("error loading flags")
 		f.Usage()
 		app.Logger.Exit(2)
+	}
+
+	// If version flag is set, output version and quit.
+	if k.Bool("version") {
+		fmt.Printf("%s - %s\n", buildVersion, buildDate)
+		app.Logger.Exit(0)
 	}
 
 	// Set log level.
