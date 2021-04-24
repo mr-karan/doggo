@@ -36,7 +36,7 @@ func NewDNSCryptResolver(server string, dnscryptOpts DNSCryptResolverOpts, resol
 	return &DNSCryptResolver{
 		client:          client,
 		serverInfo:      serverInfo,
-		server:          server,
+		server:          serverInfo.ServerAddress,
 		resolverOptions: resolverOpts,
 	}, nil
 }
@@ -52,7 +52,7 @@ func (r *DNSCryptResolver) Lookup(question dns.Question) (Response, error) {
 		r.resolverOptions.Logger.WithFields(logrus.Fields{
 			"domain":     msg.Question[0].Name,
 			"ndots":      r.resolverOptions.Ndots,
-			"nameserver": r.serverInfo.ProviderName,
+			"nameserver": r.server,
 		}).Debug("Attempting to resolve")
 		in, rtt, err := r.client.Exchange(&msg, r.serverInfo)
 		if err != nil {
