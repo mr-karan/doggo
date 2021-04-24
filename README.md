@@ -26,6 +26,7 @@ to experiment with writing a DNS Client from scratch in `Go` myself. Hence the n
   - DNS over **TLS** (DoT)
   - DNS over **TCP**
   - DNS over **UDP**
+  - DNS over **DNSCrypt**
 - Supports **ndots** and **search** configurations from `resolv.conf` or command-line arguments.
 - Supports multiple resolvers at once.
 - Supports IPv4 **and** IPv6 _both_.
