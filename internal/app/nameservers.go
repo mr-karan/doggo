@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/url"
 
+	"github.com/ameshkov/dnsstamps"
 	"github.com/mr-karan/doggo/pkg/config"
 	"github.com/mr-karan/doggo/pkg/models"
 )
@@ -59,6 +60,23 @@ func initNameserver(n string) (models.Nameserver, error) {
 	u, err := url.Parse(n)
 	if err != nil {
 		return ns, err
+	}
+	if u.Scheme == "sdns" {
+		stamp, err := dnsstamps.NewServerStampFromString(n)
+		if err != nil {
+			return ns, err
+		}
+		switch stamp.Proto {
+		case dnsstamps.StampProtoTypeDoH:
+			ns.Type = models.DOHResolver
+			address := url.URL{Scheme: "https", Host: stamp.ProviderName, Path: stamp.Path}
+			ns.Address = address.String()
+		case dnsstamps.StampProtoTypeDNSCrypt:
+			ns.Type = models.DNSCryptResolver
+			ns.Address = n
+		default:
+			return ns, fmt.Errorf("unsupported protocol: %v", stamp.Proto.String())
+		}
 	}
 	if u.Scheme == "https" {
 		ns.Type = models.DOHResolver

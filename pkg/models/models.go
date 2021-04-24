@@ -8,11 +8,12 @@ const (
 	// DefaultUDPPort specifies the default port for a DNS server connecting over UDP
 	DefaultUDPPort = "53"
 	// DefaultTCPPort specifies the default port for a DNS server connecting over TCP
-	DefaultTCPPort = "53"
-	UDPResolver    = "udp"
-	DOHResolver    = "doh"
-	TCPResolver    = "tcp"
-	DOTResolver    = "dot"
+	DefaultTCPPort   = "53"
+	UDPResolver      = "udp"
+	DOHResolver      = "doh"
+	TCPResolver      = "tcp"
+	DOTResolver      = "dot"
+	DNSCryptResolver = "dnscrypt"
 )
 
 // QueryFlags is used store the query params
