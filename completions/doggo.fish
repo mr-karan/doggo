@@ -12,7 +12,7 @@ complete -c doggo -s 'n' -l 'nameserver' -d "Address of a specific nameserver to
 complete -c doggo -s 'c' -l 'class'      -d "Network class of the DNS record being queried" -x -a "IN CH HS"
 
 # Transport options
-complete -c doggo -x -a "@udp:// @tcp:// @https:// @tls://"          -d "Select the protocol for resolving queries"
+complete -c doggo -x -a "@udp:// @tcp:// @https:// @tls:// @sdns://"          -d "Select the protocol for resolving queries"
 
 # Resolver options
 complete -c doggo -l 'ndots'             -d "Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise"

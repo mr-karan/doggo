@@ -12,7 +12,7 @@
 
 ---
 
-**doggo** is a modern command-line DNS client (like _dig_) written in Golang. It outputs information in a neat concise manner and supports protocols like DoH, DoT as well.
+**doggo** is a modern command-line DNS client (like _dig_) written in Golang. It outputs information in a neat concise manner and supports protocols like DoH, DoT and DNSCrypt as well.
 
 It's totally inspired from [dog](https://github.com/ogham/dog/) which is written in Rust. I wanted to add some features to it but since I don't know Rust, I found it as a nice opportunity
 to experiment with writing a DNS Client from scratch in `Go` myself. Hence the name `dog` +`go` => **doggo**.
@@ -195,6 +195,8 @@ URL scheme of the server is used to identify which resolver to use for lookups. 
   @tcp://        eg: @1.1.1.1 initiates a TCP resolver for 1.1.1.1:53.
   @https://      eg: @https://cloudflare-dns.com/dns-query initiates a DOH resolver for Cloudflare DoH server.
   @tls://        eg: @1.1.1.1 initiates a DoT resolver for 1.1.1.1:853.
+  @sdns://       eg: @sdns://AgcAAAAAAAAABzEuMC4wLjEAEmRucy5jbG91ZGZsYXJlLmNvbQovZG5zLXF1ZXJ5
+                 initiates a DNSCrypt or DoH resolver using its DNS stamp
 ```
 
 ### Query Options

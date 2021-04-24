@@ -127,6 +127,17 @@ func LoadResolvers(opts Options) ([]Resolver, error) {
 			}
 			rslvrs = append(rslvrs, rslvr)
 		}
+		if ns.Type == models.DNSCryptResolver {
+			opts.Logger.Debug("initiating DNSCrypt resolver")
+			rslvr, err := NewDNSCryptResolver(ns.Address,
+				DNSCryptResolverOpts{
+					UseTCP: false,
+				}, resolverOpts)
+			if err != nil {
+				return rslvrs, err
+			}
+			rslvrs = append(rslvrs, rslvr)
+		}
 	}
 	return rslvrs, nil
 }
