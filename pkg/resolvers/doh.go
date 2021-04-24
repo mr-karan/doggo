@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -63,6 +64,17 @@ func (r *DOHResolver) Lookup(question dns.Question) (Response, error) {
 		resp, err := r.client.Post(r.server, "application/dns-message", bytes.NewBuffer(b))
 		if err != nil {
 			return rsp, err
+		}
+		if resp.StatusCode == http.StatusMethodNotAllowed {
+			url, err := url.Parse(r.server)
+			if err != nil {
+				return rsp, err
+			}
+			url.RawQuery = fmt.Sprintf("dns=%v", base64.RawURLEncoding.EncodeToString(b))
+			resp, err = r.client.Get(url.String())
+			if err != nil {
+				return rsp, err
+			}
 		}
 		if resp.StatusCode != http.StatusOK {
 			return rsp, fmt.Errorf("error from nameserver %s", resp.Status)
