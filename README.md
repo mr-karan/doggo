@@ -196,7 +196,7 @@ URL scheme of the server is used to identify which resolver to use for lookups. 
   @https://      eg: @https://cloudflare-dns.com/dns-query initiates a DOH resolver for Cloudflare DoH server.
   @tls://        eg: @1.1.1.1 initiates a DoT resolver for 1.1.1.1:853.
   @sdns://       eg: @sdns://AgcAAAAAAAAABzEuMC4wLjEAEmRucy5jbG91ZGZsYXJlLmNvbQovZG5zLXF1ZXJ5
-                 initiates a DNSCrypt or DoH resolver using its DNS stamp
+                 initiates a DNSCrypt or DoH resolver using its DNS stamp.
 ```
 
 ### Query Options
