@@ -61,7 +61,8 @@ func initNameserver(n string) (models.Nameserver, error) {
 	if err != nil {
 		return ns, err
 	}
-	if u.Scheme == "sdns" {
+	switch u.Scheme {
+	case "sdns":
 		stamp, err := dnsstamps.NewServerStampFromString(n)
 		if err != nil {
 			return ns, err
@@ -77,28 +78,28 @@ func initNameserver(n string) (models.Nameserver, error) {
 		default:
 			return ns, fmt.Errorf("unsupported protocol: %v", stamp.Proto.String())
 		}
-	}
-	if u.Scheme == "https" {
+
+	case "https":
 		ns.Type = models.DOHResolver
 		ns.Address = u.String()
-	}
-	if u.Scheme == "tls" {
+
+	case "tls":
 		ns.Type = models.DOTResolver
 		if u.Port() == "" {
 			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultTLSPort)
 		} else {
 			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
 		}
-	}
-	if u.Scheme == "tcp" {
+
+	case "tcp":
 		ns.Type = models.TCPResolver
 		if u.Port() == "" {
 			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultTCPPort)
 		} else {
 			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
 		}
-	}
-	if u.Scheme == "udp" {
+
+	case "udp":
 		ns.Type = models.UDPResolver
 		if u.Port() == "" {
 			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultUDPPort)
