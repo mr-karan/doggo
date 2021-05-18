@@ -137,7 +137,6 @@ func main() {
 			resp, err := rslv.Lookup(q)
 			if err != nil {
 				app.Logger.WithError(err).Error("error looking up DNS records")
-				app.Logger.Exit(2)
 			}
 			responses = append(responses, resp)
 		}
