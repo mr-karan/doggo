@@ -1,4 +1,4 @@
-CLI_BIN := ./bin/doggo-cli.bin
+CLI_BIN := ./bin/doggo.bin
 API_BIN := ./bin/doggo-api.bin
 
 HASH := $(shell git rev-parse --short HEAD)

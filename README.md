@@ -82,7 +82,6 @@ You need to have `go` installed in your system.
 
 ```bash
 $ go get github.com/mr-karan/doggo/cmd/doggo
-$ mv $GOPATH/bin/cli $GOPATH/bin/doggo 
 ```
 
 The binary will be available at `$GOPATH/bin/doggo`.
