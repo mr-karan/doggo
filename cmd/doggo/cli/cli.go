@@ -37,6 +37,7 @@ func main() {
 	f.StringSliceP("type", "t", []string{}, "Type of DNS record to be queried (A, AAAA, MX etc)")
 	f.StringSliceP("class", "c", []string{}, "Network class of the DNS record to be queried (IN, CH, HS etc)")
 	f.StringSliceP("nameservers", "n", []string{}, "Address of the nameserver to send packets to")
+	f.BoolP("reverse", "x", false, "Performs a DNS Lookup for an IPv4 or IPv6 address. Sets the query type and class to PTR and IN respectively.")
 
 	// Resolver Options
 	f.Int("timeout", 5, "Sets the timeout for a query to T seconds. The default timeout is 5 seconds.")
@@ -93,6 +94,15 @@ func main() {
 	app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, qt...)
 	app.QueryFlags.QClasses = append(app.QueryFlags.QClasses, qc...)
 	app.QueryFlags.QNames = append(app.QueryFlags.QNames, qn...)
+
+	// Check if reverse flag is passed. If it is, then set
+	// query type as PTR and query class as IN.
+	// Modify query name like 94.2.0.192.in-addr.arpa if it's an IPv4 address.
+	// Use IP6.ARPA nibble format otherwise.
+
+	if app.QueryFlags.ReverseLookup {
+		app.ReverseLookup()
+	}
 
 	// Load fallbacks.
 	app.LoadFallbacks()

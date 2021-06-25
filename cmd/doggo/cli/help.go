@@ -43,6 +43,7 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{"-t, --type=TYPE" | color "yellow" ""}}             Type of the DNS Record ({{"A, MX, NS" | color "cyan" ""}} etc).
   {{"-n, --nameserver=ADDR" | color "yellow" ""}}       Address of a specific nameserver to send queries to ({{"9.9.9.9, 8.8.8.8" | color "cyan" ""}} etc).
   {{"-c, --class=CLASS" | color "yellow" ""}}           Network class of the DNS record ({{"IN, CH, HS" | color "cyan" ""}} etc).
+  {{"-x, --reverse" | color "yellow" ""}}               Performs a DNS Lookup for an IPv4 or IPv6 address. Sets the query type and class to PTR and IN respectively.
 
 {{ "Resolver Options" | color "" "heading" }}:
   {{"--ndots=INT" | color "yellow" ""}}        Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise.

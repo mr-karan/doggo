@@ -32,6 +32,7 @@ to experiment with writing a DNS Client from scratch in `Go` myself. Hence the n
 - Supports IPv4 **and** IPv6 _both_.
 - Available as a web tool as well: [https://doggo.mrkaran.dev](https://doggo.mrkaran.dev).
 - Shell completions for `zsh` and `fish`.
+- Reverse DNS Lookups.
 
 ## Installation
 

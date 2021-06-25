@@ -3,11 +3,11 @@ package models
 import "time"
 
 const (
-	// DefaultTLSPort specifies the default port for a DNS server connecting over TCP over TLS
+	// DefaultTLSPort specifies the default port for a DNS server connecting over TCP over TLS.
 	DefaultTLSPort = "853"
-	// DefaultUDPPort specifies the default port for a DNS server connecting over UDP
+	// DefaultUDPPort specifies the default port for a DNS server connecting over UDP.
 	DefaultUDPPort = "53"
-	// DefaultTCPPort specifies the default port for a DNS server connecting over TCP
+	// DefaultTCPPort specifies the default port for a DNS server connecting over TCP.
 	DefaultTCPPort   = "53"
 	UDPResolver      = "udp"
 	DOHResolver      = "doh"
@@ -31,6 +31,7 @@ type QueryFlags struct {
 	DisplayTimeTaken bool          `koanf:"time" json:"-"`
 	ShowJSON         bool          `koanf:"json" json:"-"`
 	UseSearchList    bool          `koanf:"search" json:"-"`
+	ReverseLookup    bool          `koanf:"reverse" reverse:"-"`
 }
 
 // Nameserver represents the type of Nameserver
