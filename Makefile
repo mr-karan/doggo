@@ -7,11 +7,11 @@ VERSION := ${HASH}
 
 .PHONY: build-cli
 build-cli:
-	go build -o ${CLI_BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" ./cmd/doggo/cli/
+	go build -o ${CLI_BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" ./cmd/doggo/
 
 .PHONY: build-api
 build-api:
-	go build -o ${API_BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" ./cmd/doggo/api/
+	go build -o ${API_BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" ./cmd/api/
 
 .PHONY: build
 build: build-api build-cli
