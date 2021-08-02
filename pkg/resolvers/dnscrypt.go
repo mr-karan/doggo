@@ -1,7 +1,9 @@
 package resolvers
 
 import (
-	"github.com/ameshkov/dnscrypt"
+	"time"
+
+	"github.com/ameshkov/dnscrypt/v2"
 	"github.com/miekg/dns"
 	"github.com/sirupsen/logrus"
 )
@@ -9,8 +11,8 @@ import (
 // DNSCryptResolver represents the config options for setting up a Resolver.
 type DNSCryptResolver struct {
 	client          *dnscrypt.Client
-	serverInfo      *dnscrypt.ServerInfo
 	server          string
+	resolverInfo    *dnscrypt.ResolverInfo
 	resolverOptions Options
 }
 
@@ -28,15 +30,15 @@ func NewDNSCryptResolver(server string, dnscryptOpts DNSCryptResolverOpts, resol
 	if dnscryptOpts.UseTCP {
 		net = "tcp"
 	}
-	client := &dnscrypt.Client{Proto: net, AdjustPayloadSize: true}
-	serverInfo, _, err := client.Dial(server)
+	client := &dnscrypt.Client{Net: net, Timeout: resolverOpts.Timeout, UDPSize: 4096}
+	resolverInfo, err := client.Dial(server)
 	if err != nil {
 		return nil, err
 	}
 	return &DNSCryptResolver{
 		client:          client,
-		serverInfo:      serverInfo,
-		server:          serverInfo.ServerAddress,
+		resolverInfo:    resolverInfo,
+		server:          resolverInfo.ServerAddress,
 		resolverOptions: resolverOpts,
 	}, nil
 }
@@ -54,10 +56,12 @@ func (r *DNSCryptResolver) Lookup(question dns.Question) (Response, error) {
 			"ndots":      r.resolverOptions.Ndots,
 			"nameserver": r.server,
 		}).Debug("Attempting to resolve")
-		in, rtt, err := r.client.Exchange(&msg, r.serverInfo)
+		now := time.Now()
+		in, err := r.client.Exchange(&msg, r.resolverInfo)
 		if err != nil {
 			return rsp, err
 		}
+		rtt := time.Since(now)
 		// pack questions in output.
 		for _, q := range msg.Question {
 			ques := Question{
