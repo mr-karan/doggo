@@ -80,6 +80,14 @@ func (r *DOHResolver) Lookup(question dns.Question) (Response, error) {
 			return rsp, fmt.Errorf("error from nameserver %s", resp.Status)
 		}
 		rtt := time.Since(now)
+		// if debug, extract the response headers
+		if r.resolverOptions.Logger.IsLevelEnabled(logrus.DebugLevel) {
+			for header, value := range resp.Header {
+				r.resolverOptions.Logger.WithFields(logrus.Fields{
+					header: value,
+				}).Debug("DOH response header")
+			}
+		}
 		// extract the binary response in DNS Message.
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
