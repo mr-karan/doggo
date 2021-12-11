@@ -138,6 +138,14 @@ func LoadResolvers(opts Options) ([]Resolver, error) {
 			}
 			rslvrs = append(rslvrs, rslvr)
 		}
+		if ns.Type == models.DOQResolver {
+			opts.Logger.Debug("initiating DOQ resolver")
+			rslvr, err := NewDOQResolver(ns.Address, resolverOpts)
+			if err != nil {
+				return rslvrs, err
+			}
+			rslvrs = append(rslvrs, rslvr)
+		}
 	}
 	return rslvrs, nil
 }

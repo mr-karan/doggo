@@ -106,6 +106,13 @@ func initNameserver(n string) (models.Nameserver, error) {
 		} else {
 			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
 		}
+	case "quic":
+		ns.Type = models.DOQResolver
+		if u.Port() == "" {
+			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultDOQPort)
+		} else {
+			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
+		}
 	}
 	return ns, nil
 }
