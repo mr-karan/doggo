@@ -42,21 +42,14 @@ archives:
       - LICENSE
       - completions/
 
-snapcrafts:
-  - name_template: "{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
-    summary: Command-line DNS client.
-    description: |
-      doggo is a command-line DNS client written in Go. It supports protocols like DoH, DoT and output formats like JSON.
-    grade: stable
-    confinement: strict
-    publish: true
-
 dockers:
   - image_templates:
       - "ghcr.io/mr-karan/doggo:{{ .Tag }}"
       - "ghcr.io/mr-karan/doggo:latest"
-    binaries:
-      - doggo
+    id: doggo
+    # IDs to filter the binaries/packages.
+    ids:
+      - cli
     dockerfile: Dockerfile-cli
     build_flag_templates:
       - "--build-arg"
@@ -64,8 +57,10 @@ dockers:
   - image_templates:
       - "ghcr.io/mr-karan/doggo:{{ .Tag }}-arm64v8"
       - "ghcr.io/mr-karan/doggo:latest-arm64v8"
-    binaries:
-      - doggo
+    id: doggo-arm
+    # IDs to filter the binaries/packages.
+    ids:
+      - cli
     goarch: arm64
     dockerfile: Dockerfile-cli
     build_flag_templates:
@@ -73,10 +68,11 @@ dockers:
       - "ARCH=arm64v8"
 
   - image_templates:
-      - "ghcr.io/mr-karan/doggo-api:{{ .Tag }}"
-      - "ghcr.io/mr-karan/doggo-api:latest"
-    binaries:
-      - doggo-api.bin
+      - "ghcr.io/mr-karan/doggo:api-{{ .Tag }}"
+      - "ghcr.io/mr-karan/doggo:api:latest"
+    id: doggo-api
+    ids:
+      - api
     dockerfile: Dockerfile-api
     build_flag_templates:
       - "--build-arg"
@@ -86,8 +82,9 @@ dockers:
   - image_templates:
       - "ghcr.io/mr-karan/doggo-api:{{ .Tag }}-arm64v8"
       - "ghcr.io/mr-karan/doggo-api:latest-arm64v8"
-    binaries:
-      - doggo-api.bin
+    id: doggo-api-arm
+    ids:
+      - api
     goarch: arm64
     dockerfile: Dockerfile-api
     build_flag_templates:
