@@ -64,17 +64,13 @@ You can supply all arguments to the CLI directly to `docker run` command. Eg:
 
 `docker run ghcr.io/mr-karan/doggo:latest mrkaran.dev @1.1.1.1 MX`
 
-### Using snap
+### Package Managers
 
-[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/doggo)
+#### Arch
 
-```sh
-$ sudo snap install doggo
+```bash
+yay -S doggo-bin
 ```
-
-**NOTE**: Since the [confinement](https://snapcraft.io/docs/snap-confinement) mode is strict as of now, it cannot access your host's `/etc/resolv.conf`.
-I'll be making a request in the Snap forums soon so that it can be manually reviewed and allowed to use `--classic`. Until then, please specify a nameserver manually
-if using `snap`.
 
 ### From Source
 
@@ -198,6 +194,8 @@ URL scheme of the server is used to identify which resolver to use for lookups. 
   @tls://        eg: @1.1.1.1 initiates a DoT resolver for 1.1.1.1:853.
   @sdns://       eg: @sdns://AgcAAAAAAAAABzEuMC4wLjEAEmRucy5jbG91ZGZsYXJlLmNvbQovZG5zLXF1ZXJ5
                  initiates a DNSCrypt or DoH resolver using its DNS stamp.
+  @quic://       eg: @quic://dns.adguard.com
+                 initiates a DNS over QUIC resolver for Adguard DNS Resolver.
 ```
 
 ### Query Options
