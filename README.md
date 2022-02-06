@@ -77,7 +77,7 @@ yay -S doggo-bin
 You need to have `go` installed in your system.
 
 ```bash
-$ go get github.com/mr-karan/doggo/cmd/doggo
+$ go install github.com/mr-karan/doggo/cmd/doggo@latest
 ```
 
 The binary will be available at `$GOPATH/bin/doggo`.
