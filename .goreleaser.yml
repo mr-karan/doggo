@@ -67,28 +67,28 @@ dockers:
       - "--build-arg"
       - "ARCH=arm64v8"
 
-  - image_templates:
-      - "ghcr.io/mr-karan/doggo-api:{{ .Tag }}"
-      - "ghcr.io/mr-karan/doggo-api:latest"
-    id: doggo-api
-    ids:
-      - api
-    dockerfile: Dockerfile-api
-    build_flag_templates:
-      - "--build-arg"
-      - "ARCH=amd64"
-    extra_files:
-      - config-api-sample.toml
-  - image_templates:
-      - "ghcr.io/mr-karan/doggo-api:{{ .Tag }}-arm64v8"
-      - "ghcr.io/mr-karan/doggo-api:latest-arm64v8"
-    id: doggo-api-arm
-    ids:
-      - api
-    goarch: arm64
-    dockerfile: Dockerfile-api
-    build_flag_templates:
-      - "--build-arg"
-      - "ARCH=arm64v8"
-    extra_files:
-      - config-api-sample.toml
+  # - image_templates:
+  #     - "ghcr.io/mr-karan/doggo-api:{{ .Tag }}"
+  #     - "ghcr.io/mr-karan/doggo-api:latest"
+  #   id: doggo-api
+  #   ids:
+  #     - api
+  #   dockerfile: Dockerfile-api
+  #   build_flag_templates:
+  #     - "--build-arg"
+  #     - "ARCH=amd64"
+  #   extra_files:
+  #     - config-api-sample.toml
+  # - image_templates:
+  #     - "ghcr.io/mr-karan/doggo-api:{{ .Tag }}-arm64v8"
+  #     - "ghcr.io/mr-karan/doggo-api:latest-arm64v8"
+  #   id: doggo-api-arm
+  #   ids:
+  #     - api
+  #   goarch: arm64
+  #   dockerfile: Dockerfile-api
+  #   build_flag_templates:
+  #     - "--build-arg"
+  #     - "ARCH=arm64v8"
+  #   extra_files:
+  #     - config-api-sample.toml
