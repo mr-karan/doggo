@@ -68,7 +68,7 @@ dockers:
       - "ARCH=arm64v8"
 
   - image_templates:
-      - "ghcr.io/mr-karan/doggo:api-{{ .Tag }}"
+      - "ghcr.io/mr-karan/doggo:api{{ .Tag }}"
       - "ghcr.io/mr-karan/doggo:api:latest"
     id: doggo-api
     ids:
