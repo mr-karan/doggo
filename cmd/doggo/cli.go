@@ -45,6 +45,7 @@ func main() {
 	f.Int("ndots", -1, "Specify the ndots parameter. Default value is taken from resolv.conf and fallbacks to 1 if ndots statement is missing in resolv.conf")
 	f.BoolP("ipv4", "4", false, "Use IPv4 only")
 	f.BoolP("ipv6", "6", false, "Use IPv6 only")
+	f.String("strategy", "all", "Strategy to query nameservers in resolv.conf file (`all`, `random`, `first`)")
 
 	// Output Options
 	f.BoolP("json", "J", false, "Set the output format as JSON")
@@ -126,6 +127,7 @@ func main() {
 		Ndots:       app.ResolverOpts.Ndots,
 		Timeout:     app.QueryFlags.Timeout * time.Second,
 		Logger:      app.Logger,
+		Strategy:    app.QueryFlags.Strategy,
 	})
 	if err != nil {
 		app.Logger.WithError(err).Error("error loading resolver")

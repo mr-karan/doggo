@@ -35,6 +35,7 @@ type QueryFlags struct {
 	ShowJSON         bool          `koanf:"json" json:"-"`
 	UseSearchList    bool          `koanf:"search" json:"-"`
 	ReverseLookup    bool          `koanf:"reverse" reverse:"-"`
+	Strategy         string        `koanf:"strategy" strategy:"-"`
 }
 
 // Nameserver represents the type of Nameserver

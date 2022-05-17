@@ -62,5 +62,8 @@
 - [ ] Add tests for CLI Output.
 - [ ] Homebrew - Goreleaser
 - [ ] Add support for `dig +trace` like functionality.
+- [ ] Add `dig +x` short output
+- [x] Add `--strategy` for picking nameservers.
+- [ ] Explore `dig.rc` kinda file
 - [x] Separate Authority/Answer in JSON output.
 - [x] Error on NXDomain (Related upstream [bug](https://github.com/miekg/dns/issues/1198))

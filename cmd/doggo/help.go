@@ -47,11 +47,12 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{"-x, --reverse" | color "yellow" ""}}               Performs a DNS Lookup for an IPv4 or IPv6 address. Sets the query type and class to PTR and IN respectively.
 
 {{ "Resolver Options" | color "" "heading" }}:
-  {{"--ndots=INT" | color "yellow" ""}}        Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise.
-  {{"--search" | color "yellow" ""}}           Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list.
-  {{"--timeout" | color "yellow" ""}}          Specify timeout (in seconds) for the resolver to return a response.
-  {{"-4 --ipv4" | color "yellow" ""}}          Use IPv4 only.
-  {{"-6 --ipv6" | color "yellow" ""}}          Use IPv6 only.
+  {{"--strategy=STRATEGY" | color "yellow" ""}}      Specify strategy to query nameserver listed in etc/resolv.conf. ({{"all, random, first" | color "cyan" ""}}).
+  {{"--ndots=INT" | color "yellow" ""}}              Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise.
+  {{"--search" | color "yellow" ""}}                 Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list.
+  {{"--timeout" | color "yellow" ""}}                Specify timeout (in seconds) for the resolver to return a response.
+  {{"-4 --ipv4" | color "yellow" ""}}                Use IPv4 only.
+  {{"-6 --ipv6" | color "yellow" ""}}                Use IPv6 only.
 
 {{ "Output Options" | color "" "heading" }}:
   {{"-J, --json " | color "yellow" ""}}                 Format the output as JSON.

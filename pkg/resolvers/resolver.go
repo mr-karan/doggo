@@ -18,6 +18,7 @@ type Options struct {
 	Ndots       int
 	Timeout     time.Duration
 	Logger      *logrus.Logger
+	Strategy    string
 }
 
 // Resolver implements the configuration for a DNS

@@ -2,8 +2,10 @@ package app
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"net/url"
+	"time"
 
 	"github.com/ameshkov/dnsstamps"
 	"github.com/mr-karan/doggo/pkg/config"
@@ -29,7 +31,7 @@ func (app *App) LoadNameservers() error {
 	// fallback to system nameserver
 	// in case no nameserver is specified by user.
 	if len(app.Nameservers) == 0 {
-		ns, ndots, search, err := getDefaultServers()
+		ns, ndots, search, err := getDefaultServers(app.QueryFlags.Strategy)
 		if err != nil {
 			return fmt.Errorf("error fetching system default nameserver")
 		}
@@ -117,18 +119,44 @@ func initNameserver(n string) (models.Nameserver, error) {
 	return ns, nil
 }
 
-func getDefaultServers() ([]models.Nameserver, int, []string, error) {
+func getDefaultServers(strategy string) ([]models.Nameserver, int, []string, error) {
+	// Load nameservers from `/etc/resolv.conf`.
 	dnsServers, ndots, search, err := config.GetDefaultServers()
 	if err != nil {
 		return nil, 0, nil, err
 	}
 	servers := make([]models.Nameserver, 0, len(dnsServers))
-	for _, s := range dnsServers {
+
+	switch strategy {
+	case "random":
+		// Choose a random server from the list.
+		rand.Seed(time.Now().Unix())
+		srv := dnsServers[rand.Intn(len(dnsServers))]
 		ns := models.Nameserver{
 			Type:    models.UDPResolver,
-			Address: net.JoinHostPort(s, models.DefaultUDPPort),
+			Address: net.JoinHostPort(srv, models.DefaultUDPPort),
 		}
 		servers = append(servers, ns)
+
+	case "first":
+		// Choose the first from the list, always.
+		srv := dnsServers[0]
+		ns := models.Nameserver{
+			Type:    models.UDPResolver,
+			Address: net.JoinHostPort(srv, models.DefaultUDPPort),
+		}
+		servers = append(servers, ns)
+
+	default:
+		// Default behaviour is to load all nameservers.
+		for _, s := range dnsServers {
+			ns := models.Nameserver{
+				Type:    models.UDPResolver,
+				Address: net.JoinHostPort(s, models.DefaultUDPPort),
+			}
+			servers = append(servers, ns)
+		}
 	}
+
 	return servers, ndots, search, nil
 }
