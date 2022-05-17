@@ -1,6 +1,8 @@
 package resolvers
 
 import (
+	"time"
+
 	"github.com/miekg/dns"
 	"github.com/sirupsen/logrus"
 )
@@ -65,11 +67,15 @@ func (r *ClassicResolver) Lookup(question dns.Question) (Response, error) {
 			"ndots":      r.resolverOptions.Ndots,
 			"nameserver": r.server,
 		}).Debug("Attempting to resolve")
-		in, rtt, err := r.client.Exchange(&msg, r.server)
+
+		// Since the library doesn't include tcp.Dial time,
+		// it's better to not rely on `rtt` provided here and calculate it ourselves.
+		now := time.Now()
+		in, _, err := r.client.Exchange(&msg, r.server)
 		if err != nil {
 			return rsp, err
 		}
-		// pack questions in output.
+		// Pack questions in output.
 		for _, q := range msg.Question {
 			ques := Question{
 				Name:  q.Name,
@@ -78,13 +84,15 @@ func (r *ClassicResolver) Lookup(question dns.Question) (Response, error) {
 			}
 			rsp.Questions = append(rsp.Questions, ques)
 		}
-		// get the authorities and answers.
+		rtt := time.Since(now)
+
+		// Get the authorities and answers.
 		output := parseMessage(in, rtt, r.server)
 		rsp.Authorities = output.Authorities
 		rsp.Answers = output.Answers
 
 		if len(output.Answers) > 0 {
-			// stop iterating the searchlist.
+			// Stop iterating the searchlist.
 			break
 		}
 	}
