@@ -56,6 +56,7 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
 
 {{ "Output Options" | color "" "heading" }}:
   {{"-J, --json " | color "yellow" ""}}                 Format the output as JSON.
+  {{"--short" | color "yellow" ""}}                     Short output format. Shows only the response section.
   {{"--color   " | color "yellow" ""}}                  Defaults to true. Set --color=false to disable colored output.
   {{"--debug " | color "yellow" ""}}                    Enable debug logging.
   {{"--time" | color "yellow" ""}}                      Shows how long the response took from the server.

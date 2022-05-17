@@ -33,6 +33,7 @@ type QueryFlags struct {
 	Color            bool          `koanf:"color" json:"-"`
 	DisplayTimeTaken bool          `koanf:"time" json:"-"`
 	ShowJSON         bool          `koanf:"json" json:"-"`
+	ShortOutput      bool          `koanf:"short" short:"-"`
 	UseSearchList    bool          `koanf:"search" json:"-"`
 	ReverseLookup    bool          `koanf:"reverse" reverse:"-"`
 	Strategy         string        `koanf:"strategy" strategy:"-"`

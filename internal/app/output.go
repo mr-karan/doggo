@@ -21,6 +21,14 @@ func (app *App) outputJSON(rsp []resolvers.Response) {
 	fmt.Printf("%s", res)
 }
 
+func (app *App) outputShort(rsp []resolvers.Response) {
+	for _, r := range rsp {
+		for _, a := range r.Answers {
+			fmt.Printf("%s\n", a.Address)
+		}
+	}
+}
+
 func (app *App) outputTerminal(rsp []resolvers.Response) {
 	var (
 		green   = color.New(color.FgGreen, color.Bold).SprintFunc()
@@ -134,6 +142,8 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 func (app *App) Output(responses []resolvers.Response) {
 	if app.QueryFlags.ShowJSON {
 		app.outputJSON(responses)
+	} else if app.QueryFlags.ShortOutput {
+		app.outputShort(responses)
 	} else {
 		app.outputTerminal(responses)
 	}

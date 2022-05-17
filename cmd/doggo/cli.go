@@ -49,6 +49,7 @@ func main() {
 
 	// Output Options
 	f.BoolP("json", "J", false, "Set the output format as JSON")
+	f.Bool("short", false, "Short output format")
 	f.Bool("time", false, "Display how long it took for the response to arrive")
 	f.Bool("color", true, "Show colored output")
 	f.Bool("debug", false, "Enable debug mode")
