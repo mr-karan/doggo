@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"crypto/tls"
 	"time"
 
 	"github.com/miekg/dns"
@@ -16,10 +17,8 @@ type ClassicResolver struct {
 
 // ClassicResolverOpts holds options for setting up a Classic resolver.
 type ClassicResolverOpts struct {
-	IPv4Only bool
-	IPv6Only bool
-	UseTLS   bool
-	UseTCP   bool
+	UseTLS bool
+	UseTCP bool
 }
 
 // NewClassicResolver accepts a list of nameservers and configures a DNS resolver.
@@ -34,15 +33,20 @@ func NewClassicResolver(server string, classicOpts ClassicResolverOpts, resolver
 		net = "tcp"
 	}
 
-	if classicOpts.IPv4Only {
+	if resolverOpts.UseIPv4 {
 		net = net + "4"
 	}
-	if classicOpts.IPv6Only {
+	if resolverOpts.UseIPv6 {
 		net = net + "6"
 	}
 
 	if classicOpts.UseTLS {
 		net = net + "-tls"
+		// Provide extra TLS config for doing/skipping hostname verification.
+		client.TLSConfig = &tls.Config{
+			ServerName:         resolverOpts.TLSHostname,
+			InsecureSkipVerify: resolverOpts.InsecureSkipVerify,
+		}
 	}
 
 	client.Net = net

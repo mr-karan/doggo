@@ -11,14 +11,17 @@ import (
 // Options represent a set of common options
 // to configure a Resolver.
 type Options struct {
-	Nameservers []models.Nameserver
-	UseIPv4     bool
-	UseIPv6     bool
-	SearchList  []string
-	Ndots       int
-	Timeout     time.Duration
-	Logger      *logrus.Logger
-	Strategy    string
+	Logger *logrus.Logger
+
+	Nameservers        []models.Nameserver
+	UseIPv4            bool
+	UseIPv6            bool
+	SearchList         []string
+	Ndots              int
+	Timeout            time.Duration
+	Strategy           string
+	InsecureSkipVerify bool
+	TLSHostname        string
 }
 
 // Resolver implements the configuration for a DNS
@@ -68,18 +71,13 @@ type Authority struct {
 // LoadResolvers loads differently configured
 // resolvers based on a list of nameserver.
 func LoadResolvers(opts Options) ([]Resolver, error) {
-	var resolverOpts = Options{
-		Timeout:    opts.Timeout,
-		Ndots:      opts.Ndots,
-		SearchList: opts.SearchList,
-		Logger:     opts.Logger,
-	}
-	// for each nameserver, initialise the correct resolver
+	// For each nameserver, initialise the correct resolver.
 	rslvrs := make([]Resolver, 0, len(opts.Nameservers))
+
 	for _, ns := range opts.Nameservers {
 		if ns.Type == models.DOHResolver {
 			opts.Logger.Debug("initiating DOH resolver")
-			rslvr, err := NewDOHResolver(ns.Address, resolverOpts)
+			rslvr, err := NewDOHResolver(ns.Address, opts)
 			if err != nil {
 				return rslvrs, err
 			}
@@ -89,11 +87,9 @@ func LoadResolvers(opts Options) ([]Resolver, error) {
 			opts.Logger.Debug("initiating DOT resolver")
 			rslvr, err := NewClassicResolver(ns.Address,
 				ClassicResolverOpts{
-					IPv4Only: opts.UseIPv4,
-					IPv6Only: opts.UseIPv6,
-					UseTLS:   true,
-					UseTCP:   true,
-				}, resolverOpts)
+					UseTLS: true,
+					UseTCP: true,
+				}, opts)
 
 			if err != nil {
 				return rslvrs, err
@@ -104,11 +100,9 @@ func LoadResolvers(opts Options) ([]Resolver, error) {
 			opts.Logger.Debug("initiating TCP resolver")
 			rslvr, err := NewClassicResolver(ns.Address,
 				ClassicResolverOpts{
-					IPv4Only: opts.UseIPv4,
-					IPv6Only: opts.UseIPv6,
-					UseTLS:   false,
-					UseTCP:   true,
-				}, resolverOpts)
+					UseTLS: false,
+					UseTCP: true,
+				}, opts)
 			if err != nil {
 				return rslvrs, err
 			}
@@ -118,11 +112,9 @@ func LoadResolvers(opts Options) ([]Resolver, error) {
 			opts.Logger.Debug("initiating UDP resolver")
 			rslvr, err := NewClassicResolver(ns.Address,
 				ClassicResolverOpts{
-					IPv4Only: opts.UseIPv4,
-					IPv6Only: opts.UseIPv6,
-					UseTLS:   false,
-					UseTCP:   false,
-				}, resolverOpts)
+					UseTLS: false,
+					UseTCP: false,
+				}, opts)
 			if err != nil {
 				return rslvrs, err
 			}
@@ -133,7 +125,7 @@ func LoadResolvers(opts Options) ([]Resolver, error) {
 			rslvr, err := NewDNSCryptResolver(ns.Address,
 				DNSCryptResolverOpts{
 					UseTCP: false,
-				}, resolverOpts)
+				}, opts)
 			if err != nil {
 				return rslvrs, err
 			}
@@ -141,7 +133,7 @@ func LoadResolvers(opts Options) ([]Resolver, error) {
 		}
 		if ns.Type == models.DOQResolver {
 			opts.Logger.Debug("initiating DOQ resolver")
-			rslvr, err := NewDOQResolver(ns.Address, resolverOpts)
+			rslvr, err := NewDOQResolver(ns.Address, opts)
 			if err != nil {
 				return rslvrs, err
 			}

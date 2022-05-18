@@ -210,12 +210,14 @@ URL scheme of the server is used to identify which resolver to use for lookups. 
 ### Resolver Options
 
 ```
-  --strategy=STRATEGY   Specify strategy to query nameserver listed in etc/resolv.conf. Defaults to `all` (`random`, `first`, `all`).
-  --ndots=INT           Specify ndots parameter. Takes value from /etc/resolv.conf if using the system nameserver or 1 otherwise.
-  --search              Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list.
-  --timeout             Specify timeout (in seconds) for the resolver to return a response.
-  -4 --ipv4             Use IPv4 only.
-  -6 --ipv6             Use IPv6 only.
+  --strategy=STRATEGY           Specify strategy to query nameserver listed in etc/resolv.conf. Defaults to `all` (`random`, `first`, `all`).
+  --ndots=INT                   Specify ndots parameter. Takes value from /etc/resolv.conf if using the system nameserver or 1 otherwise.
+  --search                      Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list.
+  --timeout                     Specify timeout (in seconds) for the resolver to return a response.
+  -4 --ipv4                     Use IPv4 only.
+  -6 --ipv6                     Use IPv6 only.
+  --tls-hostname=HOSTNAME       Provide a hostname for doing verification of the certificate if the provided DoT nameserver is an IP.
+  --skip-hostname-verification  Skip TLS Hostname Verification in case of DOT Lookups.
 ```
 
 

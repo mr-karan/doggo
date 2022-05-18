@@ -18,10 +18,7 @@ type DNSCryptResolver struct {
 
 // DNSCryptResolverOpts holds options for setting up a DNSCrypt resolver.
 type DNSCryptResolverOpts struct {
-	IPv4Only bool
-	IPv6Only bool
-	UseTLS   bool
-	UseTCP   bool
+	UseTCP bool
 }
 
 // NewDNSCryptResolver accepts a list of nameservers and configures a DNS resolver.
@@ -30,6 +27,7 @@ func NewDNSCryptResolver(server string, dnscryptOpts DNSCryptResolverOpts, resol
 	if dnscryptOpts.UseTCP {
 		net = "tcp"
 	}
+
 	client := &dnscrypt.Client{Net: net, Timeout: resolverOpts.Timeout, UDPSize: 4096}
 	resolverInfo, err := client.Dial(server)
 	if err != nil {

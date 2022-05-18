@@ -46,6 +46,8 @@ func main() {
 	f.BoolP("ipv4", "4", false, "Use IPv4 only")
 	f.BoolP("ipv6", "6", false, "Use IPv6 only")
 	f.String("strategy", "all", "Strategy to query nameservers in resolv.conf file (`all`, `random`, `first`)")
+	f.String("tls-hostname", "", "Provide a hostname for doing verification of the certificate if the provided DoT nameserver is an IP")
+	f.Bool("skip-hostname-verification", false, "Skip TLS Hostname Verification")
 
 	// Output Options
 	f.BoolP("json", "J", false, "Set the output format as JSON")
@@ -121,14 +123,16 @@ func main() {
 
 	// Load Resolvers.
 	rslvrs, err := resolvers.LoadResolvers(resolvers.Options{
-		Nameservers: app.Nameservers,
-		UseIPv4:     app.QueryFlags.UseIPv4,
-		UseIPv6:     app.QueryFlags.UseIPv6,
-		SearchList:  app.ResolverOpts.SearchList,
-		Ndots:       app.ResolverOpts.Ndots,
-		Timeout:     app.QueryFlags.Timeout * time.Second,
-		Logger:      app.Logger,
-		Strategy:    app.QueryFlags.Strategy,
+		Nameservers:        app.Nameservers,
+		UseIPv4:            app.QueryFlags.UseIPv4,
+		UseIPv6:            app.QueryFlags.UseIPv6,
+		SearchList:         app.ResolverOpts.SearchList,
+		Ndots:              app.ResolverOpts.Ndots,
+		Timeout:            app.QueryFlags.Timeout * time.Second,
+		Logger:             app.Logger,
+		Strategy:           app.QueryFlags.Strategy,
+		InsecureSkipVerify: app.QueryFlags.InsecureSkipVerify,
+		TLSHostname:        app.QueryFlags.TLSHostname,
 	})
 	if err != nil {
 		app.Logger.WithError(err).Error("error loading resolver")
