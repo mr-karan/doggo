@@ -79,6 +79,24 @@ func (r *ClassicResolver) Lookup(question dns.Question) (Response, error) {
 		if err != nil {
 			return rsp, err
 		}
+
+		// In case the response size exceeds 512 bytes (can happen with lot of TXT records),
+		// fallback to TCP as with UDP the response is truncated. Fallback mechanism is in-line with `dig`.
+		if in.Truncated {
+			switch r.client.Net {
+			case "udp":
+				r.client.Net = "tcp"
+			case "udp4":
+				r.client.Net = "tcp4"
+			case "udp6":
+				r.client.Net = "tcp6"
+			default:
+				r.client.Net = "tcp"
+			}
+			r.resolverOptions.Logger.WithField("protocol", r.client.Net).Debug("Response truncated; retrying now")
+			return r.Lookup(question)
+		}
+
 		// Pack questions in output.
 		for _, q := range msg.Question {
 			ques := Question{
