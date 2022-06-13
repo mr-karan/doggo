@@ -10,7 +10,7 @@ const (
 	// DefaultTCPPort specifies the default port for a DNS server connecting over TCP.
 	DefaultTCPPort = "53"
 	// DefaultDOQPort specifies the default port for a DNS server connecting over DNS over QUIC.
-	DefaultDOQPort   = "784"
+	DefaultDOQPort   = "853"
 	UDPResolver      = "udp"
 	DOHResolver      = "doh"
 	TCPResolver      = "tcp"
