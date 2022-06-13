@@ -76,6 +76,7 @@ func (r *DOQResolver) Lookup(question dns.Question) (Response, error) {
 		if err != nil {
 			return rsp, err
 		}
+		// Make a QUIC request to the DNS server with the DNS message as wire format bytes in the body.
 		_, err = stream.Write(b)
 		if err != nil {
 			return rsp, err
@@ -95,6 +96,8 @@ func (r *DOQResolver) Lookup(question dns.Question) (Response, error) {
 			return rsp, err
 		}
 		rtt := time.Since(now)
+
+		_ = stream.Close()
 
 		packetLen := binary.BigEndian.Uint16(buf[:2])
 		if packetLen != uint16(len(buf[2:])) {
@@ -122,8 +125,6 @@ func (r *DOQResolver) Lookup(question dns.Question) (Response, error) {
 			// stop iterating the searchlist.
 			break
 		}
-
-		_ = stream.Close()
 	}
 	return rsp, nil
 }
