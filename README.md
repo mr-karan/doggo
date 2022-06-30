@@ -66,6 +66,14 @@ You can supply all arguments to the CLI directly to `docker run` command. Eg:
 
 ### Package Managers
 
+#### Homebrew
+
+Install via [Homebrew](https://brew.sh/)
+
+```bash
+$ brew install doggo
+```
+
 #### Arch
 
 ```bash
