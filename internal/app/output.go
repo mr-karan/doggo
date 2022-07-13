@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/fatih/color"
 	"github.com/miekg/dns"
@@ -45,7 +44,7 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 	}
 
 	// Conditional Time column.
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(color.Output)
 	header := []string{"Name", "Type", "Class", "TTL", "Address", "Nameserver"}
 	if app.QueryFlags.DisplayTimeTaken {
 		header = append(header, "Time Taken")

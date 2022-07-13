@@ -100,7 +100,7 @@ func renderCustomHelp() {
 		// should ideally never happen.
 		panic(err)
 	}
-	err = tmpl.Execute(os.Stdout, helpTmplVars)
+	err = tmpl.Execute(color.Output, helpTmplVars)
 	if err != nil {
 		// should ideally never happen.
 		panic(err)
