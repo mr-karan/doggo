@@ -20,24 +20,24 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
 
 {{ "EXAMPLES" | color "" "heading" }}:
   {{ .Name | color "green" "bold" }} {{ "mrkaran.dev" | color "cyan" "" }}                            	Query a domain using defaults.
-  {{ .Name | color "green" "bold" }} {{ "mrkaran.dev CNAME" | color "cyan" "" }}                 	Looks up for a CNAME record.
+  {{ .Name | color "green" "bold" }} {{ "mrkaran.dev CNAME" | color "cyan" "" }}                 	Query for a CNAME record.
   {{ .Name | color "green" "bold" }} {{ "mrkaran.dev MX @9.9.9.9" | color "cyan" "" }}              	Uses a custom DNS resolver.
   {{ .Name | color "green" "bold" }} {{"-q mrkaran.dev -t MX -n 1.1.1.1" | color "yellow" ""}}   	Using named arguments.
 
 {{ "Free Form Arguments" | color "" "heading" }}:
-  Supply hostnames, query types, classes without any flag. For eg:
+  Supply hostnames, query types, and classes without flags. Example:
   {{ .Name | color "green" "bold" }} {{"mrkaran.dev A @1.1.1.1" | color "cyan" "" }}
 
 {{ "Transport Options" | color "" "heading" }}:
-  Based on the URL scheme the correct resolver is chosen.
-  Fallbacks to UDP resolver if no scheme is present.
+  Specify the protocol with a URL-type scheme.
+  UDP is used if no scheme is specified.
 
-  {{"@udp://" | color "yellow" ""}}        eg: @1.1.1.1 initiates a {{"UDP" | color "cyan" ""}} resolver for 1.1.1.1:53.
-  {{"@tcp://" | color "yellow" ""}}        eg: @tcp://1.1.1.1 initiates a {{"TCP" | color "cyan" ""}} resolver for 1.1.1.1:53.
-  {{"@https://" | color "yellow" ""}}      eg: @https://cloudflare-dns.com/dns-query initiates a {{"DOH" | color "cyan" ""}} resolver for Cloudflare DoH server.
-  {{"@tls://" | color "yellow" ""}}        eg: @tls://1.1.1.1 initiates a {{"DoT" | color "cyan" ""}} resolver for 1.1.1.1:853.
-  {{"@sdns://" | color "yellow" ""}}       initiates a {{"DNSCrypt" | color "cyan" ""}} or {{"DoH" | color "cyan" ""}} resolver using its DNS stamp.
-  {{"@quic://" | color "yellow" ""}}       initiates a {{"DOQ" | color "cyan" ""}} resolver.
+  {{"@udp://" | color "yellow" ""}}        eg: @1.1.1.1 initiates a {{"UDP" | color "cyan" ""}} query to 1.1.1.1:53.
+  {{"@tcp://" | color "yellow" ""}}        eg: @tcp://1.1.1.1 initiates a {{"TCP" | color "cyan" ""}} query to 1.1.1.1:53.
+  {{"@https://" | color "yellow" ""}}      eg: @https://cloudflare-dns.com/dns-query initiates a {{"DOH" | color "cyan" ""}} query to Cloudflare via DoH.
+  {{"@tls://" | color "yellow" ""}}        eg: @tls://1.1.1.1 initiates a {{"DoT" | color "cyan" ""}} query to 1.1.1.1:853.
+  {{"@sdns://" | color "yellow" ""}}       initiates a {{"DNSCrypt" | color "cyan" ""}} or {{"DoH" | color "cyan" ""}} query using a DNS stamp.
+  {{"@quic://" | color "yellow" ""}}       initiates a {{"DOQ" | color "cyan" ""}} query.
 
 {{ "Query Options" | color "" "heading" }}:
   {{"-q, --query=HOSTNAME" | color "yellow" ""}}        Hostname to query the DNS records for (eg {{"mrkaran.dev" | color "cyan" ""}}).
