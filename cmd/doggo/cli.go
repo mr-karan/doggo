@@ -148,16 +148,25 @@ func main() {
 	}
 
 	// Resolve Queries.
-	var responses []resolvers.Response
+	var (
+			responses []resolvers.Response
+			responseErrors []error
+	)
 	for _, q := range app.Questions {
 		for _, rslv := range app.Resolvers {
 			resp, err := rslv.Lookup(q)
 			if err != nil {
 				app.Logger.WithError(err).Error("error looking up DNS records")
+				responseErrors = append(responseErrors, err)
 			}
 			responses = append(responses, resp)
 		}
 	}
+
+	if len(responses) == 0 && len(responseErrors) > 0 {
+		app.Logger.Exit(9)
+	}
+
 	app.Output(responses)
 
 	// Quitting.
