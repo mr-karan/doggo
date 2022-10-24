@@ -36,7 +36,7 @@ func main() {
 	f.StringSliceP("query", "q", []string{}, "Domain name to query")
 	f.StringSliceP("type", "t", []string{}, "Type of DNS record to be queried (A, AAAA, MX etc)")
 	f.StringSliceP("class", "c", []string{}, "Network class of the DNS record to be queried (IN, CH, HS etc)")
-	f.StringSliceP("nameservers", "n", []string{}, "Address of the nameserver to send packets to")
+	f.StringSliceP("nameserver", "n", []string{}, "Address of the nameserver to send packets to")
 	f.BoolP("reverse", "x", false, "Performs a DNS Lookup for an IPv4 or IPv6 address. Sets the query type and class to PTR and IN respectively.")
 
 	// Resolver Options
