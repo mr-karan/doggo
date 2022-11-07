@@ -81,6 +81,14 @@ $ brew install doggo
 yay -S doggo-bin
 ```
 
+#### Scoop
+
+Install via [Scoop](https://scoop.sh/)
+
+```bash
+scoop install doggo
+```
+
 ### From Source
 
 You need to have `go` installed in your system.
