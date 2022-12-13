@@ -61,7 +61,11 @@ func initNameserver(n string) (models.Nameserver, error) {
 	}
 	u, err := url.Parse(n)
 	if err != nil {
-		return ns, err
+		ip := net.ParseIP(n)
+		if ip == nil {
+			return ns, err
+		}
+		return ns, nil
 	}
 	switch u.Scheme {
 	case "sdns":
