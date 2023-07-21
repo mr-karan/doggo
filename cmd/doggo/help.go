@@ -45,6 +45,7 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{"-n, --nameserver=ADDR" | color "yellow" ""}}       Address of a specific nameserver to send queries to ({{"9.9.9.9, 8.8.8.8" | color "cyan" ""}} etc).
   {{"-c, --class=CLASS" | color "yellow" ""}}           Network class of the DNS record ({{"IN, CH, HS" | color "cyan" ""}} etc).
   {{"-x, --reverse" | color "yellow" ""}}               Performs a DNS Lookup for an IPv4 or IPv6 address. Sets the query type and class to PTR and IN respectively.
+  {{"--trace" | color "yellow" ""}}                     Perform a dns trace operation against the given domain name
 
 {{ "Resolver Options" | color "" "heading" }}:
   {{"--strategy=STRATEGY" | color "yellow" ""}}          Specify strategy to query nameserver listed in etc/resolv.conf. ({{"all, random, first" | color "cyan" ""}}).

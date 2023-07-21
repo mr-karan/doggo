@@ -38,6 +38,7 @@ func main() {
 	f.StringSliceP("class", "c", []string{}, "Network class of the DNS record to be queried (IN, CH, HS etc)")
 	f.StringSliceP("nameserver", "n", []string{}, "Address of the nameserver to send packets to")
 	f.BoolP("reverse", "x", false, "Performs a DNS Lookup for an IPv4 or IPv6 address. Sets the query type and class to PTR and IN respectively.")
+	f.Bool("trace", false, "Perform a dns trace operation against the given domain name")
 
 	// Resolver Options
 	f.Int("timeout", 5, "Sets the timeout for a query to T seconds. The default timeout is 5 seconds.")
@@ -108,12 +109,6 @@ func main() {
 		app.ReverseLookup()
 	}
 
-	// Load fallbacks.
-	app.LoadFallbacks()
-
-	// Load Questions.
-	app.PrepareQuestions()
-
 	// Load Nameservers.
 	err = app.LoadNameservers()
 	if err != nil {
@@ -147,28 +142,25 @@ func main() {
 		app.Logger.Exit(0)
 	}
 
-	// Resolve Queries.
-	var (
-			responses []resolvers.Response
-			responseErrors []error
-	)
-	for _, q := range app.Questions {
-		for _, rslv := range app.Resolvers {
-			resp, err := rslv.Lookup(q)
-			if err != nil {
-				app.Logger.WithError(err).Error("error looking up DNS records")
-				responseErrors = append(responseErrors, err)
+	var responses []resolvers.Response
+	if k.Bool("trace") {
+		if responses, err = app.Trace(); err != nil {
+			app.Logger.WithError(err).Error("failed to trace")
+
+			if len(responses) == 0 {
+				app.Logger.Exit(9) // exit with an error code if there are no responses
 			}
-			responses = append(responses, resp)
+		}
+	} else {
+		if responses, err = app.Resolve(); err != nil {
+			app.Logger.WithError(err).Error("error looking up DNS records")
+
+			if len(responses) == 0 {
+				app.Logger.Exit(9) // exit with an error code if there are no responses
+			}
 		}
 	}
 
-	if len(responses) == 0 && len(responseErrors) > 0 {
-		app.Logger.Exit(9)
-	}
-
 	app.Output(responses)
-
-	// Quitting.
 	app.Logger.Exit(0)
 }

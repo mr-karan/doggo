@@ -62,7 +62,8 @@ type Authority struct {
 	Type       string `json:"type"`
 	Class      string `json:"class"`
 	TTL        string `json:"ttl"`
-	MName      string `json:"mname"`
+	Address    string `json:"address,omitempty"`
+	MName      string `json:"mname,omitempty"`
 	Status     string `json:"status"`
 	RTT        string `json:"rtt"`
 	Nameserver string `json:"nameserver"`

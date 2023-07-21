@@ -75,37 +75,43 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 	timeTaken := fmt.Sprintf("%dms", rtt.Milliseconds())
 
 	// Parse Authorities section.
-	for _, ns := range msg.Ns {
-		// check for SOA record
-		soa, ok := ns.(*dns.SOA)
-		if !ok {
-			// Currently we only check for SOA in Authority.
-			// If it's not SOA, skip this message.
-			continue
-		}
-		mname := soa.Ns + " " + soa.Mbox +
-			" " + strconv.FormatInt(int64(soa.Serial), 10) +
-			" " + strconv.FormatInt(int64(soa.Refresh), 10) +
-			" " + strconv.FormatInt(int64(soa.Retry), 10) +
-			" " + strconv.FormatInt(int64(soa.Expire), 10) +
-			" " + strconv.FormatInt(int64(soa.Minttl), 10)
-		h := ns.Header()
-		name := h.Name
-		qclass := dns.Class(h.Class).String()
-		ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
-		qtype := dns.Type(h.Rrtype).String()
-		auth := Authority{
+	for _, auth := range msg.Ns {
+		h := auth.Header()
+
+		var (
+			name   = h.Name
+			qclass = dns.Class(h.Class).String()
+			ttl    = strconv.FormatInt(int64(h.Ttl), 10) + "s"
+			qtype  = dns.Type(h.Rrtype).String()
+		)
+
+		var authority = Authority{
 			Name:       name,
 			Type:       qtype,
 			TTL:        ttl,
 			Class:      qclass,
-			MName:      mname,
 			Nameserver: server,
 			RTT:        timeTaken,
 			Status:     dns.RcodeToString[msg.Rcode],
 		}
-		resp.Authorities = append(resp.Authorities, auth)
+
+		// check for SOA record
+		if soa, ok := auth.(*dns.SOA); ok {
+			authority.MName = soa.Ns + " " + soa.Mbox +
+				" " + strconv.FormatInt(int64(soa.Serial), 10) +
+				" " + strconv.FormatInt(int64(soa.Refresh), 10) +
+				" " + strconv.FormatInt(int64(soa.Retry), 10) +
+				" " + strconv.FormatInt(int64(soa.Expire), 10) +
+				" " + strconv.FormatInt(int64(soa.Minttl), 10)
+		}
+
+		if ns, ok := auth.(*dns.NS); ok {
+			authority.Address = ns.Ns
+		}
+
+		resp.Authorities = append(resp.Authorities, authority)
 	}
+
 	// Parse Answers section.
 	for _, a := range msg.Answer {
 		var (
