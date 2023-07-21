@@ -115,14 +115,18 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 			table.Append(output)
 		}
 		for _, auth := range r.Authorities {
-			var typOut string
+			var typOut, addr string
 			switch typ := auth.Type; typ {
 			case "SOA":
 				typOut = red(auth.Type)
+				addr = auth.MName
+			case "NS":
+				typOut = cyan(auth.Type)
+				addr = auth.Address
 			default:
 				typOut = blue(auth.Type)
 			}
-			output := []string{green(auth.Name), typOut, auth.Class, auth.TTL, auth.MName, auth.Nameserver}
+			output := []string{green(auth.Name), typOut, auth.Class, auth.TTL, addr, auth.Nameserver}
 			// Print how long it took
 			if app.QueryFlags.DisplayTimeTaken {
 				output = append(output, auth.RTT)
