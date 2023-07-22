@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/binary"
 	"errors"
@@ -9,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/lucas-clemente/quic-go"
 	"github.com/miekg/dns"
+	"github.com/quic-go/quic-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,7 +41,7 @@ func (r *DOQResolver) Lookup(question dns.Question) (Response, error) {
 		messages = prepareMessages(question, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
 	)
 
-	session, err := quic.DialAddr(r.server, r.tls, nil)
+	session, err := quic.DialAddr(context.TODO(), r.server, r.tls, nil)
 	if err != nil {
 		return rsp, err
 	}
