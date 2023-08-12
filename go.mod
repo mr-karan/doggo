@@ -10,7 +10,7 @@ require (
 	github.com/knadh/koanf v1.4.4
 	github.com/miekg/dns v1.1.50
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/quic-go/quic-go v0.37.0
+	github.com/quic-go/quic-go v0.37.4
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/sys v0.8.0
@@ -32,7 +32,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
-	github.com/quic-go/qtls-go1-20 v0.3.0 // indirect
+	github.com/quic-go/qtls-go1-20 v0.3.1 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	golang.org/x/crypto v0.4.0 // indirect
 	golang.org/x/exp v0.0.0-20221230185412-738e83a70c30 // indirect
