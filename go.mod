@@ -7,7 +7,7 @@ require (
 	github.com/ameshkov/dnsstamps v1.0.3
 	github.com/fatih/color v1.13.0
 	github.com/go-chi/chi v1.5.4
-	github.com/knadh/koanf v1.4.4
+	github.com/knadh/koanf v1.5.0
 	github.com/miekg/dns v1.1.50
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/quic-go/quic-go v0.37.4
