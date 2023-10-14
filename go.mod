@@ -3,7 +3,7 @@ module github.com/mr-karan/doggo
 go 1.20
 
 require (
-	github.com/ameshkov/dnscrypt/v2 v2.2.5
+	github.com/ameshkov/dnscrypt/v2 v2.2.7
 	github.com/ameshkov/dnsstamps v1.0.3
 	github.com/fatih/color v1.15.0
 	github.com/go-chi/chi v1.5.4
