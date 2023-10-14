@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.2.5
 	github.com/ameshkov/dnsstamps v1.0.3
-	github.com/fatih/color v1.13.0
+	github.com/fatih/color v1.15.0
 	github.com/go-chi/chi v1.5.4
 	github.com/knadh/koanf v1.5.0
 	github.com/miekg/dns v1.1.50
