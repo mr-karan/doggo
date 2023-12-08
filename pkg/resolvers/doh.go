@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -30,8 +31,14 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 	if u.Scheme != "https" {
 		return nil, fmt.Errorf("missing https in %s", server)
 	}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config {
+		ServerName:         resolverOpts.TLSHostname,
+		InsecureSkipVerify: resolverOpts.InsecureSkipVerify,
+	}
 	httpClient := &http.Client{
 		Timeout: resolverOpts.Timeout,
+		Transport: transport,
 	}
 	return &DOHResolver{
 		client:          httpClient,

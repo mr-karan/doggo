@@ -26,7 +26,9 @@ type DOQResolver struct {
 func NewDOQResolver(server string, resolverOpts Options) (Resolver, error) {
 	return &DOQResolver{
 		tls: &tls.Config{
-			NextProtos: []string{"doq"},
+			NextProtos: 		[]string{"doq"},
+			ServerName: 		resolverOpts.TLSHostname,
+			InsecureSkipVerify: 	resolverOpts.InsecureSkipVerify,
 		},
 		server:          server,
 		resolverOptions: resolverOpts,
