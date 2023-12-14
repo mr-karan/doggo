@@ -10,7 +10,7 @@ require (
 	github.com/knadh/koanf v1.5.0
 	github.com/miekg/dns v1.1.56
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/quic-go/quic-go v0.40.0
+	github.com/quic-go/quic-go v0.40.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/sys v0.14.0
