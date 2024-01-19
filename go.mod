@@ -8,12 +8,12 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/knadh/koanf v1.5.0
-	github.com/miekg/dns v1.1.56
+	github.com/miekg/dns v1.1.58
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/quic-go/quic-go v0.40.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/sys v0.14.0
+	golang.org/x/sys v0.16.0
 )
 
 require (
@@ -34,9 +34,9 @@ require (
 	github.com/quic-go/qtls-go1-20 v0.4.1 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	go.uber.org/mock v0.3.0 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
+	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/mod v0.13.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/tools v0.14.0 // indirect
+	golang.org/x/mod v0.14.0 // indirect
+	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/tools v0.17.0 // indirect
 )
