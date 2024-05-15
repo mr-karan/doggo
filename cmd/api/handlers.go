@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -39,7 +39,7 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Read body.
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
 		app.Logger.WithError(err).Error("error reading request body")

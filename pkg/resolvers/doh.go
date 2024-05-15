@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -96,7 +96,7 @@ func (r *DOHResolver) Lookup(question dns.Question) (Response, error) {
 			}
 		}
 		// extract the binary response in DNS Message.
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return rsp, err
 		}
