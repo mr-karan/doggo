@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -149,25 +150,45 @@ func main() {
 
 	// Resolve Queries.
 	var (
-			responses []resolvers.Response
-			responseErrors []error
+		responses      []resolvers.Response
+		responseErrors []error
 	)
 	for _, q := range app.Questions {
 		for _, rslv := range app.Resolvers {
 			resp, err := rslv.Lookup(q)
 			if err != nil {
-				app.Logger.WithError(err).Error("error looking up DNS records")
 				responseErrors = append(responseErrors, err)
 			}
 			responses = append(responses, resp)
 		}
 	}
 
-	if len(responses) == 0 && len(responseErrors) > 0 {
-		app.Logger.Exit(9)
-	}
+	// Output results
+	if app.QueryFlags.ShowJSON {
+		jsonOutput := struct {
+			Responses []resolvers.Response `json:"responses,omitempty"`
+			Error     string               `json:"error,omitempty"`
+		}{
+			Responses: responses,
+		}
 
-	app.Output(responses)
+		if len(responseErrors) > 0 {
+			jsonOutput.Error = responseErrors[0].Error()
+		}
+
+		jsonData, err := json.MarshalIndent(jsonOutput, "", "  ")
+		if err != nil {
+			app.Logger.WithError(err).Error("Error marshaling JSON")
+			app.Logger.Exit(1)
+		}
+		fmt.Println(string(jsonData))
+	} else {
+		if len(responseErrors) > 0 {
+			app.Logger.WithError(responseErrors[0]).Error("Error looking up DNS records")
+			app.Logger.Exit(9)
+		}
+		app.Output(responses)
+	}
 
 	// Quitting.
 	app.Logger.Exit(0)
