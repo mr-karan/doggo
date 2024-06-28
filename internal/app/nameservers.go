@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/ameshkov/dnsstamps"
@@ -12,115 +13,126 @@ import (
 	"github.com/mr-karan/doggo/pkg/models"
 )
 
-// LoadNameservers reads all the user given
-// nameservers and loads to App.
 func (app *App) LoadNameservers() error {
-	for _, srv := range app.QueryFlags.Nameservers {
-		ns, err := initNameserver(srv)
-		if err != nil {
-			return fmt.Errorf("error parsing nameserver: %s", srv)
-		}
-		// check if properly initialised.
-		if ns.Address != "" && ns.Type != "" {
-			app.Nameservers = append(app.Nameservers, ns)
+	app.Logger.WithField("nameservers", app.QueryFlags.Nameservers).Debug("LoadNameservers: Initial nameservers")
+
+	app.Nameservers = []models.Nameserver{} // Clear existing nameservers
+
+	if len(app.QueryFlags.Nameservers) > 0 {
+		for _, srv := range app.QueryFlags.Nameservers {
+			ns, err := initNameserver(srv)
+			if err != nil {
+				app.Logger.WithError(err).Error("error parsing nameserver")
+				return fmt.Errorf("error parsing nameserver: %s", srv)
+			}
+			if ns.Address != "" && ns.Type != "" {
+				app.Nameservers = append(app.Nameservers, ns)
+				app.Logger.WithField("nameserver", ns).Debug("Added nameserver")
+			}
 		}
 	}
 
-	// Set `ndots` to the user specified value.
-	app.ResolverOpts.Ndots = app.QueryFlags.Ndots
-	// fallback to system nameserver
-	// in case no nameserver is specified by user.
+	// If no nameservers were successfully loaded, fall back to system nameservers
 	if len(app.Nameservers) == 0 {
-		ns, ndots, search, err := getDefaultServers(app.QueryFlags.Strategy)
-		if err != nil {
-			return fmt.Errorf("error fetching system default nameserver")
-		}
-		// `-1` indicates the flag is not set.
-		// use from config if user hasn't specified any value.
-		if app.ResolverOpts.Ndots == -1 {
-			app.ResolverOpts.Ndots = ndots
-		}
-		if len(search) > 0 && app.QueryFlags.UseSearchList {
-			app.ResolverOpts.SearchList = search
-		}
-		app.Nameservers = append(app.Nameservers, ns...)
+		return app.loadSystemNameservers()
 	}
-	// if the user hasn't given any override of `ndots` AND has
-	// given a custom nameserver. Set `ndots` to 1 as the fallback value
+
+	app.Logger.WithField("nameservers", app.Nameservers).Debug("LoadNameservers: Final nameservers")
+	return nil
+}
+
+func (app *App) loadSystemNameservers() error {
+	app.Logger.Debug("No user specified nameservers, falling back to system nameservers")
+	ns, ndots, search, err := getDefaultServers(app.QueryFlags.Strategy)
+	if err != nil {
+		app.Logger.WithError(err).Error("error fetching system default nameserver")
+		return fmt.Errorf("error fetching system default nameserver: %v", err)
+	}
+
 	if app.ResolverOpts.Ndots == -1 {
-		app.ResolverOpts.Ndots = 0
+		app.ResolverOpts.Ndots = ndots
 	}
+
+	if len(search) > 0 && app.QueryFlags.UseSearchList {
+		app.ResolverOpts.SearchList = search
+	}
+
+	app.Nameservers = append(app.Nameservers, ns...)
+	app.Logger.WithField("nameservers", app.Nameservers).Debug("Loaded system nameservers")
 	return nil
 }
 
 func initNameserver(n string) (models.Nameserver, error) {
-	// Instantiate a UDP resolver with default port as a fallback.
-	ns := models.Nameserver{
-		Type:    models.UDPResolver,
-		Address: net.JoinHostPort(n, models.DefaultUDPPort),
+	// If the nameserver doesn't have a protocol, assume it's UDP
+	if !strings.Contains(n, "://") {
+		n = "udp://" + n
 	}
+
 	u, err := url.Parse(n)
 	if err != nil {
-		ip := net.ParseIP(n)
-		if ip == nil {
-			return ns, err
-		}
-		return ns, nil
+		return models.Nameserver{}, err
 	}
+
+	ns := models.Nameserver{
+		Type:    models.UDPResolver,
+		Address: getAddressWithDefaultPort(u, models.DefaultUDPPort),
+	}
+
 	switch u.Scheme {
 	case "sdns":
-		stamp, err := dnsstamps.NewServerStampFromString(n)
-		if err != nil {
-			return ns, err
-		}
-		switch stamp.Proto {
-		case dnsstamps.StampProtoTypeDoH:
-			ns.Type = models.DOHResolver
-			address := url.URL{Scheme: "https", Host: stamp.ProviderName, Path: stamp.Path}
-			ns.Address = address.String()
-		case dnsstamps.StampProtoTypeDNSCrypt:
-			ns.Type = models.DNSCryptResolver
-			ns.Address = n
-		default:
-			return ns, fmt.Errorf("unsupported protocol: %v", stamp.Proto.String())
-		}
-
+		return handleSDNS(n)
 	case "https":
 		ns.Type = models.DOHResolver
 		ns.Address = u.String()
-
 	case "tls":
 		ns.Type = models.DOTResolver
-		if u.Port() == "" {
-			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultTLSPort)
-		} else {
-			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
-		}
-
+		ns.Address = getAddressWithDefaultPort(u, models.DefaultTLSPort)
 	case "tcp":
 		ns.Type = models.TCPResolver
-		if u.Port() == "" {
-			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultTCPPort)
-		} else {
-			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
-		}
-
+		ns.Address = getAddressWithDefaultPort(u, models.DefaultTCPPort)
 	case "udp":
 		ns.Type = models.UDPResolver
-		if u.Port() == "" {
-			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultUDPPort)
-		} else {
-			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
-		}
+		ns.Address = getAddressWithDefaultPort(u, models.DefaultUDPPort)
 	case "quic":
 		ns.Type = models.DOQResolver
-		if u.Port() == "" {
-			ns.Address = net.JoinHostPort(u.Hostname(), models.DefaultDOQPort)
-		} else {
-			ns.Address = net.JoinHostPort(u.Hostname(), u.Port())
-		}
+		ns.Address = getAddressWithDefaultPort(u, models.DefaultDOQPort)
+	default:
+		return ns, fmt.Errorf("unsupported protocol: %s", u.Scheme)
 	}
+
 	return ns, nil
+}
+
+func getAddressWithDefaultPort(u *url.URL, defaultPort string) string {
+	host := u.Hostname()
+	port := u.Port()
+	if port == "" {
+		port = defaultPort
+	}
+	return net.JoinHostPort(host, port)
+}
+
+func handleSDNS(n string) (models.Nameserver, error) {
+	stamp, err := dnsstamps.NewServerStampFromString(n)
+	if err != nil {
+		return models.Nameserver{}, err
+	}
+
+	switch stamp.Proto {
+	case dnsstamps.StampProtoTypeDoH:
+		address := url.URL{Scheme: "https", Host: stamp.ProviderName, Path: stamp.Path}
+		return models.Nameserver{
+			Type:    models.DOHResolver,
+			Address: address.String(),
+		}, nil
+	case dnsstamps.StampProtoTypeDNSCrypt:
+		return models.Nameserver{
+			Type:    models.DNSCryptResolver,
+			Address: n,
+		}, nil
+	default:
+		return models.Nameserver{}, fmt.Errorf("unsupported protocol: %v", stamp.Proto.String())
+	}
 }
 
 func getDefaultServers(strategy string) ([]models.Nameserver, int, []string, error) {
@@ -134,7 +146,7 @@ func getDefaultServers(strategy string) ([]models.Nameserver, int, []string, err
 	switch strategy {
 	case "random":
 		// Choose a random server from the list.
-		rand.Seed(time.Now().Unix())
+		rand.Seed(time.Now().UnixNano())
 		srv := dnsServers[rand.Intn(len(dnsServers))]
 		ns := models.Nameserver{
 			Type:    models.UDPResolver,
