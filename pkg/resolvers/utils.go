@@ -9,9 +9,19 @@ import (
 	"github.com/miekg/dns"
 )
 
+// QueryFlags represents the various DNS query flags
+type QueryFlags struct {
+	AA bool // Authoritative Answer
+	AD bool // Authenticated Data
+	CD bool // Checking Disabled
+	RD bool // Recursion Desired
+	Z  bool // Reserved for future use
+	DO bool // DNSSEC OK
+}
+
 // prepareMessages takes a  DNS Question and returns the
 // corresponding DNS messages for the same.
-func prepareMessages(q dns.Question, ndots int, searchList []string) []dns.Msg {
+func prepareMessages(q dns.Question, flags QueryFlags, ndots int, searchList []string) []dns.Msg {
 	var (
 		possibleQNames = constructPossibleQuestions(q.Name, ndots, searchList)
 		messages       = make([]dns.Msg, 0, len(possibleQNames))
@@ -21,7 +31,18 @@ func prepareMessages(q dns.Question, ndots int, searchList []string) []dns.Msg {
 		msg := dns.Msg{}
 		// generate a random id for the transaction.
 		msg.Id = dns.Id()
-		msg.RecursionDesired = true
+
+		// Set query flags
+		msg.RecursionDesired = flags.RD
+		msg.AuthenticatedData = flags.AD
+		msg.CheckingDisabled = flags.CD
+		msg.Authoritative = flags.AA
+		msg.Zero = flags.Z
+
+		if flags.DO {
+			msg.SetEdns0(4096, flags.DO)
+		}
+
 		// It's recommended to only send 1 question for 1 DNS message.
 		msg.Question = []dns.Question{{
 			Name:   qName,

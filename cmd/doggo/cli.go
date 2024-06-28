@@ -81,7 +81,16 @@ func main() {
 		app.Logger.Exit(0)
 	}
 
-	responses, responseErrors := resolveQueries(&app)
+	queryFlags := resolvers.QueryFlags{
+		AA: k.Bool("aa"),
+		AD: k.Bool("ad"),
+		CD: k.Bool("cd"),
+		RD: k.Bool("rd"),
+		Z:  k.Bool("z"),
+		DO: k.Bool("do"),
+	}
+
+	responses, responseErrors := resolveQueries(&app, queryFlags)
 
 	outputResults(&app, responses, responseErrors)
 
@@ -112,6 +121,14 @@ func setupFlags() *flag.FlagSet {
 	f.Bool("time", false, "Display how long the response took")
 	f.Bool("color", true, "Show colored output")
 	f.Bool("debug", false, "Enable debug mode")
+
+	// Add flags for DNS query options
+	f.Bool("aa", false, "Set Authoritative Answer flag")
+	f.Bool("ad", false, "Set Authenticated Data flag")
+	f.Bool("cd", false, "Set Checking Disabled flag")
+	f.Bool("rd", true, "Set Recursion Desired flag (default: true)")
+	f.Bool("z", false, "Set Z flag (reserved for future use)")
+	f.Bool("do", false, "Set DNSSEC OK flag")
 
 	f.Bool("version", false, "Show version of doggo")
 
@@ -156,13 +173,13 @@ func loadNameservers(app *app.App, args []string) {
 	app.Logger.WithField("finalNameservers", app.QueryFlags.Nameservers).Debug("Final nameservers")
 }
 
-func resolveQueries(app *app.App) ([]resolvers.Response, []error) {
+func resolveQueries(app *app.App, flags resolvers.QueryFlags) ([]resolvers.Response, []error) {
 	var responses []resolvers.Response
 	var responseErrors []error
 
 	for _, q := range app.Questions {
 		for _, rslv := range app.Resolvers {
-			resp, err := rslv.Lookup(q)
+			resp, err := rslv.Lookup(q, flags)
 			if err != nil {
 				responseErrors = append(responseErrors, err)
 			}
