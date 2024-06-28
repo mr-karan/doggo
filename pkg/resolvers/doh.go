@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -32,12 +32,12 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 		return nil, fmt.Errorf("missing https in %s", server)
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig = &tls.Config {
+	transport.TLSClientConfig = &tls.Config{
 		ServerName:         resolverOpts.TLSHostname,
 		InsecureSkipVerify: resolverOpts.InsecureSkipVerify,
 	}
 	httpClient := &http.Client{
-		Timeout: resolverOpts.Timeout,
+		Timeout:   resolverOpts.Timeout,
 		Transport: transport,
 	}
 	return &DOHResolver{
@@ -96,7 +96,7 @@ func (r *DOHResolver) Lookup(question dns.Question) (Response, error) {
 			}
 		}
 		// extract the binary response in DNS Message.
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return rsp, err
 		}
