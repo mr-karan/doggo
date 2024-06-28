@@ -26,9 +26,9 @@ type DOQResolver struct {
 func NewDOQResolver(server string, resolverOpts Options) (Resolver, error) {
 	return &DOQResolver{
 		tls: &tls.Config{
-			NextProtos: 		[]string{"doq"},
-			ServerName: 		resolverOpts.TLSHostname,
-			InsecureSkipVerify: 	resolverOpts.InsecureSkipVerify,
+			NextProtos:         []string{"doq"},
+			ServerName:         resolverOpts.TLSHostname,
+			InsecureSkipVerify: resolverOpts.InsecureSkipVerify,
 		},
 		server:          server,
 		resolverOptions: resolverOpts,
@@ -37,10 +37,10 @@ func NewDOQResolver(server string, resolverOpts Options) (Resolver, error) {
 
 // Lookup takes a dns.Question and sends them to DNS Server.
 // It parses the Response from the server in a custom output format.
-func (r *DOQResolver) Lookup(question dns.Question) (Response, error) {
+func (r *DOQResolver) Lookup(question dns.Question, flags QueryFlags) (Response, error) {
 	var (
 		rsp      Response
-		messages = prepareMessages(question, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
+		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
 	)
 
 	session, err := quic.DialAddr(context.TODO(), r.server, r.tls, nil)

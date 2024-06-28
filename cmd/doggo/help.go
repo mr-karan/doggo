@@ -23,6 +23,8 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{ .Name | color "green" "bold" }} {{ "mrkaran.dev CNAME" | color "cyan" "" }}                 	Query for a CNAME record.
   {{ .Name | color "green" "bold" }} {{ "mrkaran.dev MX @9.9.9.9" | color "cyan" "" }}              	Uses a custom DNS resolver.
   {{ .Name | color "green" "bold" }} {{"-q mrkaran.dev -t MX -n 1.1.1.1" | color "yellow" ""}}   	Using named arguments.
+  {{ .Name | color "green" "bold" }} {{ "mrkaran.dev --aa --ad" | color "cyan" "" }}            Query with Authoritative Answer and Authenticated Data flags set.
+  {{ .Name | color "green" "bold" }} {{ "mrkaran.dev --cd --do" | color "cyan" "" }}            Query with Checking Disabled and DNSSEC OK flags set.
 
 {{ "Free Form Arguments" | color "" "heading" }}:
   Supply hostnames, query types, and classes without flags. Example:
@@ -56,6 +58,14 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{"--ndots=INT" | color "yellow" ""}}                  Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise.
   {{"--tls-hostname=HOSTNAME" | color "yellow" ""}}      Provide a hostname for doing verification of the certificate if the provided DoT nameserver is an IP.
   {{"--skip-hostname-verification" | color "yellow" ""}} Skip TLS Hostname Verification in case of DOT Lookups.
+
+{{ "Query Flags" | color "" "heading" }}:
+  {{"--aa" | color "yellow" ""}}                        Set Authoritative Answer flag.
+  {{"--ad" | color "yellow" ""}}                        Set Authenticated Data flag.
+  {{"--cd" | color "yellow" ""}}                        Set Checking Disabled flag.
+  {{"--rd" | color "yellow" ""}}                        Set Recursion Desired flag (default: true).
+  {{"--z" | color "yellow" ""}}                         Set Z flag (reserved for future use).
+  {{"--do" | color "yellow" ""}}                        Set DNSSEC OK flag.
 
 {{ "Output Options" | color "" "heading" }}:
   {{"-J, --json " | color "yellow" ""}}                 Format the output as JSON.

@@ -94,10 +94,14 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 
 	app.Logger.WithField("resolvers", app.Resolvers).Debug("Loaded resolvers")
 
+	queryFlags := resolvers.QueryFlags{
+		RD: true,
+	}
+
 	var responses []resolvers.Response
 	for _, q := range app.Questions {
 		for _, rslv := range app.Resolvers {
-			resp, err := rslv.Lookup(q)
+			resp, err := rslv.Lookup(q, queryFlags)
 			if err != nil {
 				app.Logger.WithError(err).Error("error looking up DNS records")
 				sendErrorResponse(w, fmt.Sprintf("Error looking up for records."), http.StatusInternalServerError, nil)

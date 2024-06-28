@@ -60,10 +60,10 @@ func NewClassicResolver(server string, classicOpts ClassicResolverOpts, resolver
 
 // Lookup takes a dns.Question and sends them to DNS Server.
 // It parses the Response from the server in a custom output format.
-func (r *ClassicResolver) Lookup(question dns.Question) (Response, error) {
+func (r *ClassicResolver) Lookup(question dns.Question, flags QueryFlags) (Response, error) {
 	var (
 		rsp      Response
-		messages = prepareMessages(question, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
+		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
 	)
 	for _, msg := range messages {
 		r.resolverOptions.Logger.WithFields(logrus.Fields{
@@ -94,7 +94,7 @@ func (r *ClassicResolver) Lookup(question dns.Question) (Response, error) {
 				r.client.Net = "tcp"
 			}
 			r.resolverOptions.Logger.WithField("protocol", r.client.Net).Debug("Response truncated; retrying now")
-			return r.Lookup(question)
+			return r.Lookup(question, flags)
 		}
 
 		// Pack questions in output.

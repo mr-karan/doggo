@@ -13,7 +13,7 @@
   - [x] Change lookup method.
 - [x] Major records supported
 - [x] Support multiple resolvers
-  - [x] Take multiple transport options and initialise resolvers accordingly. 
+  - [x] Take multiple transport options and initialise resolvers accordingly.
 - [x] Add timeout support
 - [x] Support SOA/NXDOMAIN
 
@@ -60,7 +60,7 @@
   - [x] fish
 - [ ] Add tests for Resolvers.
 - [ ] Add tests for CLI Output.
-- [ ] Homebrew - Goreleaser
+- [x] Homebrew - Goreleaser
 - [ ] Add support for `dig +trace` like functionality.
 - [ ] Add `dig +short` short output
 - [x] Add `--strategy` for picking nameservers.
