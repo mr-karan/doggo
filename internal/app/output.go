@@ -11,13 +11,19 @@ import (
 )
 
 func (app *App) outputJSON(rsp []resolvers.Response) {
+	jsonOutput := struct {
+		Responses []resolvers.Response `json:"responses"`
+	}{
+		Responses: rsp,
+	}
+
 	// Pretty print with 4 spaces.
-	res, err := json.MarshalIndent(rsp, "", "    ")
+	res, err := json.MarshalIndent(jsonOutput, "", "    ")
 	if err != nil {
 		app.Logger.WithError(err).Error("unable to output data in JSON")
 		app.Logger.Exit(-1)
 	}
-	fmt.Printf("%s", res)
+	fmt.Printf("%s\n", res)
 }
 
 func (app *App) outputShort(rsp []resolvers.Response) {
