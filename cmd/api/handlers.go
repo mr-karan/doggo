@@ -67,12 +67,13 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load Nameservers.
-	err = app.LoadNameservers()
-	if err != nil {
+	if err := app.LoadNameservers(); err != nil {
 		app.Logger.WithError(err).Error("error loading nameservers")
 		sendErrorResponse(w, fmt.Sprintf("Error looking up for records."), http.StatusInternalServerError, nil)
 		return
 	}
+
+	app.Logger.WithField("nameservers", app.Nameservers).Debug("Loaded nameservers")
 
 	// Load Resolvers.
 	rslvrs, err := resolvers.LoadResolvers(resolvers.Options{
@@ -90,6 +91,8 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app.Resolvers = rslvrs
+
+	app.Logger.WithField("resolvers", app.Resolvers).Debug("Loaded resolvers")
 
 	var responses []resolvers.Response
 	for _, q := range app.Questions {

@@ -18,18 +18,17 @@ import (
 // where `@1.1.1.1` and `AAAA` are "unparsed" args.
 // Returns a list of nameserver, queryTypes, queryClasses, queryNames.
 func loadUnparsedArgs(args []string) ([]string, []string, []string, []string) {
-	var ns, qt, qc, qn []string
+	var nameservers, queryTypes, queryClasses, queryNames []string
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "@") {
-			ns = append(ns, strings.Trim(arg, "@"))
-		} else if _, ok := dns.StringToType[strings.ToUpper(arg)]; ok {
-			qt = append(qt, arg)
-		} else if _, ok := dns.StringToClass[strings.ToUpper(arg)]; ok {
-			qc = append(qc, arg)
+			nameservers = append(nameservers, strings.TrimPrefix(arg, "@"))
+		} else if qt, ok := dns.StringToType[strings.ToUpper(arg)]; ok {
+			queryTypes = append(queryTypes, dns.TypeToString[qt])
+		} else if qc, ok := dns.StringToClass[strings.ToUpper(arg)]; ok {
+			queryClasses = append(queryClasses, dns.ClassToString[qc])
 		} else {
-			// if nothing matches, consider it's a query name.
-			qn = append(qn, arg)
+			queryNames = append(queryNames, arg)
 		}
 	}
-	return ns, qt, qc, qn
+	return nameservers, queryTypes, queryClasses, queryNames
 }
