@@ -32,75 +32,113 @@ _doggo() {
             COMPREPLY=( $(compgen -W "true false" -- ${cur}) )
             return 0
             ;;
+        -n|--nameserver)
+            COMPREPLY=( $(compgen -W "1.1.1.1 8.8.8.8 9.9.9.9" -- ${cur}) )
+            return 0
+            ;;
     esac
 
     if [[ ${cur} == -* ]]; then
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
+
+    COMPREPLY=( $(compgen -A hostname -- ${cur}) )
 }
 
 complete -F _doggo doggo
 `
 
 	zshCompletion = `
-#compdef _doggo doggo
+#compdef doggo
 
 _doggo() {
-    _arguments \
-        "(- 1 *)"{-v,--version}"[Show version of doggo]" \
-        "(- 1 *)"{-h,--help}"[Show list of command-line options]" \
-        {-q,--query=}"[Hostname to query the DNS records for]::_hosts" \
-        {-t,--type=}"[Type of the DNS Record]:(record type):(A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT)" \
-        {-n,--nameserver=}"[Address of a specific nameserver to send queries to]::_hosts;" \
-        {-c,--class=}"[Network class of the DNS record being queried]:(network class):(IN CH HS)" \
-        {-r,--reverse}"[Performs a DNS Lookup for an IPv4 or IPv6 address]" \
-        --strategy="[Strategy to query nameserver listed in etc/resolv.conf]:(strategy):(all random first)" \
-        --ndots="[Number of requred dots in hostname to assume FQDN]:(number of dots):()" \
-        --search"[Defaults to true. Set --search=false to not use the search list defined in resolve.conf]:(setting):(true false)" \
-        --timeout"[Timeout (in seconds) for the resolver to return a response]:(seconds):()" \
-        {-4,--ipv4}"[Use IPv4 only]" \
-        {-6,--ipv6}"[Use IPv6 only]" \
-        --tls-hostname="[Hostname used for verification of certificate incase the provided DoT nameserver is an IP]::_hosts" \
-        --skip-hostname-verification"[Skip TLS hostname verification in case of DoT lookups]" \
-        {-J,--json}"[Format the output as JSON]" \
-        --short"[Shows only the response section in the output]" \
-        --color="[Defaults to true. Set --color=false to disable colored output]:(setting):(true false)" \
-        --debug"[Enable debug logging]:(setting):(true false)" \
-        --time"[Shows how long the response took from the server]" \
-        '*:hostname:_hosts'
+  local -a commands
+  commands=(
+    'completions:Generate shell completion scripts'
+  )
+
+  _arguments -C \
+    '(-v --version)'{-v,--version}'[Show version of doggo]' \
+    '(-h --help)'{-h,--help}'[Show list of command-line options]' \
+    '(-q --query)'{-q,--query}'[Hostname to query the DNS records for]:hostname:_hosts' \
+    '(-t --type)'{-t,--type}'[Type of the DNS Record]:record type:(A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT)' \
+    '(-n --nameserver)'{-n,--nameserver}'[Address of a specific nameserver to send queries to]:nameserver:(1.1.1.1 8.8.8.8 9.9.9.9)' \
+    '(-c --class)'{-c,--class}'[Network class of the DNS record being queried]:network class:(IN CH HS)' \
+    '(-r --reverse)'{-r,--reverse}'[Performs a DNS Lookup for an IPv4 or IPv6 address]' \
+    '--strategy[Strategy to query nameserver listed in etc/resolv.conf]:strategy:(all random first)' \
+    '--ndots[Number of required dots in hostname to assume FQDN]:number of dots' \
+    '--search[Use the search list defined in resolv.conf]:setting:(true false)' \
+    '--timeout[Timeout (in seconds) for the resolver to return a response]:seconds' \
+    '(-4 --ipv4)'{-4,--ipv4}'[Use IPv4 only]' \
+    '(-6 --ipv6)'{-6,--ipv6}'[Use IPv6 only]' \
+    '--tls-hostname[Hostname used for verification of certificate incase the provided DoT nameserver is an IP]:hostname:_hosts' \
+    '--skip-hostname-verification[Skip TLS hostname verification in case of DoT lookups]' \
+    '(-J --json)'{-J,--json}'[Format the output as JSON]' \
+    '--short[Shows only the response section in the output]' \
+    '--color[Colored output]:setting:(true false)' \
+    '--debug[Enable debug logging]' \
+    '--time[Shows how long the response took from the server]' \
+    '*:hostname:_hosts' \
+    && ret=0
+
+  case $state in
+    (commands)
+      _describe -t commands 'doggo commands' commands && ret=0
+      ;;
+  esac
+
+  return ret
 }
+
+_doggo
 `
 
 	fishCompletion = `
-# Meta options
-complete -c doggo -l 'version' -d "Show version of doggo"
-complete -c doggo -l 'help'    -d "Show list of command-line options"
+function __fish_doggo_no_subcommand
+    set cmd (commandline -opc)
+    if [ (count $cmd) -eq 1 ]
+        return 0
+    end
+    return 1
+end
 
-# Single line all options
-complete -c doggo -x -a "(__fish_print_hostnames) A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT IN CH HS"
+# Meta options
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'version' -d "Show version of doggo"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'help'    -d "Show list of command-line options"
 
 # Query options
-complete -c doggo -s 'q' -l 'query'      -d "Hostname to query the DNS records for" -x -a "(__fish_print_hostnames)"
-complete -c doggo -s 't' -l 'type'       -d "Type of the DNS Record" -x -a "A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT"
-complete -c doggo -s 'n' -l 'nameserver' -d "Address of a specific nameserver to send queries to" -x -a "1.1.1.1 8.8.8.8 9.9.9.9 (__fish_print_hostnames)"
-complete -c doggo -s 'c' -l 'class'      -d "Network class of the DNS record being queried" -x -a "IN CH HS"
-
-# Transport options
-complete -c doggo -x -a "@udp:// @tcp:// @https:// @tls:// @sdns://"          -d "Select the protocol for resolving queries"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'q' -l 'query'      -d "Hostname to query the DNS records for" -x -a "(__fish_print_hostnames)"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 't' -l 'type'       -d "Type of the DNS Record" -x -a "A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'n' -l 'nameserver' -d "Address of a specific nameserver to send queries to" -x -a "1.1.1.1 8.8.8.8 9.9.9.9"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'c' -l 'class'      -d "Network class of the DNS record being queried" -x -a "IN CH HS"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'r' -l 'reverse'    -d "Performs a DNS Lookup for an IPv4 or IPv6 address"
 
 # Resolver options
-complete -c doggo -l 'ndots'             -d "Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise"
-complete -c doggo -l 'search'            -d "Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list"
-complete -c doggo -l 'timeout'           -d "Specify timeout (in seconds) for the resolver to return a response"
-complete -c doggo -s '-4' -l 'ipv4'      -d "Use IPv4 only"
-complete -c doggo -s '-6' -l 'ipv6'      -d "Use IPv6 only"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'strategy'  -d "Strategy to query nameserver listed in etc/resolv.conf" -x -a "all random first"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ndots'     -d "Specify ndots parameter"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'search'    -d "Use the search list defined in resolv.conf" -x -a "true false"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'timeout'   -d "Specify timeout (in seconds) for the resolver to return a response"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s '4' -l 'ipv4' -d "Use IPv4 only"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s '6' -l 'ipv6' -d "Use IPv6 only"
 
 # Output options
-complete -c doggo -s 'J' -l 'json'       -d "Format the output as JSON"
-complete -c doggo        -l 'color'      -d "Defaults to true. Set --color=false to disable colored output"
-complete -c doggo        -l 'debug'      -d "Enable debug logging"
-complete -c doggo        -l 'time'       -d "Shows how long the response took from the server"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'J' -l 'json'  -d "Format the output as JSON"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'short'        -d "Shows only the response section in the output"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'color'        -d "Colored output" -x -a "true false"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'debug'        -d "Enable debug logging"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'time'         -d "Shows how long the response took from the server"
+
+# Transport options
+complete -c doggo -n '__fish_doggo_no_subcommand' -x -a "@udp:// @tcp:// @https:// @tls:// @sdns://" -d "Select the protocol for resolving queries"
+
+# TLS options
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'tls-hostname'               -d "Hostname for certificate verification" -x -a "(__fish_print_hostnames)"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'skip-hostname-verification' -d "Skip TLS hostname verification in case of DoT lookups"
+
+# Completions command
+complete -c doggo -n '__fish_doggo_no_subcommand' -a completions -d "Generate shell completion scripts"
+complete -c doggo -n '__fish_seen_subcommand_from completions' -a "bash zsh fish" -d "Shell type"
 `
 )
 
