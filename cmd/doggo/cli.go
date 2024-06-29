@@ -23,6 +23,11 @@ var (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "completions" {
+		completionsCommand()
+		return
+	}
+
 	app := app.New(logger, buildVersion)
 	f := setupFlags()
 
