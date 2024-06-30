@@ -145,9 +145,12 @@ func getDefaultServers(strategy string) ([]models.Nameserver, int, []string, err
 
 	switch strategy {
 	case "random":
+		// Create a new local random source and generator.
+		src := rand.NewSource(time.Now().UnixNano())
+		rnd := rand.New(src)
+
 		// Choose a random server from the list.
-		rand.Seed(time.Now().UnixNano())
-		srv := dnsServers[rand.Intn(len(dnsServers))]
+		srv := dnsServers[rnd.Intn(len(dnsServers))]
 		ns := models.Nameserver{
 			Type:    models.UDPResolver,
 			Address: net.JoinHostPort(srv, models.DefaultUDPPort),

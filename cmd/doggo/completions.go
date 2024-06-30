@@ -24,26 +24,25 @@ _doggo() {
             COMPREPLY=( $(compgen -W "IN CH HS" -- ${cur}) )
             return 0
             ;;
+        -n|--nameserver)
+            COMPREPLY=( $(compgen -A hostname -- ${cur}) )
+            return 0
+            ;;
         --strategy)
             COMPREPLY=( $(compgen -W "all random first" -- ${cur}) )
             return 0
             ;;
-        --search|--color|--debug)
+        --search|--color)
             COMPREPLY=( $(compgen -W "true false" -- ${cur}) )
-            return 0
-            ;;
-        -n|--nameserver)
-            COMPREPLY=( $(compgen -W "1.1.1.1 8.8.8.8 9.9.9.9" -- ${cur}) )
             return 0
             ;;
     esac
 
     if [[ ${cur} == -* ]]; then
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-        return 0
+    else
+        COMPREPLY=( $(compgen -A hostname -- ${cur}) )
     fi
-
-    COMPREPLY=( $(compgen -A hostname -- ${cur}) )
 }
 
 complete -F _doggo doggo
@@ -63,7 +62,7 @@ _doggo() {
     '(-h --help)'{-h,--help}'[Show list of command-line options]' \
     '(-q --query)'{-q,--query}'[Hostname to query the DNS records for]:hostname:_hosts' \
     '(-t --type)'{-t,--type}'[Type of the DNS Record]:record type:(A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT)' \
-    '(-n --nameserver)'{-n,--nameserver}'[Address of a specific nameserver to send queries to]:nameserver:(1.1.1.1 8.8.8.8 9.9.9.9)' \
+    '(-n --nameserver)'{-n,--nameserver}'[Address of a specific nameserver to send queries to]:nameserver:_hosts' \
     '(-c --class)'{-c,--class}'[Network class of the DNS record being queried]:network class:(IN CH HS)' \
     '(-r --reverse)'{-r,--reverse}'[Performs a DNS Lookup for an IPv4 or IPv6 address]' \
     '--strategy[Strategy to query nameserver listed in etc/resolv.conf]:strategy:(all random first)' \
@@ -110,7 +109,7 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'help'    -d "Show list of 
 # Query options
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'q' -l 'query'      -d "Hostname to query the DNS records for" -x -a "(__fish_print_hostnames)"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 't' -l 'type'       -d "Type of the DNS Record" -x -a "A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'n' -l 'nameserver' -d "Address of a specific nameserver to send queries to" -x -a "1.1.1.1 8.8.8.8 9.9.9.9"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'n' -l 'nameserver' -d "Address of a specific nameserver to send queries to" -x -a "(__fish_print_hostnames)"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'c' -l 'class'      -d "Network class of the DNS record being queried" -x -a "IN CH HS"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'r' -l 'reverse'    -d "Performs a DNS Lookup for an IPv4 or IPv6 address"
 
@@ -128,9 +127,6 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'short'        -d "Shows on
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'color'        -d "Colored output" -x -a "true false"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'debug'        -d "Enable debug logging"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'time'         -d "Shows how long the response took from the server"
-
-# Transport options
-complete -c doggo -n '__fish_doggo_no_subcommand' -x -a "@udp:// @tcp:// @https:// @tls:// @sdns://" -d "Select the protocol for resolving queries"
 
 # TLS options
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'tls-hostname'               -d "Hostname for certificate verification" -x -a "(__fish_print_hostnames)"

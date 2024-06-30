@@ -53,7 +53,7 @@
 ---
 # Future Release
 
-- [ ] Support obscure protocol tweaks in `dig`
+- [x] Support obscure protocol tweaks in `dig`
 - [x] Support more DNS Record Types
 - [x] Shell completions
   - [x] zsh
@@ -62,8 +62,15 @@
 - [ ] Add tests for CLI Output.
 - [x] Homebrew - Goreleaser
 - [ ] Add support for `dig +trace` like functionality.
-- [ ] Add `dig +short` short output
+- [x] Add `dig +short` short output
 - [x] Add `--strategy` for picking nameservers.
 - [ ] Explore `dig.rc` kinda file
 - [x] Separate Authority/Answer in JSON output.
 - [x] Error on NXDomain (Related upstream [bug](https://github.com/miekg/dns/issues/1198))
+
+- [x] Reverse Lookup (dig -x)
+- [x] Shell completion proper
+- CLI docs
+- [ ] Helper util?
+- Merge those as misc docs or usage
+- [ ] Example Guide
