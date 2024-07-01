@@ -5,20 +5,19 @@ description: Learn how to install Doggo, a modern command-line DNS client for hu
 
 Doggo can be installed using various methods. Choose the one that best suits your needs and system configuration.
 
+### Easy Install (Recommended)
+
+The easiest way to install Doggo is by using the installation script:
+
+```shell
+curl -sS https://raw.githubusercontent.com/mr-karan/doggo/main/install.sh | sh
+```
+
+This script will automatically download and install the latest version of Doggo for your system.
 
 ### Binary Installation
 
-You can download pre-compiled binaries for Linux, macOS, and Windows from the [Releases](https://github.com/mr-karan/doggo/releases) section of the GitHub repository.
-
-To install the latest `linux-amd64` binary:
-
-```shell
-$ cd "$(mktemp -d)"
-$ curl -sL "https://github.com/mr-karan/doggo/releases/download/v0.3.7/doggo_0.3.7_linux_amd64.tar.gz" | tar xz
-$ mv doggo /usr/local/bin
-# doggo should be available now in your $PATH
-$ doggo
-```
+You can download pre-compiled binaries for various operating systems and architectures from the [Releases](https://github.com/mr-karan/doggo/releases) section of the GitHub repository.
 
 ### Docker
 
