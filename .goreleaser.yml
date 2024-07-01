@@ -44,7 +44,7 @@ builds:
       - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
     main: ./web/
     hooks:
-        pre: sh -c 'cd ./docs/ && yarn build'
+      pre: sh -c 'cd ./docs/ && yarn && yarn build'
 
 archives:
   - id: cli

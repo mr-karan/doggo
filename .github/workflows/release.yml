@@ -27,6 +27,24 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ./docs/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/docs/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: |
+          cd docs
+          yarn install
+
+      - name: Build
+        run: |
+          cd docs
+          yarn build
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
