@@ -40,13 +40,11 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm64
-    goarm:
-      - 6
-      - 7
     ldflags:
       - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
     main: ./web/
+    hooks:
+        pre: sh -c 'cd ./docs/ && yarn build'
 
 archives:
   - id: cli
@@ -67,6 +65,18 @@ archives:
       - README.md
       - LICENSE
 
+  - id: web
+    builds:
+      - web
+    wrap_in_directory: true
+    files:
+      - README.md
+      - LICENSE
+      - config-api-sample.toml
+      - src: "docs/dist/*"
+        dst: "docs"
+    name_template: "{{ .ProjectName }}_web_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
 changelog:
   sort: asc
   use: github
@@ -83,7 +93,6 @@ changelog:
       order: 10
     - title: Others
       order: 999
-
 
 dockers:
   - image_templates:
@@ -104,7 +113,6 @@ dockers:
       - --label=org.opencontainers.image.created={{ .Date }}
       - --label=org.opencontainers.image.revision={{ .FullCommit }}
 
-
   - image_templates:
       - "ghcr.io/mr-karan/doggo:{{ .Tag }}-arm64v8"
       - "ghcr.io/mr-karan/doggo:latest-arm64v8"
@@ -121,3 +129,15 @@ dockers:
       - --label=org.opencontainers.image.version=v{{ .Version }}
       - --label=org.opencontainers.image.created={{ .Date }}
       - --label=org.opencontainers.image.revision={{ .FullCommit }}
+
+  - image_templates:
+      - "ghcr.io/mr-karan/doggo-web:{{ .Tag }}"
+      - "ghcr.io/mr-karan/doggo-web:latest"
+    ids:
+      - web
+    goarch: amd64
+    dockerfile: web.Dockerfile
+    use: buildx
+    extra_files:
+      - config-api-sample.toml
+      - docs/dist/

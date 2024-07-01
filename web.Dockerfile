@@ -1,7 +1,8 @@
 # Dockerfile
-ARG ARCH
-FROM ${ARCH}/alpine
+FROM ubuntu:24.04
 WORKDIR /app
-COPY doggo-api.bin .
+RUN ls -alht
+COPY doggo-web.bin .
 COPY config-api-sample.toml config.toml
-CMD ["./doggo-api.bin"]
+COPY docs/dist /app/dist/
+CMD ["./doggo-web.bin"]
