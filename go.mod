@@ -3,21 +3,21 @@ module github.com/mr-karan/doggo
 go 1.20
 
 require (
-	github.com/ameshkov/dnscrypt/v2 v2.2.7
+	github.com/ameshkov/dnscrypt/v2 v2.3.0
 	github.com/ameshkov/dnsstamps v1.0.3
 	github.com/fatih/color v1.15.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/knadh/koanf v1.5.0
-	github.com/miekg/dns v1.1.56
+	github.com/miekg/dns v1.1.58
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/quic-go/quic-go v0.40.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/sys v0.14.0
+	golang.org/x/sys v0.18.0
 )
 
 require (
-	github.com/AdguardTeam/golibs v0.17.2 // indirect
+	github.com/AdguardTeam/golibs v0.20.3 // indirect
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/aead/poly1305 v0.0.0-20180717145839-3fee0db0b635 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -34,9 +34,9 @@ require (
 	github.com/quic-go/qtls-go1-20 v0.4.1 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	go.uber.org/mock v0.3.0 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
-	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/mod v0.13.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/tools v0.14.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/exp v0.0.0-20240205201215-2c58cdc269a3 // indirect
+	golang.org/x/mod v0.16.0 // indirect
+	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/tools v0.19.0 // indirect
 )
