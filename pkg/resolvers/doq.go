@@ -12,7 +12,6 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/quic-go/quic-go"
-	"github.com/sirupsen/logrus"
 )
 
 // DOQResolver represents the config options for setting up a DOQ based resolver.
@@ -50,11 +49,11 @@ func (r *DOQResolver) Lookup(question dns.Question, flags QueryFlags) (Response,
 	defer session.CloseWithError(quic.ApplicationErrorCode(quic.NoError), "")
 
 	for _, msg := range messages {
-		r.resolverOptions.Logger.WithFields(logrus.Fields{
-			"domain":     msg.Question[0].Name,
-			"ndots":      r.resolverOptions.Ndots,
-			"nameserver": r.server,
-		}).Debug("Attempting to resolve")
+		r.resolverOptions.Logger.Debug("Attempting to resolve",
+			"domain", msg.Question[0].Name,
+			"ndots", r.resolverOptions.Ndots,
+			"nameserver", r.server,
+		)
 
 		// ref: https://www.rfc-editor.org/rfc/rfc9250.html#name-dns-message-ids
 		msg.Id = 0

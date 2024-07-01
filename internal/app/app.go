@@ -1,15 +1,16 @@
 package app
 
 import (
+	"log/slog"
+
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/models"
 	"github.com/mr-karan/doggo/pkg/resolvers"
-	"github.com/sirupsen/logrus"
 )
 
 // App represents the structure for all app wide configuration.
 type App struct {
-	Logger       *logrus.Logger
+	Logger       *slog.Logger
 	Version      string
 	QueryFlags   models.QueryFlags
 	Questions    []dns.Question
@@ -19,7 +20,7 @@ type App struct {
 }
 
 // NewApp initializes an instance of App which holds app wide configuration.
-func New(logger *logrus.Logger, buildVersion string) App {
+func New(logger *slog.Logger, buildVersion string) App {
 	app := App{
 		Logger:  logger,
 		Version: buildVersion,

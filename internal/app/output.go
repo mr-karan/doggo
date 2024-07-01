@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/fatih/color"
 	"github.com/miekg/dns"
@@ -20,8 +21,8 @@ func (app *App) outputJSON(rsp []resolvers.Response) {
 	// Pretty print with 4 spaces.
 	res, err := json.MarshalIndent(jsonOutput, "", "    ")
 	if err != nil {
-		app.Logger.WithError(err).Error("unable to output data in JSON")
-		app.Logger.Exit(-1)
+		app.Logger.Error("unable to output data in JSON", "error", err)
+		os.Exit(-1)
 	}
 	fmt.Printf("%s\n", res)
 }

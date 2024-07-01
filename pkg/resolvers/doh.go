@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
-	"github.com/sirupsen/logrus"
 )
 
 // DOHResolver represents the config options for setting up a DOH based resolver.
@@ -56,11 +55,11 @@ func (r *DOHResolver) Lookup(question dns.Question, flags QueryFlags) (Response,
 	)
 
 	for _, msg := range messages {
-		r.resolverOptions.Logger.WithFields(logrus.Fields{
-			"domain":     msg.Question[0].Name,
-			"ndots":      r.resolverOptions.Ndots,
-			"nameserver": r.server,
-		}).Debug("Attempting to resolve")
+		r.resolverOptions.Logger.Debug("Attempting to resolve",
+			"domain", msg.Question[0].Name,
+			"ndots", r.resolverOptions.Ndots,
+			"nameserver", r.server,
+		)
 		// get the DNS Message in wire format.
 		b, err := msg.Pack()
 		if err != nil {
@@ -87,14 +86,12 @@ func (r *DOHResolver) Lookup(question dns.Question, flags QueryFlags) (Response,
 			return rsp, fmt.Errorf("error from nameserver %s", resp.Status)
 		}
 		rtt := time.Since(now)
+
 		// if debug, extract the response headers
-		if r.resolverOptions.Logger.IsLevelEnabled(logrus.DebugLevel) {
-			for header, value := range resp.Header {
-				r.resolverOptions.Logger.WithFields(logrus.Fields{
-					header: value,
-				}).Debug("DOH response header")
-			}
+		for header, value := range resp.Header {
+			r.resolverOptions.Logger.Debug("DOH response header", header, value)
 		}
+
 		// extract the binary response in DNS Message.
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {

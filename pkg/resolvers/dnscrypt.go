@@ -5,7 +5,6 @@ import (
 
 	"github.com/ameshkov/dnscrypt/v2"
 	"github.com/miekg/dns"
-	"github.com/sirupsen/logrus"
 )
 
 // DNSCryptResolver represents the config options for setting up a Resolver.
@@ -49,11 +48,12 @@ func (r *DNSCryptResolver) Lookup(question dns.Question, flags QueryFlags) (Resp
 		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
 	)
 	for _, msg := range messages {
-		r.resolverOptions.Logger.WithFields(logrus.Fields{
-			"domain":     msg.Question[0].Name,
-			"ndots":      r.resolverOptions.Ndots,
-			"nameserver": r.server,
-		}).Debug("Attempting to resolve")
+		r.resolverOptions.Logger.Debug("Attempting to resolve",
+			"domain", msg.Question[0].Name,
+			"ndots", r.resolverOptions.Ndots,
+			"nameserver", r.server,
+		)
+
 		now := time.Now()
 		in, err := r.client.Exchange(&msg, r.resolverInfo)
 		if err != nil {

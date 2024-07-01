@@ -1,13 +1,21 @@
 package utils
 
-import "github.com/sirupsen/logrus"
+import (
+	"log/slog"
+	"os"
+)
 
 // InitLogger initializes logger.
-func InitLogger() *logrus.Logger {
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp:          true,
-		DisableLevelTruncation: true,
-	})
+func InitLogger(debug bool) *slog.Logger {
+	lvl := slog.LevelInfo
+	if debug {
+		lvl = slog.LevelDebug
+	}
+
+	lgrOpts := &slog.HandlerOptions{
+		Level: lvl,
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, lgrOpts))
 	return logger
 }

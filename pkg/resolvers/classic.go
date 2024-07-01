@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
-	"github.com/sirupsen/logrus"
 )
 
 // ClassicResolver represents the config options for setting up a Resolver.
@@ -66,11 +65,11 @@ func (r *ClassicResolver) Lookup(question dns.Question, flags QueryFlags) (Respo
 		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
 	)
 	for _, msg := range messages {
-		r.resolverOptions.Logger.WithFields(logrus.Fields{
-			"domain":     msg.Question[0].Name,
-			"ndots":      r.resolverOptions.Ndots,
-			"nameserver": r.server,
-		}).Debug("Attempting to resolve")
+		r.resolverOptions.Logger.Debug("Attempting to resolve",
+			"domain", msg.Question[0].Name,
+			"ndots", r.resolverOptions.Ndots,
+			"nameserver", r.server,
+		)
 
 		// Since the library doesn't include tcp.Dial time,
 		// it's better to not rely on `rtt` provided here and calculate it ourselves.
@@ -93,7 +92,7 @@ func (r *ClassicResolver) Lookup(question dns.Question, flags QueryFlags) (Respo
 			default:
 				r.client.Net = "tcp"
 			}
-			r.resolverOptions.Logger.WithField("protocol", r.client.Net).Debug("Response truncated; retrying now")
+			r.resolverOptions.Logger.Debug("Response truncated; retrying now", "protocol", r.client.Net)
 			return r.Lookup(question, flags)
 		}
 

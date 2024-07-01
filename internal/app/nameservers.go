@@ -14,7 +14,7 @@ import (
 )
 
 func (app *App) LoadNameservers() error {
-	app.Logger.WithField("nameservers", app.QueryFlags.Nameservers).Debug("LoadNameservers: Initial nameservers")
+	app.Logger.Debug("LoadNameservers: Initial nameservers", "nameservers", app.QueryFlags.Nameservers)
 
 	app.Nameservers = []models.Nameserver{} // Clear existing nameservers
 
@@ -22,12 +22,12 @@ func (app *App) LoadNameservers() error {
 		for _, srv := range app.QueryFlags.Nameservers {
 			ns, err := initNameserver(srv)
 			if err != nil {
-				app.Logger.WithError(err).Error("error parsing nameserver")
+				app.Logger.Error("error parsing nameserver", "error", err)
 				return fmt.Errorf("error parsing nameserver: %s", srv)
 			}
 			if ns.Address != "" && ns.Type != "" {
 				app.Nameservers = append(app.Nameservers, ns)
-				app.Logger.WithField("nameserver", ns).Debug("Added nameserver")
+				app.Logger.Debug("Added nameserver", "nameserver", ns)
 			}
 		}
 	}
@@ -37,7 +37,7 @@ func (app *App) LoadNameservers() error {
 		return app.loadSystemNameservers()
 	}
 
-	app.Logger.WithField("nameservers", app.Nameservers).Debug("LoadNameservers: Final nameservers")
+	app.Logger.Debug("LoadNameservers: Final nameservers", "nameservers", app.Nameservers)
 	return nil
 }
 
@@ -45,7 +45,7 @@ func (app *App) loadSystemNameservers() error {
 	app.Logger.Debug("No user specified nameservers, falling back to system nameservers")
 	ns, ndots, search, err := getDefaultServers(app.QueryFlags.Strategy)
 	if err != nil {
-		app.Logger.WithError(err).Error("error fetching system default nameserver")
+		app.Logger.Error("error fetching system default nameserver", "error", err)
 		return fmt.Errorf("error fetching system default nameserver: %v", err)
 	}
 
@@ -58,7 +58,7 @@ func (app *App) loadSystemNameservers() error {
 	}
 
 	app.Nameservers = append(app.Nameservers, ns...)
-	app.Logger.WithField("nameservers", app.Nameservers).Debug("Loaded system nameservers")
+	app.Logger.Debug("Loaded system nameservers", "nameservers", app.Nameservers)
 	return nil
 }
 
