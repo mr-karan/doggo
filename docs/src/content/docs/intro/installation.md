@@ -66,7 +66,7 @@ scoop install doggo
 To install Doggo from source, you need to have Go installed on your system.
 
 ```bash
-go install github.com/mr-karan/doggo/cmd/doggo@latest
+go install github.com/mr-karan/doggo/cmd@latest
 ```
 
 The binary will be available at `$GOPATH/bin/doggo`.
