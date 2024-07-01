@@ -1,3 +1,5 @@
+version: 2
+
 env:
   - GO111MODULE=on
   - CGO_ENABLED=0
@@ -48,7 +50,8 @@ builds:
 
 archives:
   - id: cli
-    allow_different_binary_count: true
+    builds:
+      - cli
     format_overrides:
       - goos: windows
         format: zip
