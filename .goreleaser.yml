@@ -11,7 +11,7 @@ builds:
     id: cli
     ldflags:
       - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
-    dir: ./cmd/
+    main: ./cmd/
     goos:
       - linux
       - darwin
@@ -44,7 +44,7 @@ builds:
       - 7
     ldflags:
       - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
-    dir: ./web/
+    main: ./web/
 
 archives:
   - id: cli
@@ -86,23 +86,35 @@ dockers:
   - image_templates:
       - "ghcr.io/mr-karan/doggo:{{ .Tag }}"
       - "ghcr.io/mr-karan/doggo:latest"
-    id: doggo
-    # IDs to filter the binaries/packages.
+    goarch: amd64
     ids:
       - cli
-    dockerfile: Dockerfile-cli
+    dockerfile: cli.Dockerfile
+    use: buildx
     build_flag_templates:
       - "--build-arg"
       - "ARCH=amd64"
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.source={{ .GitURL }}
+      - --label=org.opencontainers.image.version=v{{ .Version }}
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+
+
   - image_templates:
       - "ghcr.io/mr-karan/doggo:{{ .Tag }}-arm64v8"
       - "ghcr.io/mr-karan/doggo:latest-arm64v8"
-    id: doggo-arm
-    # IDs to filter the binaries/packages.
     ids:
       - cli
     goarch: arm64
-    dockerfile: Dockerfile-cli
+    dockerfile: cli.Dockerfile
     build_flag_templates:
       - "--build-arg"
       - "ARCH=arm64v8"
+      - --platform=linux/arm64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.source={{ .GitURL }}
+      - --label=org.opencontainers.image.version=v{{ .Version }}
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
