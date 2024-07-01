@@ -9,7 +9,10 @@ export default defineConfig({
 	},
 	integrations: [
 		starlight({
-			title: 'Documentation',
+			title: 'Doggo',
+			customCss: [
+				'./src/assets/custom.css',
+			],
 			social: {
 				github: 'https://github.com/mr-karan/doggo',
 			},
