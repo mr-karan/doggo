@@ -2,28 +2,39 @@ env:
   - GO111MODULE=on
   - CGO_ENABLED=0
 
+before:
+  hooks:
+    - go mod tidy
+
 builds:
   - binary: doggo
     id: cli
+    ldflags:
+      - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
+    dir: ./cmd/
     goos:
-      - windows
-      - darwin
       - linux
+      - darwin
+      - windows
+      - freebsd
+      - openbsd
+      - netbsd
     goarch:
       - amd64
       - arm64
+      - "386"
+      - arm
     goarm:
-      - 6
-      - 7
-    ldflags:
-      - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
-    dir: ./cmd/doggo/
+      - "7"
+    ignore:
+      - goos: windows
+        goarch: arm64
+      - goos: windows
+        goarm: "7"
 
-  - binary: doggo-api.bin
-    id: api
+  - binary: doggo-web.bin
+    id: web
     goos:
-      - windows
-      - darwin
       - linux
     goarch:
       - amd64
@@ -33,14 +44,43 @@ builds:
       - 7
     ldflags:
       - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
-    dir: ./cmd/api/
+    dir: ./web/
 
 archives:
-  - format: tar.gz
+  - id: cli
+    allow_different_binary_count: true
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    wrap_in_directory: true
     files:
       - README.md
       - LICENSE
-      - completions/
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+  groups:
+    - title: "New Features"
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 10
+    - title: Others
+      order: 999
+
 
 dockers:
   - image_templates:
@@ -66,29 +106,3 @@ dockers:
     build_flag_templates:
       - "--build-arg"
       - "ARCH=arm64v8"
-
-  # - image_templates:
-  #     - "ghcr.io/mr-karan/doggo-api:{{ .Tag }}"
-  #     - "ghcr.io/mr-karan/doggo-api:latest"
-  #   id: doggo-api
-  #   ids:
-  #     - api
-  #   dockerfile: Dockerfile-api
-  #   build_flag_templates:
-  #     - "--build-arg"
-  #     - "ARCH=amd64"
-  #   extra_files:
-  #     - config-api-sample.toml
-  # - image_templates:
-  #     - "ghcr.io/mr-karan/doggo-api:{{ .Tag }}-arm64v8"
-  #     - "ghcr.io/mr-karan/doggo-api:latest-arm64v8"
-  #   id: doggo-api-arm
-  #   ids:
-  #     - api
-  #   goarch: arm64
-  #   dockerfile: Dockerfile-api
-  #   build_flag_templates:
-  #     - "--build-arg"
-  #     - "ARCH=arm64v8"
-  #   extra_files:
-  #     - config-api-sample.toml
