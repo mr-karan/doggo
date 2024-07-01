@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.2.7
 	github.com/ameshkov/dnsstamps v1.0.3
-	github.com/fatih/color v1.15.0
+	github.com/fatih/color v1.17.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/knadh/koanf v1.5.0
 	github.com/miekg/dns v1.1.56
@@ -13,7 +13,7 @@ require (
 	github.com/quic-go/quic-go v0.40.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/sys v0.14.0
+	golang.org/x/sys v0.18.0
 )
 
 require (
@@ -24,7 +24,7 @@ require (
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/google/pprof v0.0.0-20230926050212-f7f687d19a98 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
