@@ -1,11 +1,12 @@
-version: 2
-updates:
-- package-ecosystem: "gomod"
-  directory: "/"
-  schedule:
-    interval: "daily"
-  open-pull-requests-limit: 10
-- package-ecosystem: "github-actions"
-  directory: "/"
-  schedule:
-    interval: "weekly"
+# TODO: Disabling as it's quite spammy. Will re-enable it at a later point.
+# version: 2
+# updates:
+# - package-ecosystem: "gomod"
+#   directory: "/"
+#   schedule:
+#     interval: "daily"
+#   open-pull-requests-limit: 10
+# - package-ecosystem: "github-actions"
+#   directory: "/"
+#   schedule:
+#     interval: "weekly"
