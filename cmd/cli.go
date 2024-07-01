@@ -3,22 +3,21 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
-	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/providers/posflag"
+	"github.com/knadh/koanf/v2"
 	"github.com/mr-karan/doggo/internal/app"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/mr-karan/doggo/pkg/utils"
-	"github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 )
 
 var (
 	buildVersion = "unknown"
 	buildDate    = "unknown"
-	logger       = utils.InitLogger()
 	k            = koanf.New(".")
 )
 
@@ -28,24 +27,24 @@ func main() {
 		return
 	}
 
-	app := app.New(logger, buildVersion)
 	f := setupFlags()
 
 	if err := parseAndLoadFlags(f); err != nil {
-		app.Logger.WithError(err).Error("Error parsing or loading flags")
-		app.Logger.Exit(2)
+		fmt.Println("Error parsing or loading flags", "error", err)
+		os.Exit(2)
 	}
 
 	if k.Bool("version") {
 		fmt.Printf("%s - %s\n", buildVersion, buildDate)
-		app.Logger.Exit(0)
+		os.Exit(0)
 	}
 
-	setupLogging(&app)
+	logger := utils.InitLogger(k.Bool("debug"))
+	app := app.New(logger, buildVersion)
 
 	if err := k.Unmarshal("", &app.QueryFlags); err != nil {
-		app.Logger.WithError(err).Error("Error loading args")
-		app.Logger.Exit(2)
+		app.Logger.Error("Error loading args", "error", err)
+		os.Exit(2)
 	}
 
 	loadNameservers(&app, f.Args())
@@ -58,8 +57,8 @@ func main() {
 	app.PrepareQuestions()
 
 	if err := app.LoadNameservers(); err != nil {
-		app.Logger.WithError(err).Error("Error loading nameservers")
-		app.Logger.Exit(2)
+		app.Logger.Error("Error loading nameservers", "error", err)
+		os.Exit(2)
 	}
 
 	rslvrs, err := resolvers.LoadResolvers(resolvers.Options{
@@ -75,15 +74,15 @@ func main() {
 		TLSHostname:        app.QueryFlags.TLSHostname,
 	})
 	if err != nil {
-		app.Logger.WithError(err).Error("Error loading resolver")
-		app.Logger.Exit(2)
+		app.Logger.Error("Error loading resolver", "error", err)
+		os.Exit(2)
 	}
 	app.Resolvers = rslvrs
 
 	app.Logger.Debug("Starting doggo 🐶")
 	if len(app.QueryFlags.QNames) == 0 {
 		f.Usage()
-		app.Logger.Exit(0)
+		os.Exit(0)
 	}
 
 	queryFlags := resolvers.QueryFlags{
@@ -99,7 +98,7 @@ func main() {
 
 	outputResults(&app, responses, responseErrors)
 
-	app.Logger.Exit(0)
+	os.Exit(0)
 }
 
 func setupFlags() *flag.FlagSet {
@@ -150,20 +149,9 @@ func parseAndLoadFlags(f *flag.FlagSet) error {
 	return nil
 }
 
-func setupLogging(app *app.App) {
-	if k.Bool("debug") {
-		app.Logger.SetLevel(logrus.DebugLevel)
-	} else {
-		app.Logger.SetLevel(logrus.InfoLevel)
-	}
-}
-
 func loadNameservers(app *app.App, args []string) {
 	flagNameservers := k.Strings("nameserver")
-	app.Logger.WithField("flagNameservers", flagNameservers).Debug("Nameservers from -n flag")
-
 	unparsedNameservers, qt, qc, qn := loadUnparsedArgs(args)
-	app.Logger.WithField("unparsedNameservers", unparsedNameservers).Debug("Nameservers from unparsed arguments")
 
 	if len(flagNameservers) > 0 {
 		app.QueryFlags.Nameservers = flagNameservers
@@ -174,8 +162,6 @@ func loadNameservers(app *app.App, args []string) {
 	app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, qt...)
 	app.QueryFlags.QClasses = append(app.QueryFlags.QClasses, qc...)
 	app.QueryFlags.QNames = append(app.QueryFlags.QNames, qn...)
-
-	app.Logger.WithField("finalNameservers", app.QueryFlags.Nameservers).Debug("Final nameservers")
 }
 
 func resolveQueries(app *app.App, flags resolvers.QueryFlags) ([]resolvers.Response, []error) {
@@ -197,17 +183,17 @@ func resolveQueries(app *app.App, flags resolvers.QueryFlags) ([]resolvers.Respo
 
 func outputResults(app *app.App, responses []resolvers.Response, responseErrors []error) {
 	if app.QueryFlags.ShowJSON {
-		outputJSON(responses, responseErrors)
+		outputJSON(app.Logger, responses, responseErrors)
 	} else {
 		if len(responseErrors) > 0 {
-			app.Logger.WithError(responseErrors[0]).Error("Error looking up DNS records")
-			app.Logger.Exit(9)
+			app.Logger.Error("Error looking up DNS records", "error", responseErrors[0])
+			os.Exit(9)
 		}
 		app.Output(responses)
 	}
 }
 
-func outputJSON(responses []resolvers.Response, responseErrors []error) {
+func outputJSON(logger *slog.Logger, responses []resolvers.Response, responseErrors []error) {
 	jsonOutput := struct {
 		Responses []resolvers.Response `json:"responses,omitempty"`
 		Error     string               `json:"error,omitempty"`
@@ -221,8 +207,8 @@ func outputJSON(responses []resolvers.Response, responseErrors []error) {
 
 	jsonData, err := json.MarshalIndent(jsonOutput, "", "  ")
 	if err != nil {
-		logger.WithError(err).Error("Error marshaling JSON")
-		logger.Exit(1)
+		logger.Error("Error marshaling JSON")
+		os.Exit(1)
 	}
 	fmt.Println(string(jsonData))
 }

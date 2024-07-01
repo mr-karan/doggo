@@ -34,7 +34,6 @@ to experiment with writing a DNS Client from scratch in `Go` myself. Hence the n
 - Available as a web tool as well: [https://doggo.mrkaran.dev](https://doggo.mrkaran.dev).
 - Shell completions for `zsh` and `fish`.
 - Reverse DNS Lookups.
-- Supports multiple query flags.
 
 ## Installation
 
@@ -105,8 +104,8 @@ The binary will be available at `$GOPATH/bin/doggo`.
 **Do a simple DNS Lookup for `mrkaran.dev`**
 
 ```bash
-$ doggo mrkaran.dev
-NAME            TYPE    CLASS   TTL     ADDRESS         NAMESERVER
+$ doggo mrkaran.dev                                                                         
+NAME            TYPE    CLASS   TTL     ADDRESS         NAMESERVER   
 mrkaran.dev.    A       IN      20s     13.250.205.9    127.0.0.1:53
 mrkaran.dev.    A       IN      20s     206.189.89.118  127.0.0.1:53
 ```
@@ -115,7 +114,7 @@ mrkaran.dev.    A       IN      20s     206.189.89.118  127.0.0.1:53
 
 ```
 doggo MX github.com @9.9.9.9
-NAME            TYPE    CLASS   TTL     ADDRESS                         NAMESERVER
+NAME            TYPE    CLASS   TTL     ADDRESS                         NAMESERVER 
 github.com.     MX      IN      3600s   10 alt3.aspmx.l.google.com.     9.9.9.9:53
 github.com.     MX      IN      3600s   5 alt1.aspmx.l.google.com.      9.9.9.9:53
 github.com.     MX      IN      3600s   10 alt4.aspmx.l.google.com.     9.9.9.9:53
@@ -127,7 +126,7 @@ or using _named parameters_:
 
 ```bash
 $ doggo -t MX -n 9.9.9.9 github.com
-NAME            TYPE    CLASS   TTL     ADDRESS                         NAMESERVER
+NAME            TYPE    CLASS   TTL     ADDRESS                         NAMESERVER 
 github.com.     MX      IN      3600s   10 alt3.aspmx.l.google.com.     9.9.9.9:53
 github.com.     MX      IN      3600s   5 alt1.aspmx.l.google.com.      9.9.9.9:53
 github.com.     MX      IN      3600s   10 alt4.aspmx.l.google.com.     9.9.9.9:53
@@ -138,8 +137,8 @@ github.com.     MX      IN      3600s   1 aspmx.l.google.com.           9.9.9.9:
 **Query DNS records for `archive.org` using Cloudflare DoH resolver**
 
 ```bash
-$ doggo archive.org @https://cloudflare-dns.com/dns-query
-NAME            TYPE    CLASS   TTL     ADDRESS         NAMESERVER
+$ doggo archive.org @https://cloudflare-dns.com/dns-query 
+NAME            TYPE    CLASS   TTL     ADDRESS         NAMESERVER                           
 archive.org.    A       IN      41s     207.241.224.2   https://cloudflare-dns.com/dns-query
 ```
 
@@ -192,9 +191,9 @@ $ doggo internetfreedom.in --json | jq
 **Query DNS records for `duckduckgo.com` and show RTT (Round Trip Time)**
 
 ```bash
-$ doggo duckduckgo.com --time
-NAME            TYPE    CLASS   TTL     ADDRESS         NAMESERVER      TIME TAKEN
-duckduckgo.com. A       IN      30s     40.81.94.43     127.0.0.1:53    45ms
+$ doggo duckduckgo.com --time                
+NAME            TYPE    CLASS   TTL     ADDRESS         NAMESERVER      TIME TAKEN 
+duckduckgo.com. A       IN      30s     40.81.94.43     127.0.0.1:53    45ms      
 ```
 
 ## Command-line Arguments
@@ -248,26 +247,6 @@ URL scheme of the server is used to identify which resolver to use for lookups. 
   --time                      Shows how long the response took from the server.
   --short                     Short output format. Shows only the response section.
 ```
-
-### Query Flags
-
-```
-  --aa                        Set Authoritative Answer flag.
-  --ad                        Set Authenticated Data flag.
-  --cd                        Set Checking Disabled flag.
-  --rd                        Set Recursion Desired flag (default: true).
-  --z                         Set Z flag (reserved for future use).
-  --do                        Set DNSSEC OK flag.
-```
-
-These flags allow you to control various aspects of the DNS query:
-
-- `--aa`: Request an authoritative answer from the server.
-- `--ad`: Request authenticated data in the response.
-- `--cd`: Disable DNSSEC validation.
-- `--rd`: Enable recursive querying (enabled by default).
-- `--z`: Set the Z bit, which is reserved for future use.
-- `--do`: Set the DNSSEC OK bit to request DNSSEC records.
 
 ---
 

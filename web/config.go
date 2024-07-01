@@ -9,7 +9,6 @@ import (
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/providers/posflag"
-	"github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
 )
 
@@ -18,7 +17,7 @@ type Config struct {
 	HTTPAddr string `koanf:"listen_addr"`
 }
 
-func initConfig() {
+func initConfig() error {
 	f := flag.NewFlagSet("api", flag.ContinueOnError)
 	f.Usage = func() {
 		fmt.Println(f.FlagUsages())
@@ -41,11 +40,8 @@ func initConfig() {
 	// Read the config files.
 	cFiles, _ := f.GetStringSlice("config")
 	for _, f := range cFiles {
-		logger.WithFields(logrus.Fields{
-			"file": f,
-		}).Info("reading config")
 		if err := ko.Load(file.Provider(f), toml.Parser()); err != nil {
-			logger.Fatalf("error reading config: %v", err)
+			return fmt.Errorf("error reading file: %w", err)
 		}
 	}
 	// Load environment variables and merge into the loaded config.
@@ -53,8 +49,9 @@ func initConfig() {
 		return strings.Replace(strings.ToLower(
 			strings.TrimPrefix(s, "DOGGO_API_")), "__", ".", -1)
 	}), nil); err != nil {
-		logger.Fatalf("error loading env config: %v", err)
+		return fmt.Errorf("error loading env config: %w", err)
 	}
 
 	ko.Load(posflag.Provider(f, ".", ko), nil)
+	return nil
 }

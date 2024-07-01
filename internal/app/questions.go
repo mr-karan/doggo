@@ -1,6 +1,7 @@
 package app
 
 import (
+	"os"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -46,8 +47,8 @@ func (app *App) ReverseLookup() {
 	for _, n := range app.QueryFlags.QNames {
 		addr, err := dns.ReverseAddr(n)
 		if err != nil {
-			app.Logger.WithError(err).Error("error formatting address")
-			app.Logger.Exit(2)
+			app.Logger.Error("error formatting address", "error", err)
+			os.Exit(2)
 		}
 		formattedNames = append(formattedNames, addr)
 	}

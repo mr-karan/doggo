@@ -4,20 +4,19 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/mr-karan/doggo/internal/app"
 	"github.com/mr-karan/doggo/pkg/utils"
-	"github.com/sirupsen/logrus"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
-	"github.com/knadh/koanf"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/knadh/koanf/v2"
 )
 
 var (
-	logger = utils.InitLogger()
-	ko     = koanf.New(".")
+	ko = koanf.New(".")
 	// Version and date of the build. This is injected at build-time.
 	buildVersion = "unknown"
 	buildDate    = "unknown"
@@ -29,6 +28,8 @@ var (
 
 func main() {
 	initConfig()
+
+	logger := utils.InitLogger(ko.Bool("app.debug"))
 
 	// Initialize app.
 	app := app.New(logger, buildVersion)
@@ -67,11 +68,10 @@ func main() {
 		IdleTimeout:  ko.Duration("server.keepalive_timeout") * time.Millisecond,
 	}
 
-	logger.WithFields(logrus.Fields{
-		"address": srv.Addr,
-	}).Info("starting server")
+	logger.Info("starting server", "address", srv.Addr, "version", buildVersion)
 
 	if err := srv.ListenAndServe(); err != nil {
-		logger.Fatalf("couldn't start server: %v", err)
+		logger.Error("couldn't start server", "error", err)
+		os.Exit(1)
 	}
 }
