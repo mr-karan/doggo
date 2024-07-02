@@ -48,8 +48,7 @@ _doggo() {
 complete -F _doggo doggo
 `
 
-	zshCompletion = `
-#compdef doggo
+	zshCompletion = `#compdef doggo
 
 _doggo() {
   local -a commands
