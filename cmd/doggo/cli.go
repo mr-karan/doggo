@@ -120,6 +120,8 @@ func setupFlags() *flag.FlagSet {
 	f.String("tls-hostname", "", "Hostname for certificate verification")
 	f.Bool("skip-hostname-verification", false, "Skip TLS Hostname Verification")
 
+	f.Bool("any", false, "Query all supported DNS record types")
+
 	f.BoolP("json", "J", false, "Set the output format as JSON")
 	f.Bool("short", false, "Short output format")
 	f.Bool("time", false, "Display how long the response took")
