@@ -60,7 +60,7 @@ Available strategies:
 --ndots=INT             Specify ndots parameter. Takes value from /etc/resolv.conf if using the system nameserver or 1 otherwise.
 --search                Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list.
 --strategy=STRATEGY     Specify strategy to query nameservers listed in /etc/resolv.conf. Options: all, first, random. Defaults to all.
---timeout=SECONDS       Set the timeout for resolver responses.
+--timeout=DURATION    Set the timeout for resolver responses (e.g., 5s, 400ms, 1m).
 ```
 
 ## Examples
@@ -77,7 +77,7 @@ Available strategies:
 
 3. Use system resolver with 'first' strategy and custom timeout:
    ```bash
-   doggo example.com --strategy=first --timeout=5
+   doggo example.com --strategy=first --timeout=2s
    ```
 
 4. Override system resolver and use specific nameservers:
