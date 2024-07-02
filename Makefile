@@ -7,7 +7,7 @@ VERSION := ${HASH}
 
 .PHONY: build-cli
 build-cli:
-	go build -o ${CLI_BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" ./cmd/
+	go build -o ${CLI_BIN} -ldflags="-X 'main.buildVersion=${VERSION}' -X 'main.buildDate=${BUILD_DATE}'" ./cmd/doggo/
 
 .PHONY: build-web
 build-web:

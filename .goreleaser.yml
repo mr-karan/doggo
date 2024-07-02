@@ -13,7 +13,7 @@ builds:
     id: cli
     ldflags:
       - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
-    main: ./cmd/
+    main: ./cmd/doggo/
     goos:
       - linux
       - darwin
