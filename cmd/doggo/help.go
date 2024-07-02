@@ -19,7 +19,7 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
 
 {{ "EXAMPLES" | color "" "heading" }}:
   {{- range $example := .Examples }}
-  {{ $.Name | color "green" "bold" }} {{ $example.Command | color "cyan" "" }}{{ printf "%-4s" "" }}{{ $example.Description }}
+  {{ $.Name | color "green" "bold" }} {{ printf "%-40s" $example.Command | color "cyan" "" }}{{ $example.Description }}
   {{- end }}
 
 {{ "FREE FORM ARGUMENTS" | color "" "heading" }}:
@@ -106,8 +106,8 @@ func renderCustomHelp() {
 			{"--ndots=INT", "Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise."},
 			{"--search", "Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list."},
 			{"--timeout=DURATION", "Specify timeout for the resolver to return a response (e.g., 5s, 400ms, 1m)."},
-			{"-4 --ipv4", "Use IPv4 only."},
-			{"-6 --ipv6", "Use IPv6 only."},
+			{"-4, --ipv4", "Use IPv4 only."},
+			{"-6, --ipv6", "Use IPv6 only."},
 			{"--tls-hostname=HOSTNAME", "Provide a hostname for verification of the certificate if the provided DoT nameserver is an IP."},
 			{"--skip-hostname-verification", "Skip TLS Hostname Verification in case of DOT Lookups."},
 		},
