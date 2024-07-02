@@ -23,16 +23,16 @@ doggo [--] [query options] [arguments...]
 
 ## Resolver Options
 
-| Option                         | Description                                                        |
-| ------------------------------ | ------------------------------------------------------------------ |
-| `--strategy=STRATEGY`          | Specify strategy to query nameservers (all, random, first)         |
-| `--ndots=INT`                  | Specify ndots parameter                                            |
-| `--search`                     | Use the search list defined in resolv.conf (default: true)         |
-| `--timeout`                    | Specify timeout (in seconds) for the resolver to return a response |
-| `-4, --ipv4`                   | Use IPv4 only                                                      |
-| `-6, --ipv6`                   | Use IPv6 only                                                      |
-| `--tls-hostname=HOSTNAME`      | Provide a hostname for TLS certificate verification                |
-| `--skip-hostname-verification` | Skip TLS Hostname Verification for DoT lookups                     |
+| Option                         | Description                                                                 |
+| ------------------------------ | --------------------------------------------------------------------------- |
+| `--strategy=STRATEGY`          | Specify strategy to query nameservers (all, random, first)                  |
+| `--ndots=INT`                  | Specify ndots parameter                                                     |
+| `--search`                     | Use the search list defined in resolv.conf (default: true)                  |
+| `--timeout=DURATION`           | Specify timeout for the resolver to return a response (e.g., 5s, 400ms, 1m) |
+| `-4, --ipv4`                   | Use IPv4 only                                                               |
+| `-6, --ipv6`                   | Use IPv6 only                                                               |
+| `--tls-hostname=HOSTNAME`      | Provide a hostname for TLS certificate verification                         |
+| `--skip-hostname-verification` | Skip TLS Hostname Verification for DoT lookups                              |
 
 ## Query Flags
 

@@ -80,7 +80,7 @@ These examples showcase how to combine different features for powerful DNS query
 
 14. Use IPv6 only with a specific timeout and DNSSEC checking:
     ```bash
-    doggo AAAA example.com -6 --timeout 5 --do
+    doggo AAAA example.com -6 --timeout 3s --do
     ```
 
 

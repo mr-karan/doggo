@@ -105,7 +105,7 @@ func renderCustomHelp() {
 			{"--strategy=STRATEGY", "Specify strategy to query nameserver listed in etc/resolv.conf. (all, random, first)."},
 			{"--ndots=INT", "Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise."},
 			{"--search", "Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list."},
-			{"--timeout", "Specify timeout (in seconds) for the resolver to return a response."},
+			{"--timeout=DURATION", "Specify timeout for the resolver to return a response (e.g., 5s, 400ms, 1m)."},
 			{"-4 --ipv4", "Use IPv4 only."},
 			{"-6 --ipv6", "Use IPv6 only."},
 			{"--tls-hostname=HOSTNAME", "Provide a hostname for verification of the certificate if the provided DoT nameserver is an IP."},
