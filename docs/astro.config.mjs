@@ -48,6 +48,7 @@ export default defineConfig({
             { label: "Reverse IP Lookups", link: "/features/reverse" },
             { label: "Protocol Tweaks", link: "/features/tweaks" },
             { label: "Shell Completions", link: "/features/shell" },
+            { label: "Common Record Types", link: "/features/any" },
           ],
         },
       ],

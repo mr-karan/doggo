@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"log/slog"
 	"time"
 
@@ -28,7 +29,7 @@ type Options struct {
 // Client. Different types of providers can load
 // a DNS Resolver satisfying this interface.
 type Resolver interface {
-	Lookup([]dns.Question, QueryFlags) ([]Response, error)
+	Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error)
 }
 
 // Response represents a custom output format

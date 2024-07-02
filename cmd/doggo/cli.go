@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -28,29 +29,21 @@ func main() {
 		return
 	}
 
-	f := setupFlags()
-
-	if err := parseAndLoadFlags(f); err != nil {
-		fmt.Println("Error parsing or loading flags", "error", err)
-		os.Exit(2)
+	cfg, err := loadConfig()
+	if err != nil {
+		fmt.Printf("Error loading configuration: %v\n", err)
+		os.Exit(1)
 	}
 
-	if k.Bool("version") {
+	if cfg.showVersion {
 		fmt.Printf("%s - %s\n", buildVersion, buildDate)
 		os.Exit(0)
 	}
 
-	logger := utils.InitLogger(k.Bool("debug"))
-	app := app.New(logger, buildVersion)
+	logger := utils.InitLogger(cfg.debug)
+	app := initializeApp(logger, cfg)
 
-	if err := k.Unmarshal("", &app.QueryFlags); err != nil {
-		app.Logger.Error("Error loading args", "error", err)
-		os.Exit(2)
-	}
-
-	loadNameservers(&app, f.Args())
-
-	if app.QueryFlags.ReverseLookup {
+	if cfg.reverseLookup {
 		app.ReverseLookup()
 	}
 
@@ -58,42 +51,55 @@ func main() {
 	app.PrepareQuestions()
 
 	if err := app.LoadNameservers(); err != nil {
-		app.Logger.Error("Error loading nameservers", "error", err)
+		logger.Error("Error loading nameservers", "error", err)
 		os.Exit(2)
 	}
 
-	rslvrs, err := resolvers.LoadResolvers(resolvers.Options{
-		Nameservers:        app.Nameservers,
-		UseIPv4:            app.QueryFlags.UseIPv4,
-		UseIPv6:            app.QueryFlags.UseIPv6,
-		SearchList:         app.ResolverOpts.SearchList,
-		Ndots:              app.ResolverOpts.Ndots,
-		Timeout:            app.QueryFlags.Timeout * time.Second,
-		Logger:             app.Logger,
-		Strategy:           app.QueryFlags.Strategy,
-		InsecureSkipVerify: app.QueryFlags.InsecureSkipVerify,
-		TLSHostname:        app.QueryFlags.TLSHostname,
-	})
+	resolvers, err := loadResolvers(app, cfg)
 	if err != nil {
-		app.Logger.Error("Error loading resolver", "error", err)
+		logger.Error("Error loading resolvers", "error", err)
 		os.Exit(2)
 	}
-	app.Resolvers = rslvrs
+	app.Resolvers = resolvers
 
-	app.Logger.Debug("Starting doggo 🐶")
 	if len(app.QueryFlags.QNames) == 0 {
-		f.Usage()
+		cfg.flagSet.Usage()
 		os.Exit(0)
 	}
 
-	var (
-		wg           sync.WaitGroup
-		mu           sync.Mutex
-		allResponses []resolvers.Response
-		allErrors    []error
-	)
+	responses, errors := performLookup(app, cfg)
+	outputResults(app, responses, errors)
+}
 
-	queryFlags := resolvers.QueryFlags{
+type config struct {
+	flagSet       *flag.FlagSet
+	showVersion   bool
+	debug         bool
+	reverseLookup bool
+	timeout       time.Duration
+	queryFlags    resolvers.QueryFlags
+	outputJSON    bool
+	showTime      bool
+	useColor      bool
+}
+
+func loadConfig() (*config, error) {
+	cfg := &config{}
+	cfg.flagSet = setupFlags()
+
+	if err := parseAndLoadFlags(cfg.flagSet); err != nil {
+		return nil, fmt.Errorf("error parsing or loading flags: %w", err)
+	}
+
+	cfg.showVersion = k.Bool("version")
+	cfg.debug = k.Bool("debug")
+	cfg.reverseLookup = k.Bool("reverse")
+	cfg.timeout = k.Duration("timeout")
+	cfg.outputJSON = k.Bool("json")
+	cfg.showTime = k.Bool("time")
+	cfg.useColor = k.Bool("color")
+
+	cfg.queryFlags = resolvers.QueryFlags{
 		AA: k.Bool("aa"),
 		AD: k.Bool("ad"),
 		CD: k.Bool("cd"),
@@ -102,26 +108,7 @@ func main() {
 		DO: k.Bool("do"),
 	}
 
-	for _, resolver := range app.Resolvers {
-		wg.Add(1)
-		go func(r resolvers.Resolver) {
-			defer wg.Done()
-			responses, err := r.Lookup(app.Questions, queryFlags)
-			mu.Lock()
-			if err != nil {
-				allErrors = append(allErrors, err)
-			} else {
-				allResponses = append(allResponses, responses...)
-			}
-			mu.Unlock()
-		}(resolver)
-	}
-
-	wg.Wait()
-
-	outputResults(&app, allResponses, allErrors)
-
-	os.Exit(0)
+	return cfg, nil
 }
 
 func setupFlags() *flag.FlagSet {
@@ -134,7 +121,7 @@ func setupFlags() *flag.FlagSet {
 	f.StringSliceP("nameserver", "n", []string{}, "Address of the nameserver to send packets to")
 	f.BoolP("reverse", "x", false, "Performs a DNS Lookup for an IPv4 or IPv6 address")
 
-	f.Int("timeout", 5, "Sets the timeout for a query to T seconds")
+	f.DurationP("timeout", "T", 5*time.Second, "Sets the timeout for a query")
 	f.Bool("search", true, "Use the search list provided in resolv.conf")
 	f.Int("ndots", -1, "Specify the ndots parameter")
 	f.BoolP("ipv4", "4", false, "Use IPv4 only")
@@ -174,6 +161,18 @@ func parseAndLoadFlags(f *flag.FlagSet) error {
 	return nil
 }
 
+func initializeApp(logger *slog.Logger, cfg *config) *app.App {
+	app := app.New(logger, buildVersion)
+
+	if err := k.Unmarshal("", &app.QueryFlags); err != nil {
+		logger.Error("Error loading args", "error", err)
+		os.Exit(2)
+	}
+
+	loadNameservers(&app, cfg.flagSet.Args())
+	return &app
+}
+
 func loadNameservers(app *app.App, args []string) {
 	flagNameservers := k.Strings("nameserver")
 	unparsedNameservers, qt, qc, qn := loadUnparsedArgs(args)
@@ -187,6 +186,51 @@ func loadNameservers(app *app.App, args []string) {
 	app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, qt...)
 	app.QueryFlags.QClasses = append(app.QueryFlags.QClasses, qc...)
 	app.QueryFlags.QNames = append(app.QueryFlags.QNames, qn...)
+}
+
+func loadResolvers(app *app.App, cfg *config) ([]resolvers.Resolver, error) {
+	return resolvers.LoadResolvers(resolvers.Options{
+		Nameservers:        app.Nameservers,
+		UseIPv4:            app.QueryFlags.UseIPv4,
+		UseIPv6:            app.QueryFlags.UseIPv6,
+		SearchList:         app.ResolverOpts.SearchList,
+		Ndots:              app.ResolverOpts.Ndots,
+		Timeout:            cfg.timeout,
+		Logger:             app.Logger,
+		Strategy:           app.QueryFlags.Strategy,
+		InsecureSkipVerify: app.QueryFlags.InsecureSkipVerify,
+		TLSHostname:        app.QueryFlags.TLSHostname,
+	})
+}
+
+func performLookup(app *app.App, cfg *config) ([]resolvers.Response, []error) {
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
+	defer cancel()
+
+	var (
+		wg           sync.WaitGroup
+		mu           sync.Mutex
+		allResponses []resolvers.Response
+		allErrors    []error
+	)
+
+	for _, resolver := range app.Resolvers {
+		wg.Add(1)
+		go func(r resolvers.Resolver) {
+			defer wg.Done()
+			responses, err := r.Lookup(ctx, app.Questions, cfg.queryFlags)
+			mu.Lock()
+			if err != nil {
+				allErrors = append(allErrors, err)
+			} else {
+				allResponses = append(allResponses, responses...)
+			}
+			mu.Unlock()
+		}(resolver)
+	}
+
+	wg.Wait()
+	return allResponses, allErrors
 }
 
 func outputResults(app *app.App, responses []resolvers.Response, responseErrors []error) {

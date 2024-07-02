@@ -20,6 +20,8 @@ const (
 	DOTResolver      = "dot"
 	DNSCryptResolver = "dnscrypt"
 	DOQResolver      = "doq"
+	// CommonRecordTypes is a string containing all common DNS record types
+	CommonRecordTypes = "A AAAA CNAME MX NS PTR SOA SRV TXT CAA"
 )
 
 // QueryFlags is used store the query params
@@ -51,9 +53,6 @@ type Nameserver struct {
 	Address string
 	Type    string
 }
-
-// CommonRecordTypes is a string containing all common DNS record types
-const CommonRecordTypes = "A AAAA CNAME MX NS PTR SOA SRV TXT CAA"
 
 // GetCommonRecordTypes returns a slice of common DNS record types
 func GetCommonRecordTypes() []string {

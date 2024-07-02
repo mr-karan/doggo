@@ -97,8 +97,8 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 		RD: true,
 	}
 
-	// ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-	// defer cancel()
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
 
 	var (
 		wg           sync.WaitGroup
@@ -111,7 +111,7 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 		wg.Add(1)
 		go func(r resolvers.Resolver) {
 			defer wg.Done()
-			responses, err := r.Lookup(app.Questions, queryFlags)
+			responses, err := r.Lookup(ctx, app.Questions, queryFlags)
 			mu.Lock()
 			if err != nil {
 				allErrors = append(allErrors, err)

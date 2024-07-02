@@ -99,6 +99,7 @@ func renderCustomHelp() {
 			{"-n, --nameserver=ADDR", "Address of a specific nameserver to send queries to (9.9.9.9, 8.8.8.8 etc)."},
 			{"-c, --class=CLASS", "Network class of the DNS record (IN, CH, HS etc)."},
 			{"-x, --reverse", "Performs a DNS Lookup for an IPv4 or IPv6 address. Sets the query type and class to PTR and IN respectively."},
+			{"--any", "Query all supported DNS record types (A, AAAA, CNAME, MX, NS, PTR, SOA, SRV, TXT, CAA)."},
 		},
 		"ResolverOptions": []Option{
 			{"--strategy=STRATEGY", "Specify strategy to query nameserver listed in etc/resolv.conf. (all, random, first)."},

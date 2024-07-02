@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
@@ -48,7 +49,7 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 
 // query takes a dns.Question and sends them to DNS Server.
 // It parses the Response from the server in a custom output format.
-func (r *DOHResolver) query(question dns.Question, flags QueryFlags) (Response, error) {
+func (r *DOHResolver) query(ctx context.Context, question dns.Question, flags QueryFlags) (Response, error) {
 	var (
 		rsp      Response
 		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
@@ -66,21 +67,37 @@ func (r *DOHResolver) query(question dns.Question, flags QueryFlags) (Response, 
 			return rsp, err
 		}
 		now := time.Now()
-		// Make an HTTP POST request to the DNS server with the DNS message as wire format bytes in the body.
-		resp, err := r.client.Post(r.server, "application/dns-message", bytes.NewBuffer(b))
+
+		// Create a new request with the context
+		req, err := http.NewRequestWithContext(ctx, "POST", r.server, bytes.NewBuffer(b))
 		if err != nil {
 			return rsp, err
 		}
+		req.Header.Set("Content-Type", "application/dns-message")
+
+		// Make an HTTP POST request to the DNS server with the DNS message as wire format bytes in the body.
+		resp, err := r.client.Do(req)
+		if err != nil {
+			return rsp, err
+		}
+		defer resp.Body.Close()
+
 		if resp.StatusCode == http.StatusMethodNotAllowed {
 			url, err := url.Parse(r.server)
 			if err != nil {
 				return rsp, err
 			}
 			url.RawQuery = fmt.Sprintf("dns=%v", base64.RawURLEncoding.EncodeToString(b))
-			resp, err = r.client.Get(url.String())
+
+			req, err = http.NewRequestWithContext(ctx, "GET", url.String(), nil)
 			if err != nil {
 				return rsp, err
 			}
+			resp, err = r.client.Do(req)
+			if err != nil {
+				return rsp, err
+			}
+			defer resp.Body.Close()
 		}
 		if resp.StatusCode != http.StatusOK {
 			return rsp, fmt.Errorf("error from nameserver %s", resp.Status)
@@ -120,11 +137,19 @@ func (r *DOHResolver) query(question dns.Question, flags QueryFlags) (Response, 
 			// stop iterating the searchlist.
 			break
 		}
+
+		// Check if context is done after each iteration
+		select {
+		case <-ctx.Done():
+			return rsp, ctx.Err()
+		default:
+			// Continue to next iteration
+		}
 	}
 	return rsp, nil
 }
 
 // Lookup implements the Resolver interface
-func (r *DOHResolver) Lookup(questions []dns.Question, flags QueryFlags) ([]Response, error) {
-	return ConcurrentLookup(questions, flags, r.query, r.resolverOptions.Logger)
+func (r *DOHResolver) Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error) {
+	return ConcurrentLookup(ctx, questions, flags, r.query, r.resolverOptions.Logger)
 }

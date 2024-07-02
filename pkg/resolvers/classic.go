@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"crypto/tls"
 	"time"
 
@@ -57,9 +58,9 @@ func NewClassicResolver(server string, classicOpts ClassicResolverOpts, resolver
 	}, nil
 }
 
-// Lookup takes a dns.Question and sends them to DNS Server.
+// query takes a dns.Question and sends them to DNS Server.
 // It parses the Response from the server in a custom output format.
-func (r *ClassicResolver) query(question dns.Question, flags QueryFlags) (Response, error) {
+func (r *ClassicResolver) query(ctx context.Context, question dns.Question, flags QueryFlags) (Response, error) {
 	var (
 		rsp      Response
 		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
@@ -74,8 +75,12 @@ func (r *ClassicResolver) query(question dns.Question, flags QueryFlags) (Respon
 		// Since the library doesn't include tcp.Dial time,
 		// it's better to not rely on `rtt` provided here and calculate it ourselves.
 		now := time.Now()
-		in, _, err := r.client.Exchange(&msg, r.server)
+
+		in, _, err := r.client.ExchangeContext(ctx, &msg, r.server)
 		if err != nil {
+			if err == context.Canceled || err == context.DeadlineExceeded {
+				return rsp, err
+			}
 			return rsp, err
 		}
 
@@ -93,7 +98,7 @@ func (r *ClassicResolver) query(question dns.Question, flags QueryFlags) (Respon
 				r.client.Net = "tcp"
 			}
 			r.resolverOptions.Logger.Debug("Response truncated; retrying now", "protocol", r.client.Net)
-			return r.query(question, flags)
+			return r.query(ctx, question, flags)
 		}
 
 		// Pack questions in output.
@@ -116,11 +121,19 @@ func (r *ClassicResolver) query(question dns.Question, flags QueryFlags) (Respon
 			// Stop iterating the searchlist.
 			break
 		}
+
+		// Check if context is done after each iteration
+		select {
+		case <-ctx.Done():
+			return rsp, ctx.Err()
+		default:
+			// Continue to next iteration
+		}
 	}
 	return rsp, nil
 }
 
 // Lookup implements the Resolver interface
-func (r *ClassicResolver) Lookup(questions []dns.Question, flags QueryFlags) ([]Response, error) {
-	return ConcurrentLookup(questions, flags, r.query, r.resolverOptions.Logger)
+func (r *ClassicResolver) Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error) {
+	return ConcurrentLookup(ctx, questions, flags, r.query, r.resolverOptions.Logger)
 }
