@@ -40,9 +40,13 @@ func NewDNSCryptResolver(server string, dnscryptOpts DNSCryptResolverOpts, resol
 	}, nil
 }
 
-// Lookup takes a dns.Question and sends them to DNS Server.
-// It parses the Response from the server in a custom output format.
-func (r *DNSCryptResolver) Lookup(question dns.Question, flags QueryFlags) (Response, error) {
+// Lookup implements the Resolver interface
+func (r *DNSCryptResolver) Lookup(questions []dns.Question, flags QueryFlags) ([]Response, error) {
+	return ConcurrentLookup(questions, flags, r.query, r.resolverOptions.Logger)
+}
+
+// query performs a single DNS query
+func (r *DNSCryptResolver) query(question dns.Question, flags QueryFlags) (Response, error) {
 	var (
 		rsp      Response
 		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/knadh/koanf/providers/posflag"
@@ -85,6 +86,13 @@ func main() {
 		os.Exit(0)
 	}
 
+	var (
+		wg           sync.WaitGroup
+		mu           sync.Mutex
+		allResponses []resolvers.Response
+		allErrors    []error
+	)
+
 	queryFlags := resolvers.QueryFlags{
 		AA: k.Bool("aa"),
 		AD: k.Bool("ad"),
@@ -94,9 +102,24 @@ func main() {
 		DO: k.Bool("do"),
 	}
 
-	responses, responseErrors := resolveQueries(&app, queryFlags)
+	for _, resolver := range app.Resolvers {
+		wg.Add(1)
+		go func(r resolvers.Resolver) {
+			defer wg.Done()
+			responses, err := r.Lookup(app.Questions, queryFlags)
+			mu.Lock()
+			if err != nil {
+				allErrors = append(allErrors, err)
+			} else {
+				allResponses = append(allResponses, responses...)
+			}
+			mu.Unlock()
+		}(resolver)
+	}
 
-	outputResults(&app, responses, responseErrors)
+	wg.Wait()
+
+	outputResults(&app, allResponses, allErrors)
 
 	os.Exit(0)
 }
@@ -164,23 +187,6 @@ func loadNameservers(app *app.App, args []string) {
 	app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, qt...)
 	app.QueryFlags.QClasses = append(app.QueryFlags.QClasses, qc...)
 	app.QueryFlags.QNames = append(app.QueryFlags.QNames, qn...)
-}
-
-func resolveQueries(app *app.App, flags resolvers.QueryFlags) ([]resolvers.Response, []error) {
-	var responses []resolvers.Response
-	var responseErrors []error
-
-	for _, q := range app.Questions {
-		for _, rslv := range app.Resolvers {
-			resp, err := rslv.Lookup(q, flags)
-			if err != nil {
-				responseErrors = append(responseErrors, err)
-			}
-			responses = append(responses, resp)
-		}
-	}
-
-	return responses, responseErrors
 }
 
 func outputResults(app *app.App, responses []resolvers.Response, responseErrors []error) {

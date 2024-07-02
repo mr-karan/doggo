@@ -34,9 +34,14 @@ func NewDOQResolver(server string, resolverOpts Options) (Resolver, error) {
 	}, nil
 }
 
+// Lookup implements the Resolver interface
+func (r *DOQResolver) Lookup(questions []dns.Question, flags QueryFlags) ([]Response, error) {
+	return ConcurrentLookup(questions, flags, r.query, r.resolverOptions.Logger)
+}
+
 // Lookup takes a dns.Question and sends them to DNS Server.
 // It parses the Response from the server in a custom output format.
-func (r *DOQResolver) Lookup(question dns.Question, flags QueryFlags) (Response, error) {
+func (r *DOQResolver) query(question dns.Question, flags QueryFlags) (Response, error) {
 	var (
 		rsp      Response
 		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
