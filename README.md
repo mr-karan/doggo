@@ -53,7 +53,7 @@ The binary will be available at `$GOPATH/bin/doggo`.
 
 ```shell
 docker pull ghcr.io/mr-karan/doggo:latest
-docker run ghcr.io/mr-karan/doggo:latest example.com
+docker run --rm ghcr.io/mr-karan/doggo:latest example.com
 ```
 
 For more installation options, including binary downloads and Docker images, please refer to the [full installation guide](https://doggo.mrkaran.dev/docs/intro/installation/).

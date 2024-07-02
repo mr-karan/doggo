@@ -32,7 +32,7 @@ docker pull ghcr.io/mr-karan/doggo:latest
 To run Doggo using Docker:
 
 ```shell
-docker run ghcr.io/mr-karan/doggo:latest mrkaran.dev @1.1.1.1 MX
+docker run --rm ghcr.io/mr-karan/doggo:latest mrkaran.dev @1.1.1.1 MX
 ```
 
 ### Package Managers
