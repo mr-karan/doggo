@@ -28,7 +28,7 @@ type Options struct {
 // Client. Different types of providers can load
 // a DNS Resolver satisfying this interface.
 type Resolver interface {
-	Lookup(dns.Question, QueryFlags) (Response, error)
+	Lookup([]dns.Question, QueryFlags) ([]Response, error)
 }
 
 // Response represents a custom output format

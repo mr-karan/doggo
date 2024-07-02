@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/mr-karan/doggo/internal/app"
@@ -41,14 +42,14 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if err != nil {
 		app.Logger.Error("error reading request body", "error", err)
-		sendErrorResponse(w, fmt.Sprintf("Invalid JSON payload"), http.StatusBadRequest, nil)
+		sendErrorResponse(w, "Invalid JSON payload", http.StatusBadRequest, nil)
 		return
 	}
 	// Prepare query flags.
 	var qFlags models.QueryFlags
 	if err := json.Unmarshal(b, &qFlags); err != nil {
 		app.Logger.Error("error unmarshalling payload", "error", err)
-		sendErrorResponse(w, fmt.Sprintf("Invalid JSON payload"), http.StatusBadRequest, nil)
+		sendErrorResponse(w, "Invalid JSON payload", http.StatusBadRequest, nil)
 		return
 	}
 
@@ -60,14 +61,14 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	app.PrepareQuestions()
 
 	if len(app.Questions) == 0 {
-		sendErrorResponse(w, fmt.Sprintf("Missing field `query`."), http.StatusBadRequest, nil)
+		sendErrorResponse(w, "Missing field `query`.", http.StatusBadRequest, nil)
 		return
 	}
 
 	// Load Nameservers.
 	if err := app.LoadNameservers(); err != nil {
 		app.Logger.Error("error loading nameservers", "error", err)
-		sendErrorResponse(w, fmt.Sprintf("Error looking up for records."), http.StatusInternalServerError, nil)
+		sendErrorResponse(w, "Error looking up for records.", http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -96,19 +97,45 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 		RD: true,
 	}
 
-	var responses []resolvers.Response
-	for _, q := range app.Questions {
-		for _, rslv := range app.Resolvers {
-			resp, err := rslv.Lookup(q, queryFlags)
+	// ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	// defer cancel()
+
+	var (
+		wg           sync.WaitGroup
+		mu           sync.Mutex
+		allResponses []resolvers.Response
+		allErrors    []error
+	)
+
+	for _, resolver := range app.Resolvers {
+		wg.Add(1)
+		go func(r resolvers.Resolver) {
+			defer wg.Done()
+			responses, err := r.Lookup(app.Questions, queryFlags)
+			mu.Lock()
 			if err != nil {
-				app.Logger.Error("error looking up DNS records", "error", err)
-				sendErrorResponse(w, "Error looking up for records.", http.StatusInternalServerError, nil)
-				return
+				allErrors = append(allErrors, err)
+			} else {
+				allResponses = append(allResponses, responses...)
 			}
-			responses = append(responses, resp)
-		}
+			mu.Unlock()
+		}(resolver)
 	}
-	sendResponse(w, http.StatusOK, responses)
+
+	wg.Wait()
+
+	if len(allErrors) > 0 {
+		app.Logger.Error("errors looking up DNS records", "errors", allErrors)
+		sendErrorResponse(w, "Error looking up for records.", http.StatusInternalServerError, nil)
+		return
+	}
+
+	if len(allResponses) == 0 {
+		sendErrorResponse(w, "No records found.", http.StatusNotFound, nil)
+		return
+	}
+
+	sendResponse(w, http.StatusOK, allResponses)
 }
 
 // wrap is a middleware that wraps HTTP handlers and injects the "app" context.

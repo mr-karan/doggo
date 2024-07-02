@@ -46,9 +46,9 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 	}, nil
 }
 
-// Lookup takes a dns.Question and sends them to DNS Server.
+// query takes a dns.Question and sends them to DNS Server.
 // It parses the Response from the server in a custom output format.
-func (r *DOHResolver) Lookup(question dns.Question, flags QueryFlags) (Response, error) {
+func (r *DOHResolver) query(question dns.Question, flags QueryFlags) (Response, error) {
 	var (
 		rsp      Response
 		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
@@ -122,4 +122,9 @@ func (r *DOHResolver) Lookup(question dns.Question, flags QueryFlags) (Response,
 		}
 	}
 	return rsp, nil
+}
+
+// Lookup implements the Resolver interface
+func (r *DOHResolver) Lookup(questions []dns.Question, flags QueryFlags) ([]Response, error) {
+	return ConcurrentLookup(questions, flags, r.query, r.resolverOptions.Logger)
 }
