@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"time"
 
 	"github.com/ameshkov/dnscrypt/v2"
@@ -41,12 +42,12 @@ func NewDNSCryptResolver(server string, dnscryptOpts DNSCryptResolverOpts, resol
 }
 
 // Lookup implements the Resolver interface
-func (r *DNSCryptResolver) Lookup(questions []dns.Question, flags QueryFlags) ([]Response, error) {
-	return ConcurrentLookup(questions, flags, r.query, r.resolverOptions.Logger)
+func (r *DNSCryptResolver) Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error) {
+	return ConcurrentLookup(ctx, questions, flags, r.query, r.resolverOptions.Logger)
 }
 
 // query performs a single DNS query
-func (r *DNSCryptResolver) query(question dns.Question, flags QueryFlags) (Response, error) {
+func (r *DNSCryptResolver) query(ctx context.Context, question dns.Question, flags QueryFlags) (Response, error) {
 	var (
 		rsp      Response
 		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
@@ -59,28 +60,50 @@ func (r *DNSCryptResolver) query(question dns.Question, flags QueryFlags) (Respo
 		)
 
 		now := time.Now()
-		in, err := r.client.Exchange(&msg, r.resolverInfo)
-		if err != nil {
-			return rsp, err
-		}
-		rtt := time.Since(now)
-		// pack questions in output.
-		for _, q := range msg.Question {
-			ques := Question{
-				Name:  q.Name,
-				Class: dns.ClassToString[q.Qclass],
-				Type:  dns.TypeToString[q.Qtype],
-			}
-			rsp.Questions = append(rsp.Questions, ques)
-		}
-		// get the authorities and answers.
-		output := parseMessage(in, rtt, r.server)
-		rsp.Authorities = output.Authorities
-		rsp.Answers = output.Answers
 
-		if len(output.Answers) > 0 {
-			// stop iterating the searchlist.
-			break
+		// Use a channel to handle the result of the Exchange
+		resultChan := make(chan struct {
+			resp *dns.Msg
+			err  error
+		})
+
+		go func() {
+			resp, err := r.client.Exchange(&msg, r.resolverInfo)
+			resultChan <- struct {
+				resp *dns.Msg
+				err  error
+			}{resp, err}
+		}()
+
+		// Wait for either the query to complete or the context to be cancelled
+		select {
+		case result := <-resultChan:
+			if result.err != nil {
+				return rsp, result.err
+			}
+			in := result.resp
+			rtt := time.Since(now)
+
+			// pack questions in output.
+			for _, q := range msg.Question {
+				ques := Question{
+					Name:  q.Name,
+					Class: dns.ClassToString[q.Qclass],
+					Type:  dns.TypeToString[q.Qtype],
+				}
+				rsp.Questions = append(rsp.Questions, ques)
+			}
+			// get the authorities and answers.
+			output := parseMessage(in, rtt, r.server)
+			rsp.Authorities = output.Authorities
+			rsp.Answers = output.Answers
+
+			if len(output.Answers) > 0 {
+				// stop iterating the searchlist.
+				return rsp, nil
+			}
+		case <-ctx.Done():
+			return rsp, ctx.Err()
 		}
 	}
 	return rsp, nil
