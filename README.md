@@ -34,6 +34,7 @@ curl -sS https://raw.githubusercontent.com/mr-karan/doggo/main/install.sh | sh
 - Homebrew: `brew install doggo`
 - Arch Linux: `yay -S doggo-bin`
 - Scoop (Windows): `scoop install doggo`
+- Eget: `eget mr-karan/doggo`
 
 ### Binary Install
 
