@@ -16,6 +16,6 @@ func InitLogger(debug bool) *slog.Logger {
 		Level: lvl,
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, lgrOpts))
+	logger := slog.New(slog.NewTextHandler(os.Stderr, lgrOpts))
 	return logger
 }
