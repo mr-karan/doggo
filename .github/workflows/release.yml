@@ -53,3 +53,12 @@ jobs:
         env:
           DOCKER_CLI_EXPERIMENTAL: enabled
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  winget-releaser:
+    runs-on: windows-latest
+    steps:
+      - uses: vedantmgoyal9/winget-releaser@main
+        with:
+          identifier: mrkaran.doggo
+          max-versions-to-keep: 5 # keep only latest 5 versions
+          token: ${{ secrets.WINGET_TOKEN }}
