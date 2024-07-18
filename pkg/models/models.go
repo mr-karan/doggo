@@ -45,6 +45,10 @@ type QueryFlags struct {
 	InsecureSkipVerify bool          `koanf:"skip-hostname-verification" skip-hostname-verification:"-"`
 	TLSHostname        string        `koanf:"tls-hostname" tls-hostname:"-"`
 	QueryAny           bool          `koanf:"any" json:"any"`
+
+	// Globalping flags
+	From  string `koanf:"from" json:"from"`
+	Limit int    `koanf:"limit" json:"limit"`
 }
 
 // Nameserver represents the type of Nameserver

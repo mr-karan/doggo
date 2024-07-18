@@ -32,7 +32,7 @@ func main() {
 	logger := utils.InitLogger(ko.Bool("app.debug"))
 
 	// Initialize app.
-	app := app.New(logger, buildVersion)
+	app := app.New(logger, nil, buildVersion)
 
 	// Register router instance.
 	r := chi.NewRouter()

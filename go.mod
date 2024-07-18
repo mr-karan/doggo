@@ -7,6 +7,7 @@ require (
 	github.com/ameshkov/dnsstamps v1.0.3
 	github.com/fatih/color v1.17.0
 	github.com/go-chi/chi/v5 v5.1.0
+	github.com/jsdelivr/globalping-cli v1.3.1-0.20240717104136-2edb7127957b
 	github.com/knadh/koanf/parsers/toml v0.1.0
 	github.com/knadh/koanf/providers/env v0.1.0
 	github.com/knadh/koanf/providers/file v1.0.0
@@ -23,6 +24,7 @@ require (
 	github.com/AdguardTeam/golibs v0.24.1 // indirect
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/aead/poly1305 v0.0.0-20180717145839-3fee0db0b635 // indirect
+	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.0.0 // indirect
