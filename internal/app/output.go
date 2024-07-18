@@ -11,6 +11,15 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+var (
+	TerminalColorGreen   = color.New(color.FgGreen, color.Bold).SprintFunc()
+	TerminalColorBlue    = color.New(color.FgBlue, color.Bold).SprintFunc()
+	TerminalColorYellow  = color.New(color.FgYellow, color.Bold).SprintFunc()
+	TerminalColorCyan    = color.New(color.FgCyan, color.Bold).SprintFunc()
+	TerminalColorRed     = color.New(color.FgRed, color.Bold).SprintFunc()
+	TerminalColorMagenta = color.New(color.FgMagenta, color.Bold).SprintFunc()
+)
+
 func (app *App) outputJSON(rsp []resolvers.Response) {
 	jsonOutput := struct {
 		Responses []resolvers.Response `json:"responses"`
@@ -36,15 +45,6 @@ func (app *App) outputShort(rsp []resolvers.Response) {
 }
 
 func (app *App) outputTerminal(rsp []resolvers.Response) {
-	var (
-		green   = color.New(color.FgGreen, color.Bold).SprintFunc()
-		blue    = color.New(color.FgBlue, color.Bold).SprintFunc()
-		yellow  = color.New(color.FgYellow, color.Bold).SprintFunc()
-		cyan    = color.New(color.FgCyan, color.Bold).SprintFunc()
-		red     = color.New(color.FgRed, color.Bold).SprintFunc()
-		magenta = color.New(color.FgMagenta, color.Bold).SprintFunc()
-	)
-
 	// Disables colorized output if user specified.
 	if !app.QueryFlags.Color {
 		color.NoColor = true
@@ -92,32 +92,14 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 
 	for _, r := range rsp {
 		for _, ans := range r.Answers {
-			var typOut string
-			switch typ := ans.Type; typ {
-			case "A":
-				typOut = blue(ans.Type)
-			case "AAAA":
-				typOut = blue(ans.Type)
-			case "MX":
-				typOut = magenta(ans.Type)
-			case "NS":
-				typOut = cyan(ans.Type)
-			case "CNAME":
-				typOut = yellow(ans.Type)
-			case "TXT":
-				typOut = yellow(ans.Type)
-			case "SOA":
-				typOut = red(ans.Type)
-			default:
-				typOut = blue(ans.Type)
-			}
-			output := []string{green(ans.Name), typOut, ans.Class, ans.TTL, ans.Address, ans.Nameserver}
+			typOut := getColoredType(ans.Type)
+			output := []string{TerminalColorGreen(ans.Name), typOut, ans.Class, ans.TTL, ans.Address, ans.Nameserver}
 			// Print how long it took
 			if app.QueryFlags.DisplayTimeTaken {
 				output = append(output, ans.RTT)
 			}
 			if outputStatus {
-				output = append(output, red(ans.Status))
+				output = append(output, TerminalColorRed(ans.Status))
 			}
 			table.Append(output)
 		}
@@ -125,22 +107,43 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 			var typOut string
 			switch typ := auth.Type; typ {
 			case "SOA":
-				typOut = red(auth.Type)
+				typOut = TerminalColorRed(auth.Type)
 			default:
-				typOut = blue(auth.Type)
+				typOut = TerminalColorBlue(auth.Type)
 			}
-			output := []string{green(auth.Name), typOut, auth.Class, auth.TTL, auth.MName, auth.Nameserver}
+			output := []string{TerminalColorGreen(auth.Name), typOut, auth.Class, auth.TTL, auth.MName, auth.Nameserver}
 			// Print how long it took
 			if app.QueryFlags.DisplayTimeTaken {
 				output = append(output, auth.RTT)
 			}
 			if outputStatus {
-				output = append(output, red(auth.Status))
+				output = append(output, TerminalColorRed(auth.Status))
 			}
 			table.Append(output)
 		}
 	}
 	table.Render()
+}
+
+func getColoredType(t string) string {
+	switch t {
+	case "A":
+		return TerminalColorBlue(t)
+	case "AAAA":
+		return TerminalColorBlue(t)
+	case "MX":
+		return TerminalColorMagenta(t)
+	case "NS":
+		return TerminalColorCyan(t)
+	case "CNAME":
+		return TerminalColorYellow(t)
+	case "TXT":
+		return TerminalColorYellow(t)
+	case "SOA":
+		return TerminalColorRed(t)
+	default:
+		return TerminalColorBlue(t)
+	}
 }
 
 // Output takes a list of `dns.Answers` and based

@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jsdelivr/globalping-cli/globalping"
 	"github.com/knadh/koanf/providers/posflag"
 	"github.com/knadh/koanf/v2"
 	"github.com/mr-karan/doggo/internal/app"
@@ -42,6 +43,20 @@ func main() {
 
 	logger := utils.InitLogger(cfg.debug)
 	app := initializeApp(logger, cfg)
+
+	if app.QueryFlags.From != "" {
+		res, err := app.GlobalpingMeasurement()
+		if err != nil {
+			logger.Error("Error fetching globalping measurement", "error", err)
+			os.Exit(2)
+		}
+		err = app.OutputGlobalping(res)
+		if err != nil {
+			logger.Error("Error outputting globalping measurement", "error", err)
+			os.Exit(2)
+		}
+		return
+	}
 
 	if cfg.reverseLookup {
 		app.ReverseLookup()
@@ -121,6 +136,9 @@ func setupFlags() *flag.FlagSet {
 	f.StringSliceP("nameserver", "n", []string{}, "Address of the nameserver to send packets to")
 	f.BoolP("reverse", "x", false, "Performs a DNS Lookup for an IPv4 or IPv6 address")
 
+	f.String("from", "", "Probe locations as a comma-separated list")
+	f.Int("limit", 1, "Limit the number of responses")
+
 	f.DurationP("timeout", "T", 5*time.Second, "Sets the timeout for a query")
 	f.Bool("search", true, "Use the search list provided in resolv.conf")
 	f.Int("ndots", -1, "Specify the ndots parameter")
@@ -162,7 +180,12 @@ func parseAndLoadFlags(f *flag.FlagSet) error {
 }
 
 func initializeApp(logger *slog.Logger, cfg *config) *app.App {
-	app := app.New(logger, buildVersion)
+	globlpingClient := globalping.NewClient(globalping.Config{
+		APIURL:   "https://api.globalping.io/v1",
+		APIToken: os.Getenv("GLOBALPING_TOKEN"),
+	})
+
+	app := app.New(logger, globlpingClient, buildVersion)
 
 	if err := k.Unmarshal("", &app.QueryFlags); err != nil {
 		logger.Error("Error loading args", "error", err)
