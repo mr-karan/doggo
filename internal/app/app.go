@@ -3,6 +3,7 @@ package app
 import (
 	"log/slog"
 
+	"github.com/jsdelivr/globalping-cli/globalping"
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/models"
 	"github.com/mr-karan/doggo/pkg/resolvers"
@@ -17,10 +18,16 @@ type App struct {
 	Resolvers    []resolvers.Resolver
 	ResolverOpts resolvers.Options
 	Nameservers  []models.Nameserver
+
+	globalping globalping.Client
 }
 
 // NewApp initializes an instance of App which holds app wide configuration.
-func New(logger *slog.Logger, buildVersion string) App {
+func New(
+	logger *slog.Logger,
+	globalping globalping.Client,
+	buildVersion string,
+) App {
 	app := App{
 		Logger:  logger,
 		Version: buildVersion,
@@ -31,6 +38,7 @@ func New(logger *slog.Logger, buildVersion string) App {
 			Nameservers: []string{},
 		},
 		Nameservers: []models.Nameserver{},
+		globalping:  globalping,
 	}
 	return app
 }

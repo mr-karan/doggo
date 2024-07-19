@@ -68,31 +68,48 @@ Specify the protocol with a URL-type scheme. UDP is used if no scheme is specifi
 | `@sdns://`  | DNSCrypt or DoH using DNS stamp | `@sdns://...`                           |
 | `@quic://`  | DNS over QUIC                   | `@quic://dns.adguard.com`               |
 
+## Globalping API Options
+
+| Option    | Description                        | Example              |
+| --------- | ---------------------------------- | -------------------- |
+| `--from`  | Specify the location to query from | `--from Europe,Asia` |
+| `--limit` | Limit the number of probes to use  | `--limit 5`          |
+
 ## Examples
 
 1. Query a domain using defaults:
+
    ```
    doggo example.com
    ```
 
 2. Query for a CNAME record:
+
    ```
    doggo example.com CNAME
    ```
 
 3. Use a custom DNS resolver:
+
    ```
    doggo example.com MX @9.9.9.9
    ```
 
 4. Using named arguments:
+
    ```
    doggo -q example.com -t MX -n 1.1.1.1
    ```
 
 5. Query with specific flags:
+
    ```
    doggo example.com --aa --ad
+   ```
+
+6. Query using Globalping API from a specific location:
+   ```
+   doggo example.com --from Europe,Asia --limit 5
    ```
 
 For more detailed usage examples, refer to the [Examples](/guide/examples) section.

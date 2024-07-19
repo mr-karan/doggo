@@ -13,7 +13,7 @@ _doggo() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification -J --json --short --color --debug --time"
+    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification -J --json --short --color --debug --time --from --limit"
 
     case "${prev}" in
         -t|--type)
@@ -77,6 +77,8 @@ _doggo() {
     '--color[Colored output]:setting:(true false)' \
     '--debug[Enable debug logging]' \
     '--time[Shows how long the response took from the server]' \
+    '--from[Query using Globalping API from a specific location]' \
+    '--limit[Limit the number of probes to use from Globalping]' \
     '*:hostname:_hosts' \
     && ret=0
 
@@ -130,6 +132,10 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'time'         -d "Shows ho
 # TLS options
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'tls-hostname'               -d "Hostname for certificate verification" -x -a "(__fish_print_hostnames)"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'skip-hostname-verification' -d "Skip TLS hostname verification in case of DoT lookups"
+
+# Globalping options
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'from'  -d "Query using Globalping API from a specific location"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'limit' -d "Limit the number of probes to use from Globalping"
 
 # Completions command
 complete -c doggo -n '__fish_doggo_no_subcommand' -a completions -d "Generate shell completion scripts"
