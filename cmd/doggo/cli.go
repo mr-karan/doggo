@@ -50,7 +50,13 @@ func main() {
 			logger.Error("Error fetching globalping measurement", "error", err)
 			os.Exit(2)
 		}
-		err = app.OutputGlobalping(res)
+		if app.QueryFlags.ShowJSON {
+			err = app.OutputGlobalpingJSON(res)
+		} else if app.QueryFlags.ShortOutput {
+			err = app.OutputGlobalpingShort(res)
+		} else {
+			err = app.OutputGlobalping(res)
+		}
 		if err != nil {
 			logger.Error("Error outputting globalping measurement", "error", err)
 			os.Exit(2)
@@ -137,7 +143,7 @@ func setupFlags() *flag.FlagSet {
 	f.BoolP("reverse", "x", false, "Performs a DNS Lookup for an IPv4 or IPv6 address")
 
 	f.String("from", "", "Probe locations as a comma-separated list")
-	f.Int("limit", 1, "Limit the number of responses")
+	f.Int("limit", 1, "Limit the number of probes to use")
 
 	f.DurationP("timeout", "T", 5*time.Second, "Sets the timeout for a query")
 	f.Bool("search", true, "Use the search list provided in resolv.conf")
