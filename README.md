@@ -14,7 +14,6 @@
   <img src="www/static/doggo.png" alt="doggo CLI usage">
 </p>
 
-
 ---
 
 **doggo** is a modern command-line DNS client (like _dig_) written in Golang. It outputs information in a neat concise manner and supports protocols like DoH, DoT, DoQ, and DNSCrypt as well.
@@ -79,6 +78,9 @@ doggo example.com --json | jq '.responses[0].answers[].address'
 
 # Reverse DNS lookup
 doggo --reverse 8.8.8.8 --short
+
+# Using Globalping
+doggo example.com --from Germany,Japan --limit 2
 ```
 
 ## Features
