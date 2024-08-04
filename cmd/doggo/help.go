@@ -34,6 +34,11 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{ printf "%-12s" $opt.Scheme | color "yellow" "" }}{{ printf "%-68s" $opt.Example }}{{ $opt.Description | color "cyan" "" }}
   {{- end }}
 
+{{ "SUBCOMMANDS" | color "" "heading" }}:
+  {{- range $opt := .Subcommands }}
+  {{ printf "%-30s" $opt.Flag | color "yellow" "" }}{{ $opt.Description }}
+  {{- end }}
+
 {{ "QUERY OPTIONS" | color "" "heading" }}:
   {{- range $opt := .QueryOptions }}
   {{ printf "%-30s" $opt.Flag | color "yellow" "" }}{{ $opt.Description }}
@@ -92,6 +97,9 @@ func renderCustomHelp() {
 			{"@tls://", "eg: @tls://1.1.1.1", "initiates a DoT query to 1.1.1.1:853."},
 			{"@sdns://", "initiates a DNSCrypt or DoH query using a DNS stamp.", ""},
 			{"@quic://", "initiates a DOQ query.", ""},
+		},
+		"Subcommands": []Option{
+			{"completions [bash|zsh|fish]", "Generate the shell completion script for the specified shell."},
 		},
 		"QueryOptions": []Option{
 			{"-q, --query=HOSTNAME", "Hostname to query the DNS records for (eg mrkaran.dev)."},
