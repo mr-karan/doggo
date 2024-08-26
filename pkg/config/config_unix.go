@@ -9,7 +9,7 @@ import (
 )
 
 // DefaultResolvConfPath specifies path to default resolv config file on UNIX.
-const DefaultResolvConfPath = "/etc/resolv.conf"
+var DefaultResolvConfPath = "/etc/resolv.conf"
 
 // GetDefaultServers get system default nameserver
 func GetDefaultServers() ([]string, int, []string, error) {
