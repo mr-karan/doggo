@@ -27,7 +27,7 @@ These examples showcase how to combine different features for powerful DNS query
 
 4. Query using Globalping API from a specific location:
    ```bash
-   doggo example.com --from Germany
+   doggo example.com --gp-from Germany
    ```
 
 ### Using Different Resolvers
@@ -58,7 +58,7 @@ These examples showcase how to combine different features for powerful DNS query
 
 8. Using Globalping API
    ```bash
-   doggo example.com @1.1.1.1  --from Germany
+   doggo example.com @1.1.1.1  --gp-from Germany
    ```
 
 ### Advanced Queries
