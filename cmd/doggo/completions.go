@@ -134,8 +134,8 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'tls-hostname'             
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'skip-hostname-verification' -d "Skip TLS hostname verification in case of DoT lookups"
 
 # Globalping options
-complete -c doggo -n '__fish_doggo_no_subcommand' -l 'from'  -d "Query using Globalping API from a specific location"
-complete -c doggo -n '__fish_doggo_no_subcommand' -l 'limit' -d "Limit the number of probes to use from Globalping"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'gp-from'  -d "Query using Globalping API from a specific location"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'gp-limit' -d "Limit the number of probes to use from Globalping"
 
 # Completions command
 complete -c doggo -n '__fish_doggo_no_subcommand' -a completions -d "Generate shell completion scripts"
