@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math"
 	"os"
 	"sync"
 	"time"
@@ -186,10 +187,19 @@ func parseAndLoadFlags(f *flag.FlagSet) error {
 }
 
 func initializeApp(logger *slog.Logger, cfg *config) *app.App {
-	globlpingClient := globalping.NewClient(globalping.Config{
-		APIURL:   "https://api.globalping.io/v1",
-		APIToken: os.Getenv("GLOBALPING_TOKEN"),
-	})
+	gpConfig := globalping.Config{
+		APIURL:    "https://api.globalping.io/v1",
+		AuthURL:   "https://auth.globalping.io",
+		UserAgent: fmt.Sprintf("doggo/%s (https://github.com/mr-karan/doggo)", buildVersion),
+	}
+	gpToken := os.Getenv("GLOBALPING_TOKEN")
+	if gpToken != "" {
+		gpConfig.AuthToken = &globalping.Token{
+			AccessToken: gpToken,
+			Expiry:      time.Now().Add(math.MaxInt64),
+		}
+	}
+	globlpingClient := globalping.NewClient(gpConfig)
 
 	app := app.New(logger, globlpingClient, buildVersion)
 
