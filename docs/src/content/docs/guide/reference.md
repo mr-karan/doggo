@@ -70,10 +70,10 @@ Specify the protocol with a URL-type scheme. UDP is used if no scheme is specifi
 
 ## Globalping API Options
 
-| Option    | Description                        | Example              |
-| --------- | ---------------------------------- | -------------------- |
-| `--from`  | Specify the location to query from | `--from Europe,Asia` |
-| `--limit` | Limit the number of probes to use  | `--limit 5`          |
+| Option       | Description                        | Example                 |
+| ------------ | ---------------------------------- | ----------------------- |
+| `--gp-from`  | Specify the location to query from | `--gp-from Europe,Asia` |
+| `--gp-limit` | Limit the number of probes to use  | `--gp-limit 5`          |
 
 ## Examples
 
@@ -109,7 +109,7 @@ Specify the protocol with a URL-type scheme. UDP is used if no scheme is specifi
 
 6. Query using Globalping API from a specific location:
    ```
-   doggo example.com --from Europe,Asia --limit 5
+   doggo example.com --gp-from Europe,Asia --gp-limit 5
    ```
 
 For more detailed usage examples, refer to the [Examples](/guide/examples) section.

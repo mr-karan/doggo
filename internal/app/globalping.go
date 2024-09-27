@@ -47,8 +47,8 @@ func (app *App) GlobalpingMeasurement() (*globalping.Measurement, error) {
 	o := &globalping.MeasurementCreate{
 		Type:      "dns",
 		Target:    target,
-		Limit:     app.QueryFlags.Limit,
-		Locations: parseGlobalpingLocations(app.QueryFlags.From),
+		Limit:     app.QueryFlags.GPLimit,
+		Locations: parseGlobalpingLocations(app.QueryFlags.GPFrom),
 		Options: &globalping.MeasurementOptions{
 			Protocol: protocol,
 			Port:     port,

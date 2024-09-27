@@ -13,7 +13,7 @@ _doggo() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification -J --json --short --color --debug --time --from --limit"
+    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification -J --json --short --color --debug --time --gp-from --gp-limit"
 
     case "${prev}" in
         -t|--type)
@@ -77,8 +77,8 @@ _doggo() {
     '--color[Colored output]:setting:(true false)' \
     '--debug[Enable debug logging]' \
     '--time[Shows how long the response took from the server]' \
-    '--from[Query using Globalping API from a specific location]' \
-    '--limit[Limit the number of probes to use from Globalping]' \
+    '--gp-from[Query using Globalping API from a specific location]' \
+    '--gp-limit[Limit the number of probes to use from Globalping]' \
     '*:hostname:_hosts' \
     && ret=0
 

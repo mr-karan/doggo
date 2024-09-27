@@ -79,7 +79,7 @@ doggo example.com --json | jq '.responses[0].answers[].address'
 doggo --reverse 8.8.8.8 --short
 
 # Using Globalping
-doggo example.com --from Germany,Japan --limit 2
+doggo example.com --gp-from Germany,Japan --gp-limit 2
 ```
 
 ## Features

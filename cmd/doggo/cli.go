@@ -44,7 +44,7 @@ func main() {
 	logger := utils.InitLogger(cfg.debug)
 	app := initializeApp(logger, cfg)
 
-	if app.QueryFlags.From != "" {
+	if app.QueryFlags.GPFrom != "" {
 		res, err := app.GlobalpingMeasurement()
 		if err != nil {
 			logger.Error("Error fetching globalping measurement", "error", err)
@@ -142,8 +142,8 @@ func setupFlags() *flag.FlagSet {
 	f.StringSliceP("nameserver", "n", []string{}, "Address of the nameserver to send packets to")
 	f.BoolP("reverse", "x", false, "Performs a DNS Lookup for an IPv4 or IPv6 address")
 
-	f.String("from", "", "Probe locations as a comma-separated list")
-	f.Int("limit", 1, "Limit the number of probes to use")
+	f.String("gp-from", "", "Probe locations as a comma-separated list")
+	f.Int("gp-limit", 1, "Limit the number of probes to use")
 
 	f.DurationP("timeout", "T", 5*time.Second, "Sets the timeout for a query")
 	f.Bool("search", true, "Use the search list provided in resolv.conf")

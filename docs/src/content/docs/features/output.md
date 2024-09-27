@@ -17,7 +17,7 @@ mrkaran.dev.    A       IN      300s    172.67.187.239  127.0.0.53:53
 ```
 
 ```bash
-doggo mrkaran.dev --from Europe,Asia --limit 2
+doggo mrkaran.dev --gp-from Europe,Asia --gp-limit 2
 LOCATION                      	NAME        	TYPE	CLASS	TTL 	ADDRESS       	NAMESERVER
 Vienna, AT, EU, EDIS GmbH
 (AS57169)
@@ -71,7 +71,7 @@ doggo internetfreedom.in --json | jq
 ```
 
 ```bash
-doggo mrkaran.dev --from Europe,Asia --limit 2 --json | jq
+doggo mrkaran.dev --gp-from Europe,Asia --gp-limit 2 --json | jq
 ```
 
 ```json
@@ -124,7 +124,7 @@ doggo mrkaran.dev --short
 ```
 
 ```bash
-doggo mrkaran.dev --from Europe,Asia --limit 2 --short
+doggo mrkaran.dev --gp-from Europe,Asia --gp-limit 2 --short
 Frankfurt, DE, EU, WIBO Baltic UAB (AS59939)
 104.21.7.168
 172.67.187.239

@@ -47,8 +47,8 @@ type QueryFlags struct {
 	QueryAny           bool          `koanf:"any" json:"any"`
 
 	// Globalping flags
-	From  string `koanf:"from" json:"from"`
-	Limit int    `koanf:"limit" json:"limit"`
+	GPFrom  string `koanf:"gp-from" json:"gp-from"`
+	GPLimit int    `koanf:"gp-limit" json:"gp-limit"`
 }
 
 // Nameserver represents the type of Nameserver

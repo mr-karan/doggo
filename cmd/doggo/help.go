@@ -89,7 +89,7 @@ func renderCustomHelp() {
 			{"-q mrkaran.dev -t MX -n 1.1.1.1", "Using named arguments."},
 			{"mrkaran.dev --aa --ad", "Query with Authoritative Answer and Authenticated Data flags set."},
 			{"mrkaran.dev --cd --do", "Query with Checking Disabled and DNSSEC OK flags set."},
-			{"mrkaran.dev --from Germany", "Query using Globalping API from a specific location."},
+			{"mrkaran.dev --gp-from Germany", "Query using Globalping API from a specific location."},
 		},
 		"TransportOptions": []TransportOption{
 			{"@udp://", "eg: @1.1.1.1", "initiates a UDP query to 1.1.1.1:53."},
@@ -133,8 +133,8 @@ func renderCustomHelp() {
 			{"--time", "Shows how long the response took from the server."},
 		},
 		"GlobalPingOptions": []Option{
-			{"--from=Germany", "Query using Globalping API from a specific location."},
-			{"--limit=INT", "Limit the number of probes to use from Globalping."},
+			{"--gp-from=Germany", "Query using Globalping API from a specific location."},
+			{"--gp-limit=INT", "Limit the number of probes to use from Globalping."},
 		},
 	}
 
