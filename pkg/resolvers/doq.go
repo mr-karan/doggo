@@ -26,6 +26,7 @@ func NewDOQResolver(server string, resolverOpts Options) (Resolver, error) {
 			NextProtos:         []string{"doq"},
 			ServerName:         resolverOpts.TLSHostname,
 			InsecureSkipVerify: resolverOpts.InsecureSkipVerify,
+			RootCAs:            resolverOpts.RootCAs,
 		},
 		server:          server,
 		resolverOptions: resolverOpts,

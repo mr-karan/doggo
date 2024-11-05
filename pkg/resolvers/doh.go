@@ -35,6 +35,7 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 	transport.TLSClientConfig = &tls.Config{
 		ServerName:         resolverOpts.TLSHostname,
 		InsecureSkipVerify: resolverOpts.InsecureSkipVerify,
+		RootCAs:            resolverOpts.RootCAs,
 	}
 	httpClient := &http.Client{
 		Timeout:   resolverOpts.Timeout,

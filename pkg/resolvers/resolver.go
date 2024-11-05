@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"crypto/x509"
 	"log/slog"
 	"time"
 
@@ -23,6 +24,7 @@ type Options struct {
 	Strategy           string
 	InsecureSkipVerify bool
 	TLSHostname        string
+	RootCAs            *x509.CertPool
 }
 
 // Resolver implements the configuration for a DNS
