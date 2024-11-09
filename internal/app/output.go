@@ -44,6 +44,18 @@ func (app *App) outputShort(rsp []resolvers.Response) {
 	}
 }
 
+func (app *App) outputSingle(rsp []resolvers.Response) {
+	var addresses []string
+	for _, r := range rsp {
+		for _, a := range r.Answers {
+			addresses = append(addresses, a.Address)
+		}
+	}
+	if len(addresses) != 0 {
+		fmt.Printf("%s\n", selectAddress(addresses))
+	}
+}
+
 func (app *App) outputTerminal(rsp []resolvers.Response) {
 	// Disables colorized output if user specified.
 	if !app.QueryFlags.Color {
@@ -153,6 +165,8 @@ func (app *App) Output(responses []resolvers.Response) {
 		app.outputJSON(responses)
 	} else if app.QueryFlags.ShortOutput {
 		app.outputShort(responses)
+	} else if app.QueryFlags.SingleOutput {
+		app.outputSingle(responses)
 	} else {
 		app.outputTerminal(responses)
 	}

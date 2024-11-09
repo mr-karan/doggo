@@ -13,7 +13,7 @@ _doggo() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification -J --json --short --color --debug --time --gp-from --gp-limit"
+    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification -J --json --short -1 --single --color --debug --time --gp-from --gp-limit"
 
     case "${prev}" in
         -t|--type)
@@ -74,6 +74,7 @@ _doggo() {
     '--skip-hostname-verification[Skip TLS hostname verification in case of DoT lookups]' \
     '(-J --json)'{-J,--json}'[Format the output as JSON]' \
     '--short[Shows only the response section in the output]' \
+    '(-1 --single)'{-1,--single}'[Shows only the single address]' \
     '--color[Colored output]:setting:(true false)' \
     '--debug[Enable debug logging]' \
     '--time[Shows how long the response took from the server]' \
@@ -125,6 +126,7 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -s '6' -l 'ipv6' -d "Use IPv6 
 # Output options
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'J' -l 'json'  -d "Format the output as JSON"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'short'        -d "Shows only the response section in the output"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s '1' -l 'single' -d "Shows only the single address"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'color'        -d "Colored output" -x -a "true false"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'debug'        -d "Enable debug logging"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'time'         -d "Shows how long the response took from the server"
