@@ -55,6 +55,8 @@ func main() {
 			err = app.OutputGlobalpingJSON(res)
 		} else if app.QueryFlags.ShortOutput {
 			err = app.OutputGlobalpingShort(res)
+		} else if app.QueryFlags.SingleOutput {
+			err = app.OutputGlobalpingSingle(res)
 		} else {
 			err = app.OutputGlobalping(res)
 		}
@@ -159,6 +161,7 @@ func setupFlags() *flag.FlagSet {
 
 	f.BoolP("json", "J", false, "Set the output format as JSON")
 	f.Bool("short", false, "Short output format")
+	f.BoolP("single", "1", false, "Single output format")
 	f.Bool("time", false, "Display how long the response took")
 	f.Bool("color", true, "Show colored output")
 	f.Bool("debug", false, "Enable debug mode")

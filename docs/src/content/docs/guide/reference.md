@@ -47,13 +47,14 @@ doggo [--] [query options] [arguments...]
 
 ## Output Options
 
-| Option       | Description                                           |
-| ------------ | ----------------------------------------------------- |
-| `-J, --json` | Format the output as JSON                             |
-| `--short`    | Short output format (shows only the response section) |
-| `--color`    | Enable/disable colored output (default: true)         |
-| `--debug`    | Enable debug logging                                  |
-| `--time`     | Show query response time                              |
+| Option         | Description                                           |
+| -------------- | ----------------------------------------------------- |
+| `-J, --json`   | Format the output as JSON                             |
+| `--short`      | Short output format (shows only the response section) |
+| `-1, --single` | Single output format (shows only the single address)  |
+| `--color`      | Enable/disable colored output (default: true)         |
+| `--debug`      | Enable debug logging                                  |
+| `--time`       | Show query response time                              |
 
 ## Transport Options
 

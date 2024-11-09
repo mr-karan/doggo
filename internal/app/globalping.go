@@ -145,6 +145,23 @@ func (app *App) OutputGlobalpingShort(m *globalping.Measurement) error {
 	return nil
 }
 
+func (app *App) OutputGlobalpingSingle(m *globalping.Measurement) error {
+	var addresses []string
+	for i := range m.Results {
+		answers, err := globalping.DecodeDNSAnswers(m.Results[i].Result.AnswersRaw)
+		if err != nil {
+			return err
+		}
+		for _, ans := range answers {
+			addresses = append(addresses, ans.Value)
+		}
+	}
+	if len(addresses) != 0 {
+		fmt.Printf("%s\n", selectAddress(addresses))
+	}
+	return nil
+}
+
 type GlobalpingOutputResponse struct {
 	Location string             `json:"location"`
 	Answers  []resolvers.Answer `json:"answers"`

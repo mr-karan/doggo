@@ -136,6 +136,7 @@ func renderCustomHelp() {
 		"OutputOptions": []Option{
 			{"-J, --json", "Format the output as JSON."},
 			{"--short", "Short output format. Shows only the response section."},
+			{"-1, --single", "Single output format. Shows only the single address."},
 			{"--color", "Defaults to true. Set --color=false to disable colored output."},
 			{"--debug", "Enable debug logging."},
 			{"--time", "Shows how long the response took from the server."},

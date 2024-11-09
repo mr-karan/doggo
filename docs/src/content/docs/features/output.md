@@ -1,6 +1,6 @@
 ---
 title: Output Formats
-description: Learn about Doggo's various output formats including colored, JSON, and short outputs
+description: Learn about Doggo's various output formats including colored, JSON, short, and single outputs
 ---
 
 Doggo provides flexible output formats to suit different use cases, from human-readable colored output to machine-parsable JSON.
@@ -130,5 +130,14 @@ Frankfurt, DE, EU, WIBO Baltic UAB (AS59939)
 172.67.187.239
 Saratov, RU, AS, LLC "SMART CENTER" (AS48763)
 172.67.187.239
+104.21.7.168
+```
+
+### Single Output
+
+The `--single` or `-1` flag is similar to `--short` flag, but show only the single address:
+
+```bash
+doggo mrkaran.dev --single
 104.21.7.168
 ```
