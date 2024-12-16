@@ -72,7 +72,6 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 		if err != nil {
 			return rsp, err
 		}
-		defer stream.Close()
 
 		msgLen := uint16(len(b))
 		msgLenBytes := []byte{byte(msgLen >> 8), byte(msgLen & 0xFF)}
@@ -82,6 +81,16 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 		// Make a QUIC request to the DNS server with the DNS message as wire format bytes in the body.
 		if _, err = stream.Write(b); err != nil {
 			return rsp, err
+		}
+
+		// The client MUST send the DNS query over the selected stream, and MUST
+		// indicate through the STREAM FIN mechanism that no further data will be
+		// sent on that stream. Note, that stream.Close() closes the write-direction
+		// of the stream, but does not prevent reading from it.
+		// See: https://github.com/AdguardTeam/dnsproxy/blob/f901a5f4b9e8d5f143dce459067bc6614c6d927d/upstream/doq.go#L247-L254
+		err = stream.Close()
+		if err != nil {
+			return rsp, fmt.Errorf("unable to close quic stream: %w", err)
 		}
 
 		// Use a separate context with timeout for reading the response
