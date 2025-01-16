@@ -16,6 +16,7 @@ func (app *App) LoadFallbacks() {
 		app.QueryFlags.QTypes = models.GetCommonRecordTypes()
 	} else if len(app.QueryFlags.QTypes) == 0 {
 		app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, "A")
+		app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, "AAAA")
 	}
 	if len(app.QueryFlags.QClasses) == 0 {
 		app.QueryFlags.QClasses = append(app.QueryFlags.QClasses, "IN")
