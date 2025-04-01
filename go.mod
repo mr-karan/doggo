@@ -1,8 +1,7 @@
 module github.com/mr-karan/doggo
 
 go 1.22.6
-
-toolchain go1.23.1
+toolchain go1.24.1
 
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.3.0
@@ -19,7 +18,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/quic-go/quic-go v0.47.0
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/sys v0.25.0
+	golang.org/x/sys v0.31.0
 )
 
 require (
