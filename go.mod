@@ -2,7 +2,7 @@ module github.com/mr-karan/doggo
 
 go 1.22.6
 
-toolchain go1.23.1
+toolchain go1.24.1
 
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.3.0
@@ -12,7 +12,7 @@ require (
 	github.com/jsdelivr/globalping-cli v1.3.1-0.20240925142143-6b5f0951f8e1
 	github.com/knadh/koanf/parsers/toml v0.1.0
 	github.com/knadh/koanf/providers/env v1.0.0
-	github.com/knadh/koanf/providers/file v1.1.0
+	github.com/knadh/koanf/providers/file v1.1.2
 	github.com/knadh/koanf/providers/posflag v0.1.0
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/miekg/dns v1.1.62
