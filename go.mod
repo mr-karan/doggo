@@ -1,8 +1,7 @@
 module github.com/mr-karan/doggo
 
 go 1.22.6
-
-toolchain go1.23.1
+toolchain go1.24.1
 
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.3.0
@@ -17,7 +16,7 @@ require (
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/miekg/dns v1.1.62
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/quic-go/quic-go v0.47.0
+	github.com/quic-go/quic-go v0.51.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/sys v0.25.0
 )
@@ -40,7 +39,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.20.2 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	go.uber.org/mock v0.4.0 // indirect
+	go.uber.org/mock v0.5.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
