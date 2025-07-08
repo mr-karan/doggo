@@ -91,7 +91,10 @@ _doggo() {
   return ret
 }
 
-_doggo
+# don't run the completion function when being source-ed or eval-ed
+if [ "$funcstack[1]" = "_doggo" ]; then
+  _doggo
+fi
 `
 
 	fishCompletion = `
