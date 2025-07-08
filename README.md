@@ -113,4 +113,4 @@ Every contribution, no matter how small, is greatly appreciated and helps keep t
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+[LICENSE](./LICENSE)
