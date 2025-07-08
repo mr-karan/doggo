@@ -1,8 +1,7 @@
 module github.com/mr-karan/doggo
 
 go 1.22.6
-
-toolchain go1.23.1
+toolchain go1.24.1
 
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.3.0
@@ -12,14 +11,14 @@ require (
 	github.com/jsdelivr/globalping-cli v1.3.1-0.20240925142143-6b5f0951f8e1
 	github.com/knadh/koanf/parsers/toml v0.1.0
 	github.com/knadh/koanf/providers/env v1.0.0
-	github.com/knadh/koanf/providers/file v1.1.0
+	github.com/knadh/koanf/providers/file v1.2.0
 	github.com/knadh/koanf/providers/posflag v0.1.0
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/miekg/dns v1.1.62
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/quic-go/quic-go v0.47.0
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/sys v0.25.0
+	golang.org/x/sys v0.32.0
 )
 
 require (
@@ -27,7 +26,7 @@ require (
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/aead/poly1305 v0.0.0-20180717145839-3fee0db0b635 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/google/pprof v0.0.0-20240929191954-255acd752d31 // indirect
