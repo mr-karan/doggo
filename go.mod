@@ -18,7 +18,7 @@ require (
 	github.com/miekg/dns v1.1.62
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/quic-go/quic-go v0.47.0
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.7
 	golang.org/x/sys v0.25.0
 )
 
