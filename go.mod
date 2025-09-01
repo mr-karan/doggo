@@ -8,7 +8,7 @@ require (
 	github.com/ameshkov/dnscrypt/v2 v2.3.0
 	github.com/ameshkov/dnsstamps v1.0.3
 	github.com/fatih/color v1.17.0
-	github.com/go-chi/chi/v5 v5.1.0
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/jsdelivr/globalping-cli v1.3.1-0.20240925142143-6b5f0951f8e1
 	github.com/knadh/koanf/parsers/toml v0.1.0
 	github.com/knadh/koanf/providers/env v1.0.0
