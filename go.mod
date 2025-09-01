@@ -1,6 +1,6 @@
 module github.com/mr-karan/doggo
 
-go 1.22.6
+go 1.23.0
 
 toolchain go1.23.1
 
@@ -19,7 +19,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/quic-go/quic-go v0.47.0
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/sys v0.25.0
+	golang.org/x/sys v0.35.0
 )
 
 require (
