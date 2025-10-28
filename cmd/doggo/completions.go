@@ -13,7 +13,7 @@ _doggo() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do -J --json --short --color --debug --time --gp-from --gp-limit"
+    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do --nsid --cookie --padding --ede --ecs -J --json --short --color --debug --time --gp-from --gp-limit"
 
     case "${prev}" in
         -t|--type)
@@ -79,6 +79,11 @@ _doggo() {
     '--rd[Set Recursion Desired flag]' \
     '--z[Set Z flag (reserved for future use)]' \
     '--do[Set DNSSEC OK flag]' \
+    '--nsid[Request Name Server Identifier (NSID)]' \
+    '--cookie[Request DNS Cookie]' \
+    '--padding[Request EDNS padding for privacy]' \
+    '--ede[Request Extended DNS Errors]' \
+    '--ecs[EDNS Client Subnet]:subnet' \
     '(-J --json)'{-J,--json}'[Format the output as JSON]' \
     '--short[Shows only the response section in the output]' \
     '--color[Colored output]:setting:(true false)' \
@@ -137,6 +142,13 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'cd' -d "Set Checking Disab
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'rd' -d "Set Recursion Desired flag"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'z'  -d "Set Z flag (reserved for future use)"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'do' -d "Set DNSSEC OK flag"
+
+# EDNS0 options
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'nsid'    -d "Request Name Server Identifier (NSID)"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'cookie'  -d "Request DNS Cookie"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'padding' -d "Request EDNS padding for privacy"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ede'     -d "Request Extended DNS Errors"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ecs'     -d "EDNS Client Subnet" -x
 
 # Output options
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'J' -l 'json'  -d "Format the output as JSON"

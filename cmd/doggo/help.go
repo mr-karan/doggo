@@ -54,6 +54,11 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{ printf "%-30s" $flag.Flag | color "yellow" "" }}{{ $flag.Description }}
   {{- end }}
 
+{{ "EDNS OPTIONS" | color "" "heading" }}:
+  {{- range $opt := .EdnsOptions }}
+  {{ printf "%-30s" $opt.Flag | color "yellow" "" }}{{ $opt.Description }}
+  {{- end }}
+
 {{ "OUTPUT OPTIONS" | color "" "heading" }}:
   {{- range $opt := .OutputOptions }}
   {{ printf "%-30s" $opt.Flag | color "yellow" "" }}{{ $opt.Description }}
@@ -132,6 +137,13 @@ func renderCustomHelp() {
 			{"--rd", "Set Recursion Desired flag (default: true)."},
 			{"--z", "Set Z flag (reserved for future use)."},
 			{"--do", "Set DNSSEC OK flag."},
+		},
+		"EdnsOptions": []Option{
+			{"--nsid", "Request Name Server Identifier (NSID) to identify the nameserver."},
+			{"--cookie", "Request DNS Cookie for enhanced security and protection against spoofing."},
+			{"--padding", "Request EDNS padding for privacy. Helps mitigate traffic analysis attacks."},
+			{"--ede", "Request Extended DNS Errors for detailed error information."},
+			{"--ecs=SUBNET", "EDNS Client Subnet (e.g., '192.0.2.0/24' or '2001:db8::/32'). Send client subnet for geo-aware responses."},
 		},
 		"OutputOptions": []Option{
 			{"-J, --json", "Format the output as JSON."},

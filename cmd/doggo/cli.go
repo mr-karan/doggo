@@ -128,6 +128,13 @@ func loadConfig() (*config, error) {
 		RD: k.Bool("rd"),
 		Z:  k.Bool("z"),
 		DO: k.Bool("do"),
+
+		// EDNS0 options
+		NSID:    k.Bool("nsid"),
+		Cookie:  k.Bool("cookie"),
+		Padding: k.Bool("padding"),
+		EDE:     k.Bool("ede"),
+		ECS:     k.String("ecs"),
 	}
 
 	return cfg, nil
@@ -170,6 +177,13 @@ func setupFlags() *flag.FlagSet {
 	f.Bool("rd", true, "Set Recursion Desired flag (default: true)")
 	f.Bool("z", false, "Set Z flag (reserved for future use)")
 	f.Bool("do", false, "Set DNSSEC OK flag")
+
+	// Add flags for EDNS0 options
+	f.Bool("nsid", false, "Request Name Server Identifier (NSID)")
+	f.Bool("cookie", false, "Request DNS Cookie")
+	f.Bool("padding", false, "Request EDNS padding for privacy")
+	f.Bool("ede", false, "Request Extended DNS Errors")
+	f.String("ecs", "", "EDNS Client Subnet (e.g., '192.0.2.0/24' or '2001:db8::/32')")
 
 	f.Bool("version", false, "Show version of doggo")
 

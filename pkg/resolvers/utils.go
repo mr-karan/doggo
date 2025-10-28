@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +19,13 @@ type QueryFlags struct {
 	RD bool // Recursion Desired
 	Z  bool // Reserved for future use
 	DO bool // DNSSEC OK
+
+	// EDNS0 options
+	NSID    bool   // Request Name Server Identifier
+	Cookie  bool   // Request DNS Cookie
+	Padding bool   // Request EDNS padding for privacy
+	EDE     bool   // Request Extended DNS Errors
+	ECS     string // EDNS Client Subnet (e.g., "192.0.2.0/24" or "2001:db8::/32")
 }
 
 // prepareMessages takes a  DNS Question and returns the
@@ -40,8 +48,44 @@ func prepareMessages(q dns.Question, flags QueryFlags, ndots int, searchList []s
 		msg.Authoritative = flags.AA
 		msg.Zero = flags.Z
 
-		if flags.DO {
+		// Set EDNS0 if any EDNS options are requested
+		if flags.DO || flags.NSID || flags.Cookie || flags.Padding || flags.EDE || flags.ECS != "" {
 			msg.SetEdns0(4096, flags.DO)
+
+			// Add EDNS0 options
+			opt := msg.IsEdns0()
+			if opt != nil {
+				if flags.NSID {
+					nsid := &dns.EDNS0_NSID{}
+					opt.Option = append(opt.Option, nsid)
+				}
+
+				if flags.Cookie {
+					cookie := &dns.EDNS0_COOKIE{}
+					opt.Option = append(opt.Option, cookie)
+				}
+
+				if flags.Padding {
+					padding := &dns.EDNS0_PADDING{
+						Padding: make([]byte, 128), // Standard padding size
+					}
+					opt.Option = append(opt.Option, padding)
+				}
+
+				if flags.EDE {
+					// EDE is typically returned by the server, but we can set up
+					// the EDNS0 to signal we understand EDE responses
+					ede := &dns.EDNS0_EDE{}
+					opt.Option = append(opt.Option, ede)
+				}
+
+				if flags.ECS != "" {
+					subnet, err := parseECS(flags.ECS)
+					if err == nil {
+						opt.Option = append(opt.Option, subnet)
+					}
+				}
+			}
 		}
 
 		// It's recommended to only send 1 question for 1 DNS message.
@@ -99,6 +143,46 @@ func toUnicodeDomain(name string) string {
 		return name
 	}
 	return unicodeName
+}
+
+// parseECS parses an EDNS Client Subnet string and returns an EDNS0_SUBNET option.
+// Accepts formats like "192.0.2.0/24" or "2001:db8::/32".
+func parseECS(subnet string) (*dns.EDNS0_SUBNET, error) {
+	// Parse the CIDR notation
+	parts := strings.Split(subnet, "/")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid ECS format: expected 'ip/prefix', got '%s'", subnet)
+	}
+
+	ip := strings.TrimSpace(parts[0])
+	prefix := parts[1]
+
+	// Parse the prefix length
+	var prefixLen int
+	_, err := fmt.Sscanf(prefix, "%d", &prefixLen)
+	if err != nil {
+		return nil, fmt.Errorf("invalid prefix length: %s", prefix)
+	}
+
+	// Parse the IP address
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return nil, fmt.Errorf("invalid IP address: %s", ip)
+	}
+
+	// Determine if it's IPv4 or IPv6
+	family := uint16(1) // IPv4
+	if parsedIP.To4() == nil {
+		family = 2 // IPv6
+	}
+
+	return &dns.EDNS0_SUBNET{
+		Code:          dns.EDNS0SUBNET,
+		Family:        family,
+		SourceNetmask: uint8(prefixLen),
+		SourceScope:   0,
+		Address:       parsedIP,
+	}, nil
 }
 
 // parseMessage takes a `dns.Message` and returns a custom
