@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"golang.org/x/net/idna"
 )
 
 // QueryFlags represents the various DNS query flags
@@ -89,6 +90,17 @@ func constructPossibleQuestions(name string, ndots int, searchList []string) []s
 	return names
 }
 
+// toUnicodeDomain converts a punycode domain name to Unicode.
+// If conversion fails, returns the original domain name.
+func toUnicodeDomain(name string) string {
+	unicodeName, err := idna.ToUnicode(name)
+	if err != nil {
+		// If conversion fails, return original name
+		return name
+	}
+	return unicodeName
+}
+
 // parseMessage takes a `dns.Message` and returns a custom
 // Response data struct.
 func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
@@ -111,7 +123,7 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 			" " + strconv.FormatInt(int64(soa.Expire), 10) +
 			" " + strconv.FormatInt(int64(soa.Minttl), 10)
 		h := ns.Header()
-		name := h.Name
+		name := toUnicodeDomain(h.Name)
 		qclass := dns.Class(h.Class).String()
 		ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
 		qtype := dns.Type(h.Rrtype).String()
@@ -134,7 +146,7 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 			// Source https://github.com/jvns/dns-lookup/blob/main/dns.go#L121.
 			parts = strings.Split(a.String(), "\t")
 			ans   = Answer{
-				Name:       h.Name,
+				Name:       toUnicodeDomain(h.Name),
 				Type:       dns.Type(h.Rrtype).String(),
 				TTL:        strconv.FormatInt(int64(h.Ttl), 10) + "s",
 				Class:      dns.Class(h.Class).String(),
