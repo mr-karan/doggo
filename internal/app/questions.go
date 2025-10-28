@@ -6,6 +6,7 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/models"
+	"golang.org/x/net/idna"
 )
 
 // LoadFallbacks sets fallbacks for options
@@ -27,10 +28,18 @@ func (app *App) LoadFallbacks() {
 // and prepare a question for each combination of the above.
 func (app *App) PrepareQuestions() {
 	for _, n := range app.QueryFlags.QNames {
+		// Convert IDN (internationalized domain names) to ASCII-compatible encoding (punycode)
+		// This allows domains with unicode characters (umlauts, etc.) to be resolved properly
+		asciiName, err := idna.ToASCII(n)
+		if err != nil {
+			app.Logger.Error("error converting domain name to ASCII", "domain", n, "error", err)
+			os.Exit(2)
+		}
+
 		for _, t := range app.QueryFlags.QTypes {
 			for _, c := range app.QueryFlags.QClasses {
 				app.Questions = append(app.Questions, dns.Question{
-					Name:   n,
+					Name:   asciiName,
 					Qtype:  dns.StringToType[strings.ToUpper(t)],
 					Qclass: dns.StringToClass[strings.ToUpper(c)],
 				})
