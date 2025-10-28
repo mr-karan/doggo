@@ -13,7 +13,7 @@ _doggo() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification -J --json --short --color --debug --time --gp-from --gp-limit"
+    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do -J --json --short --color --debug --time --gp-from --gp-limit"
 
     case "${prev}" in
         -t|--type)
@@ -64,6 +64,7 @@ _doggo() {
     '(-n --nameserver)'{-n,--nameserver}'[Address of a specific nameserver to send queries to]:nameserver:_hosts' \
     '(-c --class)'{-c,--class}'[Network class of the DNS record being queried]:network class:(IN CH HS)' \
     '(-r --reverse)'{-r,--reverse}'[Performs a DNS Lookup for an IPv4 or IPv6 address]' \
+    '--any[Query all supported DNS record types]' \
     '--strategy[Strategy to query nameserver listed in etc/resolv.conf]:strategy:(all random first)' \
     '--ndots[Number of required dots in hostname to assume FQDN]:number of dots' \
     '--search[Use the search list defined in resolv.conf]:setting:(true false)' \
@@ -72,6 +73,12 @@ _doggo() {
     '(-6 --ipv6)'{-6,--ipv6}'[Use IPv6 only]' \
     '--tls-hostname[Hostname used for verification of certificate incase the provided DoT nameserver is an IP]:hostname:_hosts' \
     '--skip-hostname-verification[Skip TLS hostname verification in case of DoT lookups]' \
+    '--aa[Set Authoritative Answer flag]' \
+    '--ad[Set Authenticated Data flag]' \
+    '--cd[Set Checking Disabled flag]' \
+    '--rd[Set Recursion Desired flag]' \
+    '--z[Set Z flag (reserved for future use)]' \
+    '--do[Set DNSSEC OK flag]' \
     '(-J --json)'{-J,--json}'[Format the output as JSON]' \
     '--short[Shows only the response section in the output]' \
     '--color[Colored output]:setting:(true false)' \
@@ -113,6 +120,7 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -s 't' -l 'type'       -d "Typ
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'n' -l 'nameserver' -d "Address of a specific nameserver to send queries to" -x -a "(__fish_print_hostnames)"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'c' -l 'class'      -d "Network class of the DNS record being queried" -x -a "IN CH HS"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'r' -l 'reverse'    -d "Performs a DNS Lookup for an IPv4 or IPv6 address"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'any'               -d "Query all supported DNS record types"
 
 # Resolver options
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'strategy'  -d "Strategy to query nameserver listed in etc/resolv.conf" -x -a "all random first"
@@ -121,6 +129,14 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'search'    -d "Use the sea
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'timeout'   -d "Specify timeout (in seconds) for the resolver to return a response"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s '4' -l 'ipv4' -d "Use IPv4 only"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s '6' -l 'ipv6' -d "Use IPv6 only"
+
+# Query flags
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'aa' -d "Set Authoritative Answer flag"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ad' -d "Set Authenticated Data flag"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'cd' -d "Set Checking Disabled flag"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'rd' -d "Set Recursion Desired flag"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'z'  -d "Set Z flag (reserved for future use)"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'do' -d "Set DNSSEC OK flag"
 
 # Output options
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'J' -l 'json'  -d "Format the output as JSON"
