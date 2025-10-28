@@ -62,10 +62,118 @@ func (app *App) loadSystemNameservers() error {
 	return nil
 }
 
+// wrapIPv6 wraps bare IPv6 addresses in brackets for URL parsing.
+// This allows users to specify IPv6 addresses without brackets, like dig does.
+// Examples:
+//   - "2606:4700:4700::1111" -> "[2606:4700:4700::1111]"
+//   - "fe80::1%eth0" -> "[fe80::1%eth0]"
+//   - "[2606::1]" -> "[2606::1]" (already bracketed, no change)
+//   - "8.8.8.8" -> "8.8.8.8" (IPv4, no change)
+func wrapIPv6(addr string) string {
+	// Already has brackets, no need to wrap
+	if strings.HasPrefix(addr, "[") && strings.HasSuffix(addr, "]") {
+		return addr
+	}
+
+	// Must contain colons to be IPv6
+	if !strings.Contains(addr, ":") {
+		return addr
+	}
+
+	// Extract host part (handle potential zone identifier like fe80::1%eth0)
+	host := addr
+	zoneIndex := strings.Index(addr, "%")
+
+	// Try parsing the IP (without zone if present)
+	var ipToParse string
+	if zoneIndex != -1 {
+		ipToParse = addr[:zoneIndex]
+	} else {
+		ipToParse = addr
+	}
+
+	// Parse as IP address
+	ip := net.ParseIP(ipToParse)
+	if ip == nil {
+		// Not a valid IP, return as is
+		return addr
+	}
+
+	// Check if it's IPv6 (not IPv4)
+	if ip.To4() != nil {
+		// It's IPv4, return as is
+		return addr
+	}
+
+	// It's IPv6, wrap in brackets
+	return "[" + host + "]"
+}
+
+// encodeZoneID URL-encodes the zone identifier in IPv6 addresses.
+// Zone identifiers use % which must be percent-encoded as %25 for URL parsing.
+// Example: "[fe80::1%eth0]" -> "[fe80::1%25eth0]"
+func encodeZoneID(addr string) string {
+	// Only process if we have brackets and a % inside them
+	if !strings.Contains(addr, "[") || !strings.Contains(addr, "%") {
+		return addr
+	}
+
+	// Find the zone identifier (% inside brackets)
+	start := strings.Index(addr, "[")
+	end := strings.Index(addr, "]")
+	if start == -1 || end == -1 || start >= end {
+		return addr
+	}
+
+	// Extract the bracketed part
+	bracketed := addr[start+1 : end]
+	if !strings.Contains(bracketed, "%") {
+		return addr
+	}
+
+	// Replace % with %25 in the bracketed part
+	encoded := strings.ReplaceAll(bracketed, "%", "%25")
+
+	// Reconstruct the address
+	return addr[:start+1] + encoded + addr[end:]
+}
+
+// wrapIPv6InURL wraps IPv6 addresses in URLs that already have a protocol.
+// Example: "tcp://2606:4700:4700::1111" -> "tcp://[2606:4700:4700::1111]"
+func wrapIPv6InURL(urlStr string) string {
+	// Split by :// to separate protocol from host
+	parts := strings.SplitN(urlStr, "://", 2)
+	if len(parts) != 2 {
+		return urlStr
+	}
+
+	protocol := parts[0]
+	hostPart := parts[1]
+
+	// For HTTPS URLs, don't try to wrap (they have domain names, not IPs usually)
+	if protocol == "https" || protocol == "sdns" {
+		return urlStr
+	}
+
+	// Wrap the host part if it's IPv6
+	wrappedHost := wrapIPv6(hostPart)
+	// Encode zone identifiers
+	wrappedHost = encodeZoneID(wrappedHost)
+
+	return protocol + "://" + wrappedHost
+}
+
 func initNameserver(n string) (models.Nameserver, error) {
 	// If the nameserver doesn't have a protocol, assume it's UDP
 	if !strings.Contains(n, "://") {
+		// Wrap bare IPv6 addresses in brackets for proper URL parsing
+		n = wrapIPv6(n)
+		// URL-encode zone identifiers (%) for proper parsing
+		n = encodeZoneID(n)
 		n = "udp://" + n
+	} else {
+		// Protocol is present, but we still need to wrap IPv6 addresses in the host part
+		n = wrapIPv6InURL(n)
 	}
 
 	u, err := url.Parse(n)
