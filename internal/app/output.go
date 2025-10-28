@@ -52,7 +52,7 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 
 	// Conditional Time column.
 	table := tablewriter.NewWriter(color.Output)
-	header := []string{"Name", "Type", "Class", "TTL", "Address", "Nameserver"}
+	header := []interface{}{"Name", "Type", "Class", "TTL", "Address", "Nameserver"}
 	if app.QueryFlags.DisplayTimeTaken {
 		header = append(header, "Time Taken")
 	}
@@ -77,18 +77,7 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 	}
 
 	// Formatting options for the table.
-	table.SetHeader(header)
-	table.SetAutoWrapText(true)
-	table.SetAutoFormatHeaders(true)
-	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.SetCenterSeparator("")
-	table.SetColumnSeparator("")
-	table.SetRowSeparator("")
-	table.SetHeaderLine(false)
-	table.SetBorder(false)
-	table.SetTablePadding("\t") // pad with tabs
-	table.SetNoWhiteSpace(true)
+	table.Header(header...)
 
 	for _, r := range rsp {
 		for _, ans := range r.Answers {

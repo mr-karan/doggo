@@ -51,7 +51,7 @@ func (app *App) GlobalpingMeasurement() (*globalping.Measurement, error) {
 		Locations: parseGlobalpingLocations(app.QueryFlags.GPFrom),
 		Options: &globalping.MeasurementOptions{
 			Protocol: protocol,
-			Port:     port,
+			Port:     uint16(port),
 		},
 	}
 	if app.QueryFlags.UseIPv4 {
@@ -98,21 +98,9 @@ func (app *App) OutputGlobalping(m *globalping.Measurement) error {
 	}
 
 	table := tablewriter.NewWriter(color.Output)
-	header := []string{"Location", "Name", "Type", "Class", "TTL", "Address", "Nameserver"}
 
 	// Formatting options for the table.
-	table.SetHeader(header)
-	table.SetAutoWrapText(true)
-	table.SetAutoFormatHeaders(true)
-	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.SetCenterSeparator("")
-	table.SetColumnSeparator("")
-	table.SetRowSeparator("")
-	table.SetHeaderLine(false)
-	table.SetBorder(false)
-	table.SetTablePadding("\t") // pad with tabs
-	table.SetNoWhiteSpace(true)
+	table.Header("Location", "Name", "Type", "Class", "TTL", "Address", "Nameserver")
 
 	for i := range m.Results {
 		table.Append([]string{getGlobalPingLocationText(&m.Results[i]), "", "", "", "", "", ""})
