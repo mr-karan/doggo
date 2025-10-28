@@ -116,6 +116,10 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 
 		rtt := time.Since(now)
 
+		if len(buf) < 2 {
+			return rsp, fmt.Errorf("response too short: got %d bytes, need at least 2", len(buf))
+		}
+
 		packetLen := binary.BigEndian.Uint16(buf[:2])
 		if packetLen != uint16(len(buf[2:])) {
 			return rsp, fmt.Errorf("packet length mismatch")
