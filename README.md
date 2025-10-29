@@ -88,6 +88,7 @@ doggo example.com --gp-from Germany,Japan --gp-limit 2
 - Human-readable output with color-coded and tabular format
 - JSON output support for easy scripting and parsing
 - Multiple transport protocols: DoH, DoT, DoQ, TCP, UDP, DNSCrypt
+- EDNS support with Client Subnet (ECS), NSID, Cookies, Padding, and Extended Errors
 - Support for `ndots` and `search` configurations
 - Multiple resolver support with customizable query strategies
 - IPv4 and IPv6 support

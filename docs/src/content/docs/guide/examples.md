@@ -136,22 +136,61 @@ These examples showcase how to combine different features for powerful DNS query
     doggo AAAA example.com --json | jq '.responses[0].answers | length'
     ```
 
+## EDNS Options
+
+21. Request Name Server Identifier (NSID) to see which server responded:
+
+    ```bash
+    doggo example.com --nsid @1.1.1.1
+    ```
+
+22. Use EDNS Client Subnet (ECS) for geo-aware CDN responses:
+
+    ```bash
+    doggo example.com --ecs 8.8.8.0/24 @8.8.8.8
+    ```
+
+    This is particularly useful for testing how CDNs route traffic based on client location.
+
+23. Compare responses from different geographic locations using ECS:
+
+    ```bash
+    # North America subnet
+    doggo example.com --ecs 8.8.8.0/24 @8.8.8.8
+
+    # Europe subnet
+    doggo example.com --ecs 1.1.1.0/24 @8.8.8.8
+    ```
+
+24. Use DNS Cookie for enhanced security:
+
+    ```bash
+    doggo example.com --cookie @1.1.1.1
+    ```
+
+25. Combine EDNS options for privacy and debugging:
+
+    ```bash
+    doggo example.com --nsid --cookie --padding @1.1.1.1
+    ```
+
+    The `--padding` flag helps protect against traffic analysis attacks.
+
 ## Troubleshooting and Debugging
 
-21. Enable debug logging for verbose output:
+26. Enable debug logging for verbose output:
 
     ```bash
     doggo example.com --debug
     ```
 
-22. Compare responses with and without EDNS Client Subnet:
+27. Request Extended DNS Errors (EDE) for detailed failure information:
 
     ```bash
-    doggo example.com @8.8.8.8
-    doggo example.com @8.8.8.8 --z
+    doggo nonexistent.example --ede @1.1.1.1
     ```
 
-23. Test DNSSEC validation:
+28. Test DNSSEC validation:
 
     ```bash
     doggo rsasecured.net --do @8.8.8.8
@@ -167,14 +206,7 @@ These examples showcase how to combine different features for powerful DNS query
 
     If you don't see DNSSEC-related information in the output, try using a resolver known to support DNSSEC, like 8.8.8.8 (Google) or 9.9.9.9 (Quad9).
 
-24. Compare responses with and without EDNS Client Subnet:
-
-    ```bash
-    doggo example.com @8.8.8.8
-    doggo example.com @8.8.8.8 --z
-    ```
-
-25. Check for DNSSEC records (DNSKEY, DS, RRSIG):
+29. Check for DNSSEC records (DNSKEY, DS, RRSIG):
 
     ```bash
     doggo DNSKEY example.com @8.8.8.8
@@ -182,7 +214,7 @@ These examples showcase how to combine different features for powerful DNS query
     doggo RRSIG example.com @8.8.8.8
     ```
 
-26. Verify DNSSEC chain of trust:
+30. Verify DNSSEC chain of trust:
     ```bash
     doggo example.com --type=A --do --cd=false @8.8.8.8
     ```

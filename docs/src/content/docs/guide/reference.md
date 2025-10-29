@@ -45,6 +45,35 @@ doggo [--] [query options] [arguments...]
 | `--z`  | Set Z flag (reserved for future use)       |
 | `--do` | Set DNSSEC OK flag                         |
 
+## EDNS Options
+
+EDNS (Extension Mechanisms for DNS) provides additional capabilities beyond basic DNS queries.
+
+| Option        | Description                                                                                                |
+| ------------- | ---------------------------------------------------------------------------------------------------------- |
+| `--nsid`      | Request Name Server Identifier (NSID) to identify which nameserver responded                                |
+| `--cookie`    | Request DNS Cookie for enhanced security and protection against spoofing and amplification attacks          |
+| `--padding`   | Request EDNS padding for privacy (helps mitigate traffic analysis attacks by standardizing packet sizes)    |
+| `--ede`       | Request Extended DNS Errors for detailed error information when queries fail                                 |
+| `--ecs=SUBNET`| EDNS Client Subnet - sends client subnet information for geo-aware responses (e.g., `192.0.2.0/24` or `2001:db8::/32`) |
+
+### EDNS Examples
+
+1. Query with NSID to identify the responding nameserver:
+   ```
+   doggo example.com --nsid @1.1.1.1
+   ```
+
+2. Use EDNS Client Subnet for geo-aware CDN responses:
+   ```
+   doggo example.com --ecs 8.8.8.0/24 @8.8.8.8
+   ```
+
+3. Combine multiple EDNS options for privacy and debugging:
+   ```
+   doggo example.com --nsid --cookie --padding @1.1.1.1
+   ```
+
 ## Output Options
 
 | Option       | Description                                           |
