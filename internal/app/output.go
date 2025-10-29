@@ -112,6 +112,36 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 		}
 	}
 	table.Render()
+
+	// Display EDNS information if present (only once, from the first response)
+	hasEdns := false
+	for _, r := range rsp {
+		if r.Edns != nil && !hasEdns {
+			hasEdns = true
+			fmt.Println()
+			fmt.Println(TerminalColorYellow("EDNS Information:"))
+			if r.Edns.NSID != "" {
+				fmt.Printf("  NSID: %s\n", TerminalColorCyan(r.Edns.NSID))
+			}
+			if r.Edns.Cookie != "" {
+				fmt.Printf("  Cookie: %s\n", TerminalColorCyan(r.Edns.Cookie))
+			}
+			if r.Edns.Subnet != "" {
+				fmt.Printf("  Client Subnet: %s (Scope: %d)\n",
+					TerminalColorCyan(r.Edns.Subnet), r.Edns.SubnetScope)
+			}
+			if r.Edns.ExtendedErr != "" {
+				fmt.Printf("  Extended Error: %s\n", TerminalColorRed(r.Edns.ExtendedErr))
+			}
+			if r.Edns.UDPSize > 0 {
+				fmt.Printf("  UDP Size: %s\n", TerminalColorCyan(fmt.Sprintf("%d", r.Edns.UDPSize)))
+			}
+			if r.Edns.DNSSECOk {
+				fmt.Printf("  DNSSEC OK: %s\n", TerminalColorGreen("true"))
+			}
+			break // Only display EDNS info once
+		}
+	}
 }
 
 func getColoredType(t string) string {

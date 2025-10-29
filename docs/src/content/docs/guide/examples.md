@@ -162,13 +162,38 @@ These examples showcase how to combine different features for powerful DNS query
     doggo example.com --ecs 1.1.1.0/24 @8.8.8.8
     ```
 
-24. Use DNS Cookie for enhanced security:
+24. **Real-world example: Test geo-aware DNS with Netflix**
+
+    Netflix uses geo-aware DNS to route users to regional servers. Query from different locations to see how they return different IP addresses:
+
+    ```bash
+    # From USA (using subnet 8.8.8.0/24)
+    doggo netflix.com --ecs 8.8.8.0/24 @8.8.8.8
+    # Returns: 3.225.92.8 (AWS US-East servers)
+
+    # From India (using subnet 49.207.0.0/24)
+    doggo netflix.com --ecs 49.207.0.0/24 @8.8.8.8
+    # Returns: 54.246.79.9 (AWS EU-Ireland servers)
+
+    # From Germany (using subnet 5.9.0.0/24)
+    doggo netflix.com --ecs 5.9.0.0/24 @8.8.8.8
+    # Returns: 54.74.73.31 (AWS EU-Ireland servers)
+    ```
+
+    Notice how Netflix returns **completely different IP addresses** based on your location. This ensures you connect to the closest data center for faster streaming.
+
+    **Understanding CDN behavior:**
+    - Some services like Netflix use **geo-aware DNS** (different IPs per region)
+    - Others like Cloudflare use **Anycast** (same IPs globally, routing happens at network level)
+    - ECS lets you test this without actually traveling!
+
+25. Use DNS Cookie for enhanced security:
 
     ```bash
     doggo example.com --cookie @1.1.1.1
     ```
 
-25. Combine EDNS options for privacy and debugging:
+26. Combine EDNS options for privacy and debugging:
 
     ```bash
     doggo example.com --nsid --cookie --padding @1.1.1.1
@@ -178,19 +203,19 @@ These examples showcase how to combine different features for powerful DNS query
 
 ## Troubleshooting and Debugging
 
-26. Enable debug logging for verbose output:
+27. Enable debug logging for verbose output:
 
     ```bash
     doggo example.com --debug
     ```
 
-27. Request Extended DNS Errors (EDE) for detailed failure information:
+28. Request Extended DNS Errors (EDE) for detailed failure information:
 
     ```bash
     doggo nonexistent.example --ede @1.1.1.1
     ```
 
-28. Test DNSSEC validation:
+29. Test DNSSEC validation:
 
     ```bash
     doggo rsasecured.net --do @8.8.8.8
@@ -206,7 +231,7 @@ These examples showcase how to combine different features for powerful DNS query
 
     If you don't see DNSSEC-related information in the output, try using a resolver known to support DNSSEC, like 8.8.8.8 (Google) or 9.9.9.9 (Quad9).
 
-29. Check for DNSSEC records (DNSKEY, DS, RRSIG):
+30. Check for DNSSEC records (DNSKEY, DS, RRSIG):
 
     ```bash
     doggo DNSKEY example.com @8.8.8.8
@@ -214,7 +239,7 @@ These examples showcase how to combine different features for powerful DNS query
     doggo RRSIG example.com @8.8.8.8
     ```
 
-30. Verify DNSSEC chain of trust:
+31. Verify DNSSEC chain of trust:
     ```bash
     doggo example.com --type=A --do --cd=false @8.8.8.8
     ```

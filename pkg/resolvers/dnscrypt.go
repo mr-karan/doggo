@@ -97,6 +97,7 @@ func (r *DNSCryptResolver) query(ctx context.Context, question dns.Question, fla
 			output := parseMessage(in, rtt, r.server)
 			rsp.Authorities = output.Authorities
 			rsp.Answers = output.Answers
+			rsp.Edns = output.Edns
 
 			if len(output.Answers) > 0 {
 				// stop iterating the searchlist.

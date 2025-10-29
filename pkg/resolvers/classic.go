@@ -116,6 +116,7 @@ func (r *ClassicResolver) query(ctx context.Context, question dns.Question, flag
 		output := parseMessage(in, rtt, r.server)
 		rsp.Authorities = output.Authorities
 		rsp.Answers = output.Answers
+		rsp.Edns = output.Edns
 
 		if len(output.Answers) > 0 {
 			// Stop iterating the searchlist.

@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net"
 	"strconv"
@@ -185,11 +186,63 @@ func parseECS(subnet string) (*dns.EDNS0_SUBNET, error) {
 	}, nil
 }
 
+// parseEdns extracts EDNS0 options from a DNS message.
+func parseEdns(msg *dns.Msg) *EdnsInfo {
+	opt := msg.IsEdns0()
+	if opt == nil {
+		return nil
+	}
+
+	edns := &EdnsInfo{
+		UDPSize:  opt.UDPSize(),
+		DNSSECOk: opt.Do(),
+	}
+
+	for _, option := range opt.Option {
+		switch o := option.(type) {
+		case *dns.EDNS0_NSID:
+			// NSID is stored as hex string, decode and display as ASCII if printable
+			nsidBytes, err := hex.DecodeString(o.Nsid)
+			if err != nil {
+				edns.NSID = o.Nsid // fallback to hex if decode fails
+			} else {
+				isPrintable := true
+				for _, b := range nsidBytes {
+					if b < 32 || b > 126 {
+						isPrintable = false
+						break
+					}
+				}
+				if isPrintable && len(nsidBytes) > 0 {
+					edns.NSID = string(nsidBytes)
+				} else {
+					edns.NSID = o.Nsid // keep as hex
+				}
+			}
+		case *dns.EDNS0_COOKIE:
+			edns.Cookie = fmt.Sprintf("%x", o.Cookie)
+		case *dns.EDNS0_SUBNET:
+			edns.Subnet = fmt.Sprintf("%s/%d", o.Address.String(), o.SourceNetmask)
+			edns.SubnetScope = o.SourceScope
+		case *dns.EDNS0_EDE:
+			edns.ExtendedErr = fmt.Sprintf("Code: %d", o.InfoCode)
+			if o.ExtraText != "" {
+				edns.ExtendedErr += fmt.Sprintf(", Info: %s", o.ExtraText)
+			}
+		}
+	}
+
+	return edns
+}
+
 // parseMessage takes a `dns.Message` and returns a custom
 // Response data struct.
 func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 	var resp Response
 	timeTaken := fmt.Sprintf("%dms", rtt.Milliseconds())
+
+	// Parse EDNS0 options if present
+	resp.Edns = parseEdns(msg)
 
 	// Parse Authorities section.
 	for _, ns := range msg.Ns {

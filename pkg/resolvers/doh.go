@@ -132,6 +132,7 @@ func (r *DOHResolver) query(ctx context.Context, question dns.Question, flags Qu
 		output := parseMessage(&msg, rtt, r.server)
 		rsp.Authorities = output.Authorities
 		rsp.Answers = output.Answers
+		rsp.Edns = output.Edns
 
 		if len(output.Answers) > 0 {
 			// stop iterating the searchlist.

@@ -39,6 +39,7 @@ type Response struct {
 	Answers     []Answer    `json:"answers"`
 	Authorities []Authority `json:"authorities"`
 	Questions   []Question  `json:"questions"`
+	Edns        *EdnsInfo   `json:"edns,omitempty"`
 }
 
 type Question struct {
@@ -67,6 +68,16 @@ type Authority struct {
 	Status     string `json:"status"`
 	RTT        string `json:"rtt"`
 	Nameserver string `json:"nameserver"`
+}
+
+type EdnsInfo struct {
+	NSID         string `json:"nsid,omitempty"`
+	Cookie       string `json:"cookie,omitempty"`
+	Subnet       string `json:"subnet,omitempty"`
+	SubnetScope  uint8  `json:"subnet_scope,omitempty"`
+	ExtendedErr  string `json:"extended_error,omitempty"`
+	UDPSize      uint16 `json:"udp_size,omitempty"`
+	DNSSECOk     bool   `json:"dnssec_ok,omitempty"`
 }
 
 // LoadResolvers loads differently configured
