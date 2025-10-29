@@ -29,3 +29,19 @@ clean:
 .PHONY: lint
 lint:
 	golangci-lint run
+
+.PHONY: docs-dev
+docs-dev: ## Start Astro docs development server
+	cd docs && yarn dev
+
+.PHONY: docs-build
+docs-build: ## Build Astro docs for production
+	cd docs && yarn build
+
+.PHONY: docs-preview
+docs-preview: ## Preview built docs
+	cd docs && yarn preview
+
+.PHONY: docs-install
+docs-install: ## Install docs dependencies
+	cd docs && yarn install
