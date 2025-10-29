@@ -295,5 +295,29 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 
 		resp.Answers = append(resp.Answers, ans)
 	}
+
+	// Parse Additional section (glue records, extra A/AAAA for MX/SRV, etc.)
+	for _, extra := range msg.Extra {
+		h := extra.Header()
+
+		// Skip OPT records (already displayed as EDNS information)
+		if h.Rrtype == dns.TypeOPT {
+			continue
+		}
+
+		parts := strings.Split(extra.String(), "\t")
+		ans := Answer{
+			Name:       toUnicodeDomain(h.Name),
+			Type:       dns.Type(h.Rrtype).String(),
+			TTL:        strconv.FormatInt(int64(h.Ttl), 10) + "s",
+			Class:      dns.Class(h.Class).String(),
+			Address:    parts[len(parts)-1],
+			RTT:        timeTaken,
+			Nameserver: server,
+			Status:     dns.RcodeToString[msg.Rcode],
+		}
+		resp.Additional = append(resp.Additional, ans)
+	}
+
 	return resp
 }

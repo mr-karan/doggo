@@ -39,6 +39,7 @@ type Response struct {
 	Answers     []Answer    `json:"answers"`
 	Authorities []Authority `json:"authorities"`
 	Questions   []Question  `json:"questions"`
+	Additional  []Answer    `json:"additional,omitempty"`
 	Edns        *EdnsInfo   `json:"edns,omitempty"`
 }
 

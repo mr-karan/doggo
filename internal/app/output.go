@@ -41,6 +41,9 @@ func (app *App) outputShort(rsp []resolvers.Response) {
 		for _, a := range r.Answers {
 			fmt.Printf("%s\n", a.Address)
 		}
+		for _, a := range r.Additional {
+			fmt.Printf("%s\n", a.Address)
+		}
 	}
 }
 
@@ -107,6 +110,18 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 			}
 			if outputStatus {
 				output = append(output, TerminalColorRed(auth.Status))
+			}
+			table.Append(output)
+		}
+		for _, additional := range r.Additional {
+			typOut := getColoredType(additional.Type)
+			output := []string{TerminalColorGreen(additional.Name), typOut, additional.Class, additional.TTL, additional.Address, additional.Nameserver}
+			// Print how long it took
+			if app.QueryFlags.DisplayTimeTaken {
+				output = append(output, additional.RTT)
+			}
+			if outputStatus {
+				output = append(output, TerminalColorRed(additional.Status))
 			}
 			table.Append(output)
 		}
