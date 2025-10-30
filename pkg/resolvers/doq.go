@@ -6,6 +6,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"net"
+	"strings"
 	"time"
 
 	"github.com/miekg/dns"
@@ -19,12 +21,35 @@ type DOQResolver struct {
 	resolverOptions Options
 }
 
+// splitHostPort splits a host:port string and handles IPv6 addresses properly.
+// Returns the host without port and brackets.
+func splitHostPort(addr string) (host, port string, err error) {
+	host, port, err = net.SplitHostPort(addr)
+	if err != nil {
+		return "", "", err
+	}
+	// Remove brackets from IPv6 addresses
+	host = strings.Trim(host, "[]")
+	return host, port, nil
+}
+
 // NewDOQResolver accepts a nameserver address and configures a DOQ based resolver.
 func NewDOQResolver(server string, resolverOpts Options) (Resolver, error) {
+	// Extract hostname from server address for TLS verification
+	// If TLSHostname is explicitly set via flag, use that; otherwise extract from server address
+	tlsHostname := resolverOpts.TLSHostname
+	if tlsHostname == "" {
+		// server is in format "hostname:port", extract just the hostname
+		host, _, err := splitHostPort(server)
+		if err == nil {
+			tlsHostname = host
+		}
+	}
+
 	return &DOQResolver{
 		tls: &tls.Config{
 			NextProtos:         []string{"doq"},
-			ServerName:         resolverOpts.TLSHostname,
+			ServerName:         tlsHostname,
 			InsecureSkipVerify: resolverOpts.InsecureSkipVerify,
 		},
 		server:          server,
