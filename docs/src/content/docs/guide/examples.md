@@ -243,3 +243,75 @@ These examples showcase how to combine different features for powerful DNS query
     ```bash
     doggo example.com --type=A --do --cd=false @8.8.8.8
     ```
+
+## Internationalized Domain Names (IDN)
+
+32. Query Unicode domain names directly:
+
+    ```bash
+    doggo münchen.de
+    ```
+
+    Doggo automatically converts Unicode to punycode for DNS queries and displays results in Unicode for readability.
+
+33. Query international domains in different scripts:
+
+    ```bash
+    # German (Umlauts)
+    doggo die-förderer.net
+
+    # Arabic
+    doggo مصر.eg
+
+    # Chinese
+    doggo 中国.cn
+
+    # Japanese
+    doggo 日本.jp
+    ```
+
+34. Use IDN domains with different resolvers:
+
+    ```bash
+    doggo münchen.de @https://dns.google/dns-query
+    ```
+
+## DNS Additional Section (Glue Records)
+
+35. Query TLD nameservers to see glue records:
+
+    ```bash
+    doggo NS com. @a.gtld-servers.net --rd=false
+    ```
+
+    The Additional section shows IPv4 and IPv6 addresses for nameservers, preventing circular dependencies.
+
+36. Investigate DNS delegation for a domain:
+
+    ```bash
+    doggo NS example.org @a.gtld-servers.net --rd=false
+    ```
+
+    This reveals how the domain is delegated at the TLD level, including glue records for in-zone nameservers.
+
+37. Query root servers for TLD nameserver information:
+
+    ```bash
+    doggo NS org. @a.root-servers.net --rd=false
+    ```
+
+38. Debug nameserver configuration:
+
+    ```bash
+    doggo NS yourdomain.com @ns1.yourdomain.com --rd=false
+    ```
+
+    Verify that nameserver IPs are correctly configured in glue records.
+
+39. See MX target addresses in Additional section:
+
+    ```bash
+    doggo MX gmail.com
+    ```
+
+    The Additional section may include A/AAAA records for mail servers, optimizing resolution.
