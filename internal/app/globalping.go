@@ -14,6 +14,7 @@ import (
 	"github.com/jsdelivr/globalping-cli/globalping"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 var (
@@ -98,6 +99,32 @@ func (app *App) OutputGlobalping(m *globalping.Measurement) error {
 	}
 
 	table := tablewriter.NewWriter(color.Output)
+	table.Options(
+		tablewriter.WithRendition(tw.Rendition{
+			Borders: tw.Border{
+				Left:   tw.Off,
+				Right:  tw.Off,
+				Top:    tw.Off,
+				Bottom: tw.Off,
+			},
+			Settings: tw.Settings{
+				Separators: tw.Separators{
+					ShowHeader:     tw.Off,
+					ShowFooter:     tw.Off,
+					BetweenRows:    tw.Off,
+					BetweenColumns: tw.Off,
+				},
+				Lines: tw.Lines{
+					ShowTop:        tw.Off,
+					ShowBottom:     tw.Off,
+					ShowHeaderLine: tw.Off,
+					ShowFooterLine: tw.Off,
+				},
+			},
+			Symbols: tw.NewSymbols(tw.StyleLight),
+		}),
+		tablewriter.WithHeaderAlignment(tw.AlignLeft),
+	)
 
 	// Formatting options for the table.
 	table.Header("Location", "Name", "Type", "Class", "TTL", "Address", "Nameserver")

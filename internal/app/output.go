@@ -9,6 +9,7 @@ import (
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 var (
@@ -55,6 +56,33 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 
 	// Conditional Time column.
 	table := tablewriter.NewWriter(color.Output)
+	table.Options(
+		tablewriter.WithRendition(tw.Rendition{
+			Borders: tw.Border{
+				Left:   tw.Off,
+				Right:  tw.Off,
+				Top:    tw.Off,
+				Bottom: tw.Off,
+			},
+			Settings: tw.Settings{
+				Separators: tw.Separators{
+					ShowHeader:     tw.Off,
+					ShowFooter:     tw.Off,
+					BetweenRows:    tw.Off,
+					BetweenColumns: tw.Off,
+				},
+				Lines: tw.Lines{
+					ShowTop:        tw.Off,
+					ShowBottom:     tw.Off,
+					ShowHeaderLine: tw.Off,
+					ShowFooterLine: tw.Off,
+				},
+			},
+			Symbols: tw.NewSymbols(tw.StyleLight),
+		}),
+		tablewriter.WithHeaderAlignment(tw.AlignLeft),
+	)
+
 	header := []interface{}{"Name", "Type", "Class", "TTL", "Address", "Nameserver"}
 	if app.QueryFlags.DisplayTimeTaken {
 		header = append(header, "Time Taken")
