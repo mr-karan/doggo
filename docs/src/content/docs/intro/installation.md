@@ -45,6 +45,14 @@ Install via [Homebrew](https://brew.sh/):
 brew install doggo
 ```
 
+#### MacPorts (macOS)
+
+Install via [MacPorts](https://www.macports.org/):
+
+```bash
+sudo port install doggo
+```
+
 #### Arch Linux
 
 Install using an AUR helper like `yay`:
@@ -53,12 +61,46 @@ Install using an AUR helper like `yay`:
 yay -S doggo-bin
 ```
 
+#### Nix
+
+Install via [Nix](https://nixos.org/) using the modern Nix commands:
+
+```bash
+# Install to your profile
+nix profile install nixpkgs#doggo
+
+# Or try it without installing
+nix shell nixpkgs#doggo
+```
+
+For NixOS, add to your configuration:
+
+```nix
+environment.systemPackages = [ pkgs.doggo ];
+```
+
 #### Scoop (Windows)
 
 Install via [Scoop](https://scoop.sh/):
 
 ```bash
 scoop install doggo
+```
+
+#### Winget (Windows)
+
+Install via [Winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/):
+
+```bash
+winget install doggo
+```
+
+#### Eget
+
+Install via [Eget](https://github.com/zyedidia/eget):
+
+```bash
+eget mr-karan/doggo
 ```
 
 ### From Source
