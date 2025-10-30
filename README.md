@@ -25,7 +25,7 @@ It's totally inspired by [dog](https://github.com/ogham/dog/) which is written i
 ### Easy Install (Recommended)
 
 ```shell
-curl -sS https://raw.githubusercontent.com/mr-karan/doggo/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/mr-karan/doggo/main/install.sh | sh
 ```
 
 ### Package Managers
