@@ -43,7 +43,7 @@ func (app *App) LoadNameservers() error {
 
 func (app *App) loadSystemNameservers() error {
 	app.Logger.Debug("No user specified nameservers, falling back to system nameservers")
-	ns, ndots, search, err := getDefaultServers(app.QueryFlags.Strategy)
+	ns, ndots, search, err := getDefaultServers(app.QueryFlags.Strategy, app.QueryFlags.UseIPv4, app.QueryFlags.UseIPv6)
 	if err != nil {
 		app.Logger.Error("error fetching system default nameserver", "error", err)
 		return fmt.Errorf("error fetching system default nameserver: %v", err)
@@ -243,12 +243,62 @@ func handleSDNS(n string) (models.Nameserver, error) {
 	}
 }
 
-func getDefaultServers(strategy string) ([]models.Nameserver, int, []string, error) {
+// isIPv4 checks if an IP address string is IPv4
+func isIPv4(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+	return ip.To4() != nil
+}
+
+// isIPv6 checks if an IP address string is IPv6
+func isIPv6(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+	return ip.To4() == nil
+}
+
+// filterNameserversByIPVersion filters nameservers based on IPv4/IPv6 flags
+func filterNameserversByIPVersion(servers []string, useIPv4, useIPv6 bool) []string {
+	// If neither flag is set, return all servers
+	if !useIPv4 && !useIPv6 {
+		return servers
+	}
+
+	filtered := make([]string, 0, len(servers))
+	for _, srv := range servers {
+		if useIPv4 && isIPv4(srv) {
+			filtered = append(filtered, srv)
+		} else if useIPv6 && isIPv6(srv) {
+			filtered = append(filtered, srv)
+		}
+	}
+
+	return filtered
+}
+
+func getDefaultServers(strategy string, useIPv4, useIPv6 bool) ([]models.Nameserver, int, []string, error) {
 	// Load nameservers from `/etc/resolv.conf`.
 	dnsServers, ndots, search, err := config.GetDefaultServers()
 	if err != nil {
 		return nil, 0, nil, err
 	}
+
+	// Filter nameservers based on IPv4/IPv6 flags
+	dnsServers = filterNameserversByIPVersion(dnsServers, useIPv4, useIPv6)
+
+	// If after filtering we have no servers, return an error
+	if len(dnsServers) == 0 {
+		ipVersion := "IPv4"
+		if useIPv6 {
+			ipVersion = "IPv6"
+		}
+		return nil, ndots, search, fmt.Errorf("no %s nameservers found in system configuration", ipVersion)
+	}
+
 	servers := make([]models.Nameserver, 0, len(dnsServers))
 
 	switch strategy {
