@@ -103,7 +103,7 @@ download_and_install() {
   fi
 
   info "Verifying if file command exists"
-  if ! command -v asfile > /dev/null 2>&1; then
+  if ! command -v file > /dev/null 2>&1; then
       error "'file' command not found. Please install it."
       exit 1
   fi
