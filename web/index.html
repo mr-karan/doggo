@@ -4,97 +4,230 @@
     <title>Doggo DNS</title>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="assets/terminal.css">
     <link href="assets/style.css" rel="stylesheet">
 </head>
 <body>
-<div class="main">
-    <header>
-        <h1 class="logo"><span>Doggo</span> DNS</h1>
-    </header>
-
-    <form method="post" id="form" class="box">
-        <div class="row">
-            <div class="field">
-                <label for="domain">Domain name</label>
-                <input id="domain" name="q" placeholder="domain.tld" required autofocus />
-            </div>
-            <div class="field">
-                <label for="type">Query type</label>
-                <select id="type" name="type">
-                    <option default>A</option>
-                    <option>AAAA</option>
-                    <option>CAA</option>
-                    <option>CNAME</option>
-                    <option>MX</option>
-                    <option>NAPTR</option>
-                    <option>NS</option>
-                    <option>PTR</option>
-                    <option>SOA</option>
-                    <option>SRV</option>
-                    <option>TXT</option>
-                </select>
-            </div>
+<div class="container">
+    <div class="terminal-nav">
+        <div class="terminal-logo">
+            <div class="logo">🐶 doggo</div>
         </div>
-        <div class="row">
-            <div class="field">
+        <nav class="terminal-menu">
+            <ul vocab="https://schema.org/" typeof="BreadcrumbList">
+                <li property="itemListElement" typeof="ListItem"><a href="https://github.com/mr-karan/doggo" property="item" typeof="WebPage"><span property="name">GitHub</span></a></li>
+                <li property="itemListElement" typeof="ListItem"><a href="https://doggo.mrkaran.dev/docs/" property="item" typeof="WebPage"><span property="name">Docs</span></a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <form id="form">
+        <fieldset>
+            <legend>DNS Query</legend>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="domain">Domain</label>
+                    <input id="domain" name="q" type="text" placeholder="example.com" required autofocus />
+                </div>
+
+                <div class="form-group">
+                    <label for="type">Record Type</label>
+                    <select id="type" name="type">
+                        <option>A</option>
+                        <option>AAAA</option>
+                        <option>CAA</option>
+                        <option>CNAME</option>
+                        <option>MX</option>
+                        <option>NS</option>
+                        <option>PTR</option>
+                        <option>SOA</option>
+                        <option>SRV</option>
+                        <option>TXT</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label for="ns">Nameserver</label>
                 <select id="ns" name="ns">
-                    <option default value="tcp://1.1.1.1:53">Cloudflare</option>
-                    <option value="https://cloudflare-dns.com/dns-query">Cloudflare (DOH)</option>
-                    <option value="tcp://8.8.8.8:53">Google</option>
-                    <option value="tcp://9.9.9.9:53">Quad9</option>
-                    <option value="">Custom</option>
+                    <optgroup label="Cloudflare">
+                        <option value="udp://1.1.1.1:53">UDP (1.1.1.1)</option>
+                        <option value="tcp://1.1.1.1:53">TCP (1.1.1.1)</option>
+                        <option value="https://cloudflare-dns.com/dns-query">DNS over HTTPS</option>
+                        <option value="tls://1.1.1.1:853">DNS over TLS</option>
+                        <option value="quic://dns.cloudflare.com:853">DNS over QUIC</option>
+                    </optgroup>
+                    <optgroup label="Google">
+                        <option value="udp://8.8.8.8:53">UDP (8.8.8.8)</option>
+                        <option value="tcp://8.8.8.8:53">TCP (8.8.8.8)</option>
+                        <option value="https://dns.google/dns-query">DNS over HTTPS</option>
+                        <option value="tls://8.8.8.8:853">DNS over TLS</option>
+                    </optgroup>
+                    <optgroup label="Quad9">
+                        <option value="udp://9.9.9.9:53">UDP (9.9.9.9)</option>
+                        <option value="tcp://9.9.9.9:53">TCP (9.9.9.9)</option>
+                        <option value="https://dns.quad9.net/dns-query">DNS over HTTPS</option>
+                        <option value="tls://9.9.9.9:853">DNS over TLS</option>
+                    </optgroup>
+                    <optgroup label="AdGuard">
+                        <option value="udp://94.140.14.14:53">UDP (94.140.14.14)</option>
+                        <option value="tcp://94.140.14.14:53">TCP (94.140.14.14)</option>
+                        <option value="https://dns.adguard-dns.com/dns-query">DNS over HTTPS</option>
+                        <option value="tls://dns.adguard-dns.com:853">DNS over TLS</option>
+                        <option value="quic://dns.adguard-dns.com:853">DNS over QUIC</option>
+                    </optgroup>
+                    <optgroup label="Mullvad">
+                        <option value="https://dns.mullvad.net/dns-query">DNS over HTTPS</option>
+                        <option value="tls://dns.mullvad.net:853">DNS over TLS</option>
+                    </optgroup>
+                    <optgroup label="Control D">
+                        <option value="udp://76.76.2.0:53">UDP (76.76.2.0)</option>
+                        <option value="tcp://76.76.2.0:53">TCP (76.76.2.0)</option>
+                        <option value="https://freedns.controld.com/p0">DNS over HTTPS</option>
+                        <option value="tls://p0.freedns.controld.com:853">DNS over TLS</option>
+                        <option value="quic://p0.freedns.controld.com:853">DNS over QUIC</option>
+                    </optgroup>
+                    <optgroup label="DNS0.eu">
+                        <option value="udp://193.110.81.0:53">UDP (193.110.81.0)</option>
+                        <option value="tcp://193.110.81.0:53">TCP (193.110.81.0)</option>
+                        <option value="https://zero.dns0.eu">DNS over HTTPS</option>
+                        <option value="tls://zero.dns0.eu:853">DNS over TLS</option>
+                        <option value="quic://zero.dns0.eu:853">DNS over QUIC</option>
+                    </optgroup>
+                    <optgroup label="OpenDNS">
+                        <option value="udp://208.67.222.222:53">UDP (208.67.222.222)</option>
+                        <option value="tcp://208.67.222.222:53">TCP (208.67.222.222)</option>
+                    </optgroup>
+                    <optgroup label="CleanBrowsing">
+                        <option value="udp://185.228.168.9:53">UDP (185.228.168.9)</option>
+                        <option value="https://doh.cleanbrowsing.org/doh/family-filter">DNS over HTTPS</option>
+                    </optgroup>
+                    <optgroup label="Custom">
+                        <option value="custom">Custom Server</option>
+                    </optgroup>
                 </select>
             </div>
-            <div class="field">
-                <label for="address">Nameserver address</label>
-                <input id="address" name="address" type="text" placeholder="tcp://your-ip"
-                    required pattern="(tcp|udp|tls|https|sdns):\/\/(.*)" />
-                <p class="help">
-                    To use different protocols like DOH, DOT etc. refer to the instructions
-                    <a href="https://github.com/mr-karan/doggo#transport-options">here</a>.
-                </p>
+
+            <div class="form-group" id="custom-server-group" style="display: none;">
+                <label for="custom-server">Custom Server</label>
+                <input id="custom-server" name="custom-server" type="text" placeholder="udp://ip:port or https://..." />
             </div>
-        </div>
-        <div class="row">
-            <div class="field"><p id="message"></p></div>
-            <div class="field submit">
-                <button type="submit">Submit</button>
+
+            <div class="form-group full-width">
+                <label for="address">Selected Server</label>
+                <input id="address" name="address" type="text" readonly />
             </div>
+        </fieldset>
+
+        <details id="advanced-options">
+            <summary>Advanced Options</summary>
+
+            <div class="advanced-grid">
+                <fieldset class="advanced-fieldset">
+                    <legend>Query Flags</legend>
+                    <div class="checkbox-row">
+                        <label><input type="checkbox" id="rd" name="rd" checked> RD</label>
+                        <label><input type="checkbox" id="ad" name="ad"> AD</label>
+                        <label><input type="checkbox" id="cd" name="cd"> CD</label>
+                        <label><input type="checkbox" id="aa" name="aa"> AA</label>
+                        <label><input type="checkbox" id="do" name="do"> DO</label>
+                        <label><input type="checkbox" id="z" name="z"> Z</label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="advanced-fieldset">
+                    <legend>EDNS Options</legend>
+                    <div class="checkbox-row">
+                        <label><input type="checkbox" id="nsid" name="nsid"> NSID</label>
+                        <label><input type="checkbox" id="cookie" name="cookie"> Cookie</label>
+                        <label><input type="checkbox" id="padding" name="padding"> Padding</label>
+                        <label><input type="checkbox" id="ede" name="ede"> EDE</label>
+                    </div>
+                    <div class="form-group">
+                        <label for="ecs">Client Subnet (ECS)</label>
+                        <input id="ecs" name="ecs" type="text" placeholder="192.0.2.0/24 or 2001:db8::/32" />
+                    </div>
+                </fieldset>
+            </div>
+        </details>
+
+        <div class="form-actions">
+            <p id="message" class="hidden"></p>
+            <button type="submit" class="btn btn-default btn-block">
+                <span id="btn-text">Query DNS</span>
+                <span id="btn-loader" class="hidden">Querying...</span>
+            </button>
         </div>
     </form>
 
-    <!--Responses-->
-    <table class="box hidden" id="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Address</th>
-                <th class="type">Type</th>
-                <th>TTL</th>
-                <th>RTT</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <footer >
-        <div>
-            <p>Built with
-                <span>&#9829;</span> by
-                <a href="https://mrkaran.dev"><strong>mrkaran</strong></a>
-            </p>
-            <p><a href="https://github.com/mr-karan/doggo">Source Code</a></p>
+    <div id="results" class="hidden">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="answers">Answers</button>
+            <button class="tab-btn" data-tab="authorities">Authorities</button>
+            <button class="tab-btn" data-tab="additional">Additional</button>
+            <button class="tab-btn" data-tab="edns">EDNS</button>
         </div>
-    </footer>
-    <script src="assets/main.js"> </script>
 
-    <noscript>
-        <div class="noscript">
-            <h2>This service requires Javascript</h2>
-            <p>Please enable JavaScript so that the form data can be sent to the API backend.</p>
+        <div id="tab-answers" class="tab-content active">
+            <table id="table-answers">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>TTL</th>
+                        <th>Address</th>
+                        <th>RTT</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <p class="empty-msg hidden">No answers</p>
         </div>
-    </noscript>
+
+        <div id="tab-authorities" class="tab-content">
+            <table id="table-authorities">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>TTL</th>
+                        <th>MName</th>
+                        <th>RTT</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <p class="empty-msg hidden">No authorities</p>
+        </div>
+
+        <div id="tab-additional" class="tab-content">
+            <table id="table-additional">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>TTL</th>
+                        <th>Address</th>
+                        <th>RTT</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <p class="empty-msg hidden">No additional records</p>
+        </div>
+
+        <div id="tab-edns" class="tab-content">
+            <div id="edns-grid"></div>
+            <p class="empty-msg hidden">No EDNS info</p>
+        </div>
+    </div>
+
+    <div class="terminal-card footer-card">
+        <p>Made by <a href="https://mrkaran.dev">karan</a> · <a href="https://github.com/mr-karan/doggo">GitHub</a></p>
+    </div>
 </div>
+
+<script src="assets/main.js"></script>
 </body>
 </html>

@@ -46,6 +46,21 @@ type QueryFlags struct {
 	TLSHostname        string        `koanf:"tls-hostname" tls-hostname:"-"`
 	QueryAny           bool          `koanf:"any" json:"any"`
 
+	// DNS Query Flags
+	AA bool `koanf:"aa" json:"aa"` // Authoritative Answer
+	AD bool `koanf:"ad" json:"ad"` // Authenticated Data
+	CD bool `koanf:"cd" json:"cd"` // Checking Disabled
+	RD bool `koanf:"rd" json:"rd"` // Recursion Desired
+	Z  bool `koanf:"z" json:"z"`   // Reserved for future use
+	DO bool `koanf:"do" json:"do"` // DNSSEC OK
+
+	// EDNS0 Options
+	NSID    bool   `koanf:"nsid" json:"nsid"`       // Request Name Server Identifier
+	Cookie  bool   `koanf:"cookie" json:"cookie"`   // Request DNS Cookie
+	Padding bool   `koanf:"padding" json:"padding"` // Request EDNS padding for privacy
+	EDE     bool   `koanf:"ede" json:"ede"`         // Request Extended DNS Errors
+	ECS     string `koanf:"ecs" json:"ecs"`         // EDNS Client Subnet
+
 	// Globalping flags
 	GPFrom  string `koanf:"gp-from" json:"gp-from"`
 	GPLimit int    `koanf:"gp-limit" json:"gp-limit"`

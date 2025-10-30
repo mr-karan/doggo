@@ -93,8 +93,26 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 
 	app.Logger.Debug("Loaded resolvers", "resolvers", app.Resolvers)
 
+	// Build query flags from the request payload
 	queryFlags := resolvers.QueryFlags{
-		RD: true,
+		AA: app.QueryFlags.AA,
+		AD: app.QueryFlags.AD,
+		CD: app.QueryFlags.CD,
+		RD: app.QueryFlags.RD,
+		Z:  app.QueryFlags.Z,
+		DO: app.QueryFlags.DO,
+
+		// EDNS0 options
+		NSID:    app.QueryFlags.NSID,
+		Cookie:  app.QueryFlags.Cookie,
+		Padding: app.QueryFlags.Padding,
+		EDE:     app.QueryFlags.EDE,
+		ECS:     app.QueryFlags.ECS,
+	}
+
+	// Default to RD=true if not explicitly set
+	if !app.QueryFlags.RD && !app.QueryFlags.AA && !app.QueryFlags.AD && !app.QueryFlags.CD && !app.QueryFlags.Z && !app.QueryFlags.DO {
+		queryFlags.RD = true
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
