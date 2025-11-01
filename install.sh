@@ -138,7 +138,7 @@ download_and_install() {
       exit 1
     fi
   else
-    if ! tar -xzvf "${filename}" -C "${extract_dir}"; then
+    if ! tar -xzf "${filename}" -C "${extract_dir}"; then
       error "Failed to extract ${filename}"
       rm -rf "${filename}" "${extract_dir}"
       exit 1
