@@ -58,6 +58,7 @@ detect_arch() {
   case "${arch}" in
     x86_64) arch="x86_64" ;;
     aarch64|arm64) arch="arm64" ;;
+    armv6l|armv7l|armv8l) arch="arm" ;;
     *)
       error "Unsupported architecture: ${arch}"
       exit 1
