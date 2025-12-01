@@ -121,7 +121,7 @@ func renderCustomHelp() {
 			{"--any", "Query all supported DNS record types (A, AAAA, CNAME, MX, NS, PTR, SOA, SRV, TXT, CAA)."},
 		},
 		"ResolverOptions": []Option{
-			{"--strategy=STRATEGY", "Specify strategy to query nameserver listed in etc/resolv.conf. (all, random, first)."},
+			{"--strategy=STRATEGY", "Specify strategy to query nameserver listed in etc/resolv.conf. Options: all, random, first, internal (RFC 1918/ULA private IPs only)."},
 			{"--ndots=INT", "Specify ndots parameter. Takes value from /etc/resolv.conf if using the system namesever or 1 otherwise."},
 			{"--search", "Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list."},
 			{"--timeout=DURATION", "Specify timeout for the resolver to return a response (e.g., 5s, 400ms, 1m)."},

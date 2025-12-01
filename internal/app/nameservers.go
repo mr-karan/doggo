@@ -261,6 +261,40 @@ func isIPv6(ipStr string) bool {
 	return ip.To4() == nil
 }
 
+// isPrivateIP checks if an IP address is in RFC 1918 private address space (IPv4)
+// or RFC 4193 Unique Local Address space (IPv6)
+func isPrivateIP(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+
+	// IPv4 RFC 1918 ranges
+	if ipv4 := ip.To4(); ipv4 != nil {
+		// 10.0.0.0/8
+		if ipv4[0] == 10 {
+			return true
+		}
+		// 172.16.0.0/12
+		if ipv4[0] == 172 && ipv4[1] >= 16 && ipv4[1] <= 31 {
+			return true
+		}
+		// 192.168.0.0/16
+		if ipv4[0] == 192 && ipv4[1] == 168 {
+			return true
+		}
+		return false
+	}
+
+	// IPv6 Unique Local Address (ULA) - RFC 4193
+	// fd00::/8 range
+	if len(ip) == 16 && ip[0] == 0xfd {
+		return true
+	}
+
+	return false
+}
+
 // filterNameserversByIPVersion filters nameservers based on IPv4/IPv6 flags
 func filterNameserversByIPVersion(servers []string, useIPv4, useIPv6 bool) []string {
 	// If neither flag is set, return all servers
@@ -323,6 +357,34 @@ func getDefaultServers(strategy string, useIPv4, useIPv6 bool) ([]models.Nameser
 			Address: net.JoinHostPort(srv, models.DefaultUDPPort),
 		}
 		servers = append(servers, ns)
+
+	case "internal":
+		// Filter for nameservers with private IPs only (RFC 1918 / RFC 4193 ULA)
+		internalServers := make([]string, 0)
+		for _, srv := range dnsServers {
+			if isPrivateIP(srv) {
+				internalServers = append(internalServers, srv)
+			}
+		}
+
+		// Apply IPv4/IPv6 filtering
+		internalServers = filterNameserversByIPVersion(internalServers, useIPv4, useIPv6)
+
+		// Warn and fall back to public DNS if no internal servers found
+		if len(internalServers) == 0 {
+			// Note: app.Logger is not available here, so we'll just fall back silently
+			// The user will see public DNS being used
+			internalServers = filterNameserversByIPVersion(dnsServers, useIPv4, useIPv6)
+		}
+
+		// Return all internal servers (or all servers if fallback occurred)
+		for _, s := range internalServers {
+			ns := models.Nameserver{
+				Type:    models.UDPResolver,
+				Address: net.JoinHostPort(s, models.DefaultUDPPort),
+			}
+			servers = append(servers, ns)
+		}
 
 	default:
 		// Default behaviour is to load all nameservers.

@@ -29,7 +29,7 @@ _doggo() {
             return 0
             ;;
         --strategy)
-            COMPREPLY=( $(compgen -W "all random first" -- ${cur}) )
+            COMPREPLY=( $(compgen -W "all random first internal" -- ${cur}) )
             return 0
             ;;
         --search|--color)
@@ -65,7 +65,7 @@ _doggo() {
     '(-c --class)'{-c,--class}'[Network class of the DNS record being queried]:network class:(IN CH HS)' \
     '(-r --reverse)'{-r,--reverse}'[Performs a DNS Lookup for an IPv4 or IPv6 address]' \
     '--any[Query all supported DNS record types]' \
-    '--strategy[Strategy to query nameserver listed in etc/resolv.conf]:strategy:(all random first)' \
+    '--strategy[Strategy to query nameserver listed in etc/resolv.conf]:strategy:(all random first internal)' \
     '--ndots[Number of required dots in hostname to assume FQDN]:number of dots' \
     '--search[Use the search list defined in resolv.conf]:setting:(true false)' \
     '--timeout[Timeout (in seconds) for the resolver to return a response]:seconds' \
@@ -128,7 +128,7 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -s 'r' -l 'reverse'    -d "Per
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'any'               -d "Query all supported DNS record types"
 
 # Resolver options
-complete -c doggo -n '__fish_doggo_no_subcommand' -l 'strategy'  -d "Strategy to query nameserver listed in etc/resolv.conf" -x -a "all random first"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'strategy'  -d "Strategy to query nameserver listed in etc/resolv.conf" -x -a "all random first internal"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ndots'     -d "Specify ndots parameter"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'search'    -d "Use the search list defined in resolv.conf" -x -a "true false"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'timeout'   -d "Specify timeout (in seconds) for the resolver to return a response"
