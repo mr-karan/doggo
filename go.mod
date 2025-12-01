@@ -15,7 +15,7 @@ require (
 	github.com/knadh/koanf/v2 v2.3.0
 	github.com/miekg/dns v1.1.68
 	github.com/olekukonko/tablewriter v1.1.0
-	github.com/quic-go/quic-go v0.55.0
+	github.com/quic-go/quic-go v0.57.1
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/net v0.46.0
 	golang.org/x/sys v0.37.0
