@@ -158,7 +158,7 @@ func setupFlags() *flag.FlagSet {
 	f.Int("ndots", -1, "Specify the ndots parameter")
 	f.BoolP("ipv4", "4", false, "Use IPv4 only")
 	f.BoolP("ipv6", "6", false, "Use IPv6 only")
-	f.String("strategy", "all", "Strategy to query nameservers in resolv.conf file")
+	f.String("strategy", "all", "Strategy to query nameservers (all, random, first, internal)")
 	f.String("tls-hostname", "", "Hostname for certificate verification")
 	f.Bool("skip-hostname-verification", false, "Skip TLS Hostname Verification")
 
