@@ -367,17 +367,12 @@ func getDefaultServers(strategy string, useIPv4, useIPv6 bool) ([]models.Nameser
 			}
 		}
 
-		// Apply IPv4/IPv6 filtering
-		internalServers = filterNameserversByIPVersion(internalServers, useIPv4, useIPv6)
-
-		// Warn and fall back to public DNS if no internal servers found
+		// Return error if no internal servers found
 		if len(internalServers) == 0 {
-			// Note: app.Logger is not available here, so we'll just fall back silently
-			// The user will see public DNS being used
-			internalServers = filterNameserversByIPVersion(dnsServers, useIPv4, useIPv6)
+			return nil, ndots, search, fmt.Errorf("no internal (private IP) nameservers found in system configuration")
 		}
 
-		// Return all internal servers (or all servers if fallback occurred)
+		// Return all internal servers
 		for _, s := range internalServers {
 			ns := models.Nameserver{
 				Type:    models.UDPResolver,
