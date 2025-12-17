@@ -21,8 +21,6 @@ type scutilResolver struct {
 	domain        string
 	searchDomains []string
 	options       []string
-	ifIndex       string
-	flags         string
 }
 
 // GetDefaultServers retrieves DNS configuration from macOS SystemConfiguration
@@ -42,9 +40,8 @@ func GetDefaultServers() ([]string, int, []string, error) {
 func getResolversFromScutil() ([]string, int, []string, error) {
 	// Execute scutil --dns
 	cmd := exec.Command("scutil", "--dns")
-	var stdout, stderr bytes.Buffer
+	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
 		return nil, 0, nil, fmt.Errorf("scutil execution failed: %w", err)
