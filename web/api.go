@@ -23,7 +23,9 @@ var (
 	//go:embed assets/*
 	assetsDir embed.FS
 	//go:embed index.html
-	html []byte
+	indexHTML []byte
+	//go:embed faq.html
+	faqHTML []byte
 )
 
 func main() {
@@ -51,7 +53,11 @@ func main() {
 	})
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
-		w.Write(html)
+		w.Write(indexHTML)
+	})
+	r.Get("/faq", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/html")
+		w.Write(faqHTML)
 	})
 
 	// API Handlers.

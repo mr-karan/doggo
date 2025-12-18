@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Primary Meta Tags -->
+    <title>FAQ - Doggo DNS | DNS Lookup Tool Questions & Answers</title>
+    <meta name="title" content="FAQ - Doggo DNS | DNS Lookup Tool Questions & Answers">
+    <meta name="description" content="Frequently asked questions about Doggo DNS lookup tool. Learn about DNS over HTTPS, TLS, QUIC, DNS record types, and how to use Doggo for DNS queries.">
+    <meta name="keywords" content="dns lookup faq, dns questions, what is dns, dns over https, doh explained, dns over tls, dot, dns record types, A record, AAAA record, MX record, CNAME, doggo dns help">
+    <meta name="author" content="Karan Sharma">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://doggo.mrkaran.dev/faq">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://doggo.mrkaran.dev/faq">
+    <meta property="og:title" content="FAQ - Doggo DNS | DNS Lookup Tool">
+    <meta property="og:description" content="Frequently asked questions about Doggo DNS lookup tool. Learn about DNS protocols, record types, and more.">
+    <meta property="og:image" content="https://doggo.mrkaran.dev/assets/og-image.png">
+    <meta property="og:site_name" content="Doggo DNS">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://doggo.mrkaran.dev/faq">
+    <meta name="twitter:title" content="FAQ - Doggo DNS | DNS Lookup Tool">
+    <meta name="twitter:description" content="Frequently asked questions about Doggo DNS lookup tool. Learn about DNS protocols, record types, and more.">
+    <meta name="twitter:image" content="https://doggo.mrkaran.dev/assets/og-image.png">
+    <meta name="twitter:creator" content="@mrkaran_">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+    <!-- Schema.org FAQ Page -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What is Doggo DNS?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Doggo DNS is a free online DNS lookup tool that allows you to query DNS records for any domain. It supports multiple DNS record types including A, AAAA, MX, CNAME, TXT, NS, SOA, PTR, SRV, and CAA records. It's available as both a web interface and a command-line tool."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is a DNS lookup?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "A DNS lookup queries the Domain Name System to translate domain names (like example.com) into IP addresses. It retrieves various DNS records including A records (IPv4 addresses), AAAA records (IPv6 addresses), MX records (mail servers), CNAME records (aliases), TXT records (text information), and more."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What DNS protocols does Doggo support?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Doggo supports DNS over HTTPS (DoH), DNS over TLS (DoT), DNS over QUIC (DoQ), as well as traditional UDP and TCP DNS queries. These encrypted protocols provide better privacy and security compared to standard DNS."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is DNS over HTTPS (DoH)?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "DNS over HTTPS (DoH) encrypts DNS queries using the HTTPS protocol. This prevents eavesdropping and manipulation of DNS data by ISPs or attackers, improving privacy and security compared to traditional unencrypted DNS queries."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is DNS over TLS (DoT)?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "DNS over TLS (DoT) encrypts DNS queries using the TLS protocol on port 853. Like DoH, it provides privacy and security for DNS queries, but uses a dedicated port rather than blending in with regular HTTPS traffic."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What is DNS over QUIC (DoQ)?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "DNS over QUIC (DoQ) is the newest encrypted DNS protocol that uses the QUIC transport protocol. It offers lower latency than DoT and DoH because QUIC establishes connections faster and handles packet loss better."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Which DNS providers are available in Doggo?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Doggo supports multiple DNS providers including Cloudflare (1.1.1.1), Google (8.8.8.8), Quad9 (9.9.9.9), AdGuard, Mullvad, Control D, DNS0.eu, OpenDNS, CleanBrowsing, and custom DNS servers."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Which DNS server should I use?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Popular choices include Cloudflare (1.1.1.1) for speed and privacy, Google (8.8.8.8) for reliability, Quad9 (9.9.9.9) for security with malware blocking, and AdGuard for ad-blocking. Each provider has different privacy policies and features."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How is Doggo different from dig or nslookup?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Doggo provides a modern, user-friendly interface with native support for encrypted DNS protocols (DoH, DoT, DoQ) that traditional tools like dig and nslookup don't support out of the box. It's available both as a web interface and command-line tool, with colorful output and JSON support."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What DNS record types does Doggo support?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Doggo supports all common DNS record types including: A (IPv4 address), AAAA (IPv6 address), CNAME (canonical name/alias), MX (mail exchange), NS (nameserver), TXT (text records), SOA (start of authority), PTR (pointer/reverse DNS), SRV (service records), and CAA (certificate authority authorization)."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is Doggo DNS free to use?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, Doggo DNS is completely free and open source. You can use the web interface without any registration, or install the command-line tool from GitHub. The source code is available under an open source license."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What are EDNS options in Doggo?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "EDNS (Extension Mechanisms for DNS) options allow advanced DNS queries. Doggo supports NSID (nameserver identifier), DNS cookies for security, padding for privacy, EDE (extended DNS errors) for detailed error information, and ECS (EDNS Client Subnet) for geolocation-aware responses."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="assets/terminal.css">
+    <link href="assets/style.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <div class="terminal-nav">
+        <div class="terminal-logo">
+            <div class="logo">🐶 doggo</div>
+        </div>
+        <nav class="terminal-menu">
+            <ul vocab="https://schema.org/" typeof="BreadcrumbList">
+                <li property="itemListElement" typeof="ListItem"><a href="/" property="item" typeof="WebPage"><span property="name">Home</span></a></li>
+                <li property="itemListElement" typeof="ListItem"><a href="https://github.com/mr-karan/doggo" property="item" typeof="WebPage"><span property="name">GitHub</span></a></li>
+                <li property="itemListElement" typeof="ListItem"><a href="https://doggo.mrkaran.dev/docs/" property="item" typeof="WebPage"><span property="name">Docs</span></a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <h1 class="page-title">Frequently Asked Questions</h1>
+
+    <section class="faq-section">
+        <h2>About Doggo DNS</h2>
+        <div class="faq-list">
+            <details class="faq-item">
+                <summary>What is Doggo DNS?</summary>
+                <p>Doggo DNS is a free online DNS lookup tool that allows you to query DNS records for any domain. It supports multiple DNS record types including A, AAAA, MX, CNAME, TXT, NS, SOA, PTR, SRV, and CAA records. It's available as both a web interface and a command-line tool.</p>
+            </details>
+            <details class="faq-item">
+                <summary>How is Doggo different from dig or nslookup?</summary>
+                <p>Doggo provides a modern, user-friendly interface with native support for encrypted DNS protocols (DoH, DoT, DoQ) that traditional tools like dig and nslookup don't support out of the box. It's available both as a web interface and command-line tool, with colorful output and JSON support.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Is Doggo DNS free to use?</summary>
+                <p>Yes, Doggo DNS is completely free and open source. You can use the web interface without any registration, or install the command-line tool from GitHub. The source code is available under an open source license.</p>
+            </details>
+        </div>
+    </section>
+
+    <section class="faq-section">
+        <h2>DNS Basics</h2>
+        <div class="faq-list">
+            <details class="faq-item">
+                <summary>What is a DNS lookup?</summary>
+                <p>A DNS lookup queries the Domain Name System to translate domain names (like example.com) into IP addresses. It retrieves various DNS records including A records (IPv4 addresses), AAAA records (IPv6 addresses), MX records (mail servers), CNAME records (aliases), TXT records (text information), and more.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What DNS record types does Doggo support?</summary>
+                <p>Doggo supports all common DNS record types including: A (IPv4 address), AAAA (IPv6 address), CNAME (canonical name/alias), MX (mail exchange), NS (nameserver), TXT (text records), SOA (start of authority), PTR (pointer/reverse DNS), SRV (service records), and CAA (certificate authority authorization).</p>
+            </details>
+            <details class="faq-item">
+                <summary>Which DNS server should I use?</summary>
+                <p>Popular choices include Cloudflare (1.1.1.1) for speed and privacy, Google (8.8.8.8) for reliability, Quad9 (9.9.9.9) for security with malware blocking, and AdGuard for ad-blocking. Each provider has different privacy policies and features.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Which DNS providers are available in Doggo?</summary>
+                <p>Doggo supports multiple DNS providers including Cloudflare (1.1.1.1), Google (8.8.8.8), Quad9 (9.9.9.9), AdGuard, Mullvad, Control D, DNS0.eu, OpenDNS, CleanBrowsing, and custom DNS servers.</p>
+            </details>
+        </div>
+    </section>
+
+    <section class="faq-section">
+        <h2>DNS Protocols</h2>
+        <div class="faq-list">
+            <details class="faq-item">
+                <summary>What DNS protocols does Doggo support?</summary>
+                <p>Doggo supports DNS over HTTPS (DoH), DNS over TLS (DoT), DNS over QUIC (DoQ), as well as traditional UDP and TCP DNS queries. These encrypted protocols provide better privacy and security compared to standard DNS.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What is DNS over HTTPS (DoH)?</summary>
+                <p>DNS over HTTPS (DoH) encrypts DNS queries using the HTTPS protocol. This prevents eavesdropping and manipulation of DNS data by ISPs or attackers, improving privacy and security compared to traditional unencrypted DNS queries.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What is DNS over TLS (DoT)?</summary>
+                <p>DNS over TLS (DoT) encrypts DNS queries using the TLS protocol on port 853. Like DoH, it provides privacy and security for DNS queries, but uses a dedicated port rather than blending in with regular HTTPS traffic.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What is DNS over QUIC (DoQ)?</summary>
+                <p>DNS over QUIC (DoQ) is the newest encrypted DNS protocol that uses the QUIC transport protocol. It offers lower latency than DoT and DoH because QUIC establishes connections faster and handles packet loss better.</p>
+            </details>
+        </div>
+    </section>
+
+    <section class="faq-section">
+        <h2>Advanced Features</h2>
+        <div class="faq-list">
+            <details class="faq-item">
+                <summary>What are EDNS options in Doggo?</summary>
+                <p>EDNS (Extension Mechanisms for DNS) options allow advanced DNS queries. Doggo supports NSID (nameserver identifier), DNS cookies for security, padding for privacy, EDE (extended DNS errors) for detailed error information, and ECS (EDNS Client Subnet) for geolocation-aware responses.</p>
+            </details>
+        </div>
+    </section>
+
+    <div class="terminal-card footer-card">
+        <p>Made by <a href="https://mrkaran.dev">karan</a> · <a href="https://github.com/mr-karan/doggo">GitHub</a></p>
+    </div>
+</div>
+</body>
+</html>

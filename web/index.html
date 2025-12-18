@@ -1,9 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Doggo DNS</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Primary Meta Tags -->
+    <title>Doggo DNS - Free Online DNS Lookup Tool | Query A, AAAA, MX, CNAME, TXT Records</title>
+    <meta name="title" content="Doggo DNS - Free Online DNS Lookup Tool | Query A, AAAA, MX, CNAME, TXT Records">
+    <meta name="description" content="Free online DNS lookup tool. Query DNS records (A, AAAA, MX, CNAME, TXT, NS, SOA, PTR, SRV, CAA) using DNS over HTTPS, TLS, QUIC, UDP and TCP. Fast, modern alternative to dig and nslookup.">
+    <meta name="keywords" content="dns lookup, dns checker, online dig, nslookup, dns query, nameserver lookup, A record, AAAA record, MX record, CNAME record, TXT record, NS record, SOA record, PTR record, dns over https, doh, dns over tls, dot, dns over quic, doq, domain lookup, dns tool, dns propagation, dns records">
+    <meta name="author" content="Karan Sharma">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://doggo.mrkaran.dev/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://doggo.mrkaran.dev/">
+    <meta property="og:title" content="Doggo DNS - Free Online DNS Lookup Tool">
+    <meta property="og:description" content="Free online DNS lookup tool. Query DNS records using DNS over HTTPS, TLS, QUIC, UDP and TCP. Fast, modern alternative to dig and nslookup.">
+    <meta property="og:image" content="https://doggo.mrkaran.dev/assets/og-image.png">
+    <meta property="og:site_name" content="Doggo DNS">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://doggo.mrkaran.dev/">
+    <meta name="twitter:title" content="Doggo DNS - Free Online DNS Lookup Tool">
+    <meta name="twitter:description" content="Free online DNS lookup tool. Query DNS records using DNS over HTTPS, TLS, QUIC, UDP and TCP. Fast, modern alternative to dig and nslookup.">
+    <meta name="twitter:image" content="https://doggo.mrkaran.dev/assets/og-image.png">
+    <meta name="twitter:creator" content="@mrkaran_">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Doggo DNS",
+        "url": "https://doggo.mrkaran.dev/",
+        "description": "Free online DNS lookup tool. Query DNS records (A, AAAA, MX, CNAME, TXT, NS, SOA, PTR, SRV, CAA) using DNS over HTTPS, TLS, QUIC, UDP and TCP.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "author": {
+            "@type": "Person",
+            "name": "Karan Sharma",
+            "url": "https://mrkaran.dev"
+        },
+        "featureList": [
+            "DNS over HTTPS (DoH)",
+            "DNS over TLS (DoT)",
+            "DNS over QUIC (DoQ)",
+            "Multiple DNS providers",
+            "All DNS record types",
+            "DNSSEC validation",
+            "EDNS support"
+        ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "url": "https://doggo.mrkaran.dev/",
+        "name": "Doggo DNS",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://doggo.mrkaran.dev/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What is Doggo DNS?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Doggo DNS is a free online DNS lookup tool that allows you to query DNS records for any domain. It supports multiple DNS record types including A, AAAA, MX, CNAME, TXT, NS, SOA, PTR, SRV, and CAA records."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What DNS protocols does Doggo support?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Doggo supports DNS over HTTPS (DoH), DNS over TLS (DoT), DNS over QUIC (DoQ), as well as traditional UDP and TCP DNS queries."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Which DNS providers are available?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Doggo supports multiple DNS providers including Cloudflare (1.1.1.1), Google (8.8.8.8), Quad9 (9.9.9.9), AdGuard, Mullvad, Control D, DNS0.eu, OpenDNS, CleanBrowsing, and custom DNS servers."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is Doggo DNS free to use?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, Doggo DNS is completely free and open source. You can use the web interface or install the command-line tool from GitHub."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="assets/terminal.css">
     <link href="assets/style.css" rel="stylesheet">
 </head>
@@ -15,6 +130,7 @@
         </div>
         <nav class="terminal-menu">
             <ul vocab="https://schema.org/" typeof="BreadcrumbList">
+                <li property="itemListElement" typeof="ListItem"><a href="/faq" property="item" typeof="WebPage"><span property="name">FAQ</span></a></li>
                 <li property="itemListElement" typeof="ListItem"><a href="https://github.com/mr-karan/doggo" property="item" typeof="WebPage"><span property="name">GitHub</span></a></li>
                 <li property="itemListElement" typeof="ListItem"><a href="https://doggo.mrkaran.dev/docs/" property="item" typeof="WebPage"><span property="name">Docs</span></a></li>
             </ul>

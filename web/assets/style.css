@@ -20,6 +20,14 @@
     font-size: 1.3rem;
     font-weight: bold;
     color: var(--accent);
+    margin: 0;
+}
+
+/* Page Title (for subpages like FAQ) */
+.page-title {
+    text-align: center;
+    color: var(--accent);
+    margin-bottom: 30px;
 }
 
 .terminal-menu ul {
@@ -250,6 +258,38 @@ tbody td {
     color: color-mix(in srgb, var(--foreground) 50%, transparent);
     padding: 30px 20px;
     font-style: italic;
+}
+
+/* FAQ Section */
+.faq-section {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.faq-section h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: var(--accent);
+}
+
+.faq-list {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.faq-item {
+    margin-bottom: 10px;
+}
+
+.faq-item summary {
+    padding: 15px;
+    margin-bottom: 0;
+}
+
+.faq-item p {
+    padding: 0 15px 15px 15px;
+    margin: 0;
+    color: color-mix(in srgb, var(--foreground) 80%, transparent);
 }
 
 /* Footer */
