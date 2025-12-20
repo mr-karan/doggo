@@ -81,6 +81,8 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 			Symbols: tw.NewSymbols(tw.StyleLight),
 		}),
 		tablewriter.WithPadding(tw.Padding{Left: "", Right: "  ", Overwrite: true}),
+		tablewriter.WithRowAutoWrap(tw.WrapNormal),
+		tablewriter.WithRowMaxWidth(30),
 		tablewriter.WithHeaderAlignment(tw.AlignLeft),
 	)
 

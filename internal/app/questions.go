@@ -16,8 +16,14 @@ func (app *App) LoadFallbacks() {
 	if app.QueryFlags.QueryAny {
 		app.QueryFlags.QTypes = models.GetCommonRecordTypes()
 	} else if len(app.QueryFlags.QTypes) == 0 {
-		app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, "A")
-		app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, "AAAA")
+		if app.QueryFlags.UseIPv4 {
+			app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, "A")
+		} else if app.QueryFlags.UseIPv6 {
+			app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, "AAAA")
+		} else {
+			app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, "A")
+			app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, "AAAA")
+		}
 	}
 	if len(app.QueryFlags.QClasses) == 0 {
 		app.QueryFlags.QClasses = append(app.QueryFlags.QClasses, "IN")
