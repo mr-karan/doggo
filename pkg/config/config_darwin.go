@@ -1,3 +1,4 @@
+//go:build darwin
 // +build darwin
 
 package config
@@ -21,6 +22,7 @@ type scutilResolver struct {
 	domain        string
 	searchDomains []string
 	options       []string
+	flags         []string
 }
 
 // GetDefaultServers retrieves DNS configuration from macOS SystemConfiguration
@@ -58,10 +60,10 @@ func getResolversFromScutil() ([]string, int, []string, error) {
 		return nil, 0, nil, fmt.Errorf("failed to parse scutil output: %w", err)
 	}
 
-	// Filter out mDNS resolvers
+	// Filter out mDNS and Supplemental (domain-specific) resolvers
 	validResolvers := make([]scutilResolver, 0)
 	for _, r := range resolvers {
-		if !isMDNS(r) && len(r.nameservers) > 0 {
+		if !isMDNS(r) && !isSupplemental(r) && len(r.nameservers) > 0 {
 			validResolvers = append(validResolvers, r)
 		}
 	}
@@ -100,6 +102,9 @@ func getResolversFromScutil() ([]string, int, []string, error) {
 }
 
 // parseScutilOutput parses the output of scutil --dns
+// It only parses the main "DNS configuration" section and stops at
+// "DNS configuration (for scoped queries)" since scoped resolvers
+// are interface-specific and shouldn't be used for general queries.
 func parseScutilOutput(output string) ([]scutilResolver, error) {
 	lines := strings.Split(output, "\n")
 	resolvers := make([]scutilResolver, 0)
@@ -110,8 +115,13 @@ func parseScutilOutput(output string) ([]scutilResolver, error) {
 	domainRe := regexp.MustCompile(`^\s+domain\s*:\s*(.+)`)
 	searchDomainRe := regexp.MustCompile(`^\s+search domain\[\d+\]\s*:\s*(.+)`)
 	optionsRe := regexp.MustCompile(`^\s+options\s*:\s*(.+)`)
+	flagsRe := regexp.MustCompile(`^\s+flags\s*:\s*(.+)`)
 
 	for _, line := range lines {
+		if strings.Contains(line, "DNS configuration (for scoped queries)") {
+			break
+		}
+
 		// Check for resolver start
 		if matches := resolverRe.FindStringSubmatch(line); matches != nil {
 			if current != nil {
@@ -123,6 +133,7 @@ func parseScutilOutput(output string) ([]scutilResolver, error) {
 				nameservers:   make([]string, 0),
 				searchDomains: make([]string, 0),
 				options:       make([]string, 0),
+				flags:         make([]string, 0),
 			}
 			continue
 		}
@@ -155,6 +166,15 @@ func parseScutilOutput(output string) ([]scutilResolver, error) {
 			current.options = append(current.options, opts...)
 			continue
 		}
+
+		// Parse flags (comma-separated, e.g., "Supplemental, Request A records")
+		if matches := flagsRe.FindStringSubmatch(line); matches != nil {
+			flagStr := strings.TrimSpace(matches[1])
+			for _, f := range strings.Split(flagStr, ",") {
+				current.flags = append(current.flags, strings.TrimSpace(f))
+			}
+			continue
+		}
 	}
 
 	// Don't forget the last resolver
@@ -169,6 +189,15 @@ func parseScutilOutput(output string) ([]scutilResolver, error) {
 func isMDNS(r scutilResolver) bool {
 	for _, opt := range r.options {
 		if opt == "mdns" {
+			return true
+		}
+	}
+	return false
+}
+
+func isSupplemental(r scutilResolver) bool {
+	for _, flag := range r.flags {
+		if flag == "Supplemental" {
 			return true
 		}
 	}
