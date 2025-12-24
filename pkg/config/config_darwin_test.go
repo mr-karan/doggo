@@ -122,7 +122,7 @@ func TestFilterScutilResolvers(t *testing.T) {
 
 	valid := make([]scutilResolver, 0)
 	for _, r := range resolvers {
-		if !isMDNS(r) && !isSupplemental(r) && len(r.nameservers) > 0 {
+		if !isMDNS(r) && !isSupplemental(r) && !isDomainSpecific(r) && len(r.nameservers) > 0 {
 			valid = append(valid, r)
 		}
 	}
@@ -137,6 +137,52 @@ func TestFilterScutilResolvers(t *testing.T) {
 
 	gotNameservers := valid[0].nameservers
 	wantNameservers := []string{"1.1.1.1", "8.8.8.8"}
+	if !reflect.DeepEqual(gotNameservers, wantNameservers) {
+		t.Fatalf("nameservers mismatch: got %v want %v", gotNameservers, wantNameservers)
+	}
+}
+
+func TestFilterDomainSpecificWithoutSupplementalFlag(t *testing.T) {
+	input := `
+DNS configuration
+
+resolver #1
+  search domain[0] : lan
+  nameserver[0] : 8.8.8.8
+  nameserver[1] : 1.1.1.1
+  flags    : Request A records
+  reach    : 0x00000002 (Reachable)
+
+resolver #2
+  domain   : test
+  nameserver[0] : 127.0.0.1
+  flags    : Request A records, Request AAAA records
+  reach    : 0x00030002 (Reachable,Local Address,Directly Reachable Address)
+
+DNS configuration (for scoped queries)
+`
+	resolvers, err := parseScutilOutput(input)
+	if err != nil {
+		t.Fatalf("parseScutilOutput error: %v", err)
+	}
+
+	valid := make([]scutilResolver, 0)
+	for _, r := range resolvers {
+		if !isMDNS(r) && !isSupplemental(r) && !isDomainSpecific(r) && len(r.nameservers) > 0 {
+			valid = append(valid, r)
+		}
+	}
+
+	if len(valid) != 1 {
+		t.Fatalf("expected 1 valid resolver (resolver #2 with domain:test should be filtered), got %d", len(valid))
+	}
+
+	if valid[0].number != 1 {
+		t.Fatalf("expected resolver #1 to remain, got #%d", valid[0].number)
+	}
+
+	gotNameservers := valid[0].nameservers
+	wantNameservers := []string{"8.8.8.8", "1.1.1.1"}
 	if !reflect.DeepEqual(gotNameservers, wantNameservers) {
 		t.Fatalf("nameservers mismatch: got %v want %v", gotNameservers, wantNameservers)
 	}

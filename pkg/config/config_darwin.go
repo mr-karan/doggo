@@ -60,10 +60,13 @@ func getResolversFromScutil() ([]string, int, []string, error) {
 		return nil, 0, nil, fmt.Errorf("failed to parse scutil output: %w", err)
 	}
 
-	// Filter out mDNS and Supplemental (domain-specific) resolvers
+	// Filter out resolvers that shouldn't be used for general queries:
+	// - mDNS resolvers (for .local domains)
+	// - Supplemental resolvers (flagged as domain-specific)
+	// - Domain-specific resolvers (have explicit domain field)
 	validResolvers := make([]scutilResolver, 0)
 	for _, r := range resolvers {
-		if !isMDNS(r) && !isSupplemental(r) && len(r.nameservers) > 0 {
+		if !isMDNS(r) && !isSupplemental(r) && !isDomainSpecific(r) && len(r.nameservers) > 0 {
 			validResolvers = append(validResolvers, r)
 		}
 	}
@@ -202,6 +205,14 @@ func isSupplemental(r scutilResolver) bool {
 		}
 	}
 	return false
+}
+
+// isDomainSpecific checks if a resolver is configured for a specific domain only.
+// Per scutil(8): "Those supplemental configurations containing a 'domain' name
+// will be used for queries matching the specified domain."
+// These should NOT be used for general DNS queries.
+func isDomainSpecific(r scutilResolver) bool {
+	return r.domain != ""
 }
 
 // aggregateSearchDomains collects search domains from all resolvers
