@@ -100,7 +100,7 @@ func (r *DNSCryptResolver) query(ctx context.Context, question dns.Question, fla
 			rsp.Additional = output.Additional
 			rsp.Edns = output.Edns
 
-			if len(output.Answers) > 0 {
+			if len(output.Answers) > 0 || in.Rcode == dns.RcodeSuccess {
 				// stop iterating the searchlist.
 				return rsp, nil
 			}
