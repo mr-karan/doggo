@@ -119,7 +119,7 @@ func (r *ClassicResolver) query(ctx context.Context, question dns.Question, flag
 		rsp.Additional = output.Additional
 		rsp.Edns = output.Edns
 
-		if len(output.Answers) > 0 {
+		if len(output.Answers) > 0 || in.Rcode == dns.RcodeSuccess {
 			// Stop iterating the searchlist.
 			break
 		}
