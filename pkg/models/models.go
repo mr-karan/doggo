@@ -60,6 +60,7 @@ type QueryFlags struct {
 	Padding bool   `koanf:"padding" json:"padding"` // Request EDNS padding for privacy
 	EDE     bool   `koanf:"ede" json:"ede"`         // Request Extended DNS Errors
 	ECS     string `koanf:"ecs" json:"ecs"`         // EDNS Client Subnet
+	Bufsize uint16 `koanf:"bufsize" json:"bufsize"` // EDNS UDP buffer size (default: 1232 when EDNS enabled)
 
 	// Globalping flags
 	GPFrom  string `koanf:"gp-from" json:"gp-from"`

@@ -28,7 +28,7 @@ func NewDNSCryptResolver(server string, dnscryptOpts DNSCryptResolverOpts, resol
 		net = "tcp"
 	}
 
-	client := &dnscrypt.Client{Net: net, Timeout: resolverOpts.Timeout, UDPSize: 4096}
+	client := &dnscrypt.Client{Net: net, Timeout: resolverOpts.Timeout, UDPSize: 1232}
 	resolverInfo, err := client.Dial(server)
 	if err != nil {
 		return nil, err

@@ -121,6 +121,14 @@ func loadConfig() (*config, error) {
 	cfg.showTime = k.Bool("time")
 	cfg.useColor = k.Bool("color")
 
+	bufsize := k.Int("bufsize")
+	if bufsize < 0 || bufsize > 65535 {
+		return nil, fmt.Errorf("--bufsize must be between 0 and 65535, got %d", bufsize)
+	}
+	if bufsize > 0 && bufsize < 512 {
+		return nil, fmt.Errorf("--bufsize must be 0 or at least 512 (RFC 6891), got %d", bufsize)
+	}
+
 	cfg.queryFlags = resolvers.QueryFlags{
 		AA: k.Bool("aa"),
 		AD: k.Bool("ad"),
@@ -135,6 +143,7 @@ func loadConfig() (*config, error) {
 		Padding: k.Bool("padding"),
 		EDE:     k.Bool("ede"),
 		ECS:     k.String("ecs"),
+		Bufsize: uint16(bufsize),
 	}
 
 	return cfg, nil
@@ -184,6 +193,7 @@ func setupFlags() *flag.FlagSet {
 	f.Bool("padding", false, "Request EDNS padding for privacy")
 	f.Bool("ede", false, "Request Extended DNS Errors")
 	f.String("ecs", "", "EDNS Client Subnet (e.g., '192.0.2.0/24' or '2001:db8::/32')")
+	f.Int("bufsize", 0, "EDNS UDP buffer size in bytes (512-65535); setting this enables EDNS even without other EDNS options. Default is 1232 when EDNS is enabled.")
 
 	f.Bool("version", false, "Show version of doggo")
 

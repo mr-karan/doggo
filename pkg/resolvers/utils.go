@@ -27,6 +27,7 @@ type QueryFlags struct {
 	Padding bool   // Request EDNS padding for privacy
 	EDE     bool   // Request Extended DNS Errors
 	ECS     string // EDNS Client Subnet (e.g., "192.0.2.0/24" or "2001:db8::/32")
+	Bufsize uint16 // EDNS UDP buffer size (default: 1232 when EDNS enabled)
 }
 
 // prepareMessages takes a  DNS Question and returns the
@@ -50,8 +51,12 @@ func prepareMessages(q dns.Question, flags QueryFlags, ndots int, searchList []s
 		msg.Zero = flags.Z
 
 		// Set EDNS0 if any EDNS options are requested
-		if flags.DO || flags.NSID || flags.Cookie || flags.Padding || flags.EDE || flags.ECS != "" {
-			msg.SetEdns0(4096, flags.DO)
+		if flags.DO || flags.NSID || flags.Cookie || flags.Padding || flags.EDE || flags.ECS != "" || flags.Bufsize > 0 {
+			bufsize := flags.Bufsize
+			if bufsize == 0 {
+				bufsize = 1232
+			}
+			msg.SetEdns0(bufsize, flags.DO)
 
 			// Add EDNS0 options
 			opt := msg.IsEdns0()

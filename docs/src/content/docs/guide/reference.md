@@ -56,6 +56,7 @@ EDNS (Extension Mechanisms for DNS) provides additional capabilities beyond basi
 | `--padding`   | Request EDNS padding for privacy (helps mitigate traffic analysis attacks by standardizing packet sizes)    |
 | `--ede`       | Request Extended DNS Errors for detailed error information when queries fail                                 |
 | `--ecs=SUBNET`| EDNS Client Subnet - sends client subnet information for geo-aware responses (e.g., `192.0.2.0/24` or `2001:db8::/32`) |
+| `--bufsize=BYTES` | EDNS UDP buffer size in bytes (512-65535). Setting this enables EDNS even without other EDNS options. Default is 1232 when EDNS is enabled — the [DNS Flagday 2020](https://dnsflagday.net/2020/) recommendation to avoid IP fragmentation. |
 
 ### EDNS Examples
 

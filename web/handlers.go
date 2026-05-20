@@ -108,6 +108,7 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 		Padding: app.QueryFlags.Padding,
 		EDE:     app.QueryFlags.EDE,
 		ECS:     app.QueryFlags.ECS,
+		Bufsize: app.QueryFlags.Bufsize,
 	}
 
 	// Default to RD=true if not explicitly set

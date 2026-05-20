@@ -13,7 +13,7 @@ _doggo() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do --nsid --cookie --padding --ede --ecs -J --json --short --color --debug --time --gp-from --gp-limit"
+    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do --nsid --cookie --padding --ede --ecs --bufsize -J --json --short --color --debug --time --gp-from --gp-limit"
 
     case "${prev}" in
         -t|--type)
@@ -84,6 +84,7 @@ _doggo() {
     '--padding[Request EDNS padding for privacy]' \
     '--ede[Request Extended DNS Errors]' \
     '--ecs[EDNS Client Subnet]:subnet' \
+    '--bufsize[EDNS UDP buffer size in bytes]:buffer size' \
     '(-J --json)'{-J,--json}'[Format the output as JSON]' \
     '--short[Shows only the response section in the output]' \
     '--color[Colored output]:setting:(true false)' \
@@ -149,6 +150,7 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'cookie'  -d "Request DNS C
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'padding' -d "Request EDNS padding for privacy"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ede'     -d "Request Extended DNS Errors"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ecs'     -d "EDNS Client Subnet" -x
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'bufsize' -d "EDNS UDP buffer size in bytes" -x
 
 # Output options
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'J' -l 'json'  -d "Format the output as JSON"
