@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/miekg/dns"
@@ -64,6 +65,54 @@ func TestPrepareMessagesEDNS(t *testing.T) {
 			}
 			if got := opt.UDPSize(); got != tt.wantBufsize {
 				t.Errorf("UDPSize = %d, want %d", got, tt.wantBufsize)
+			}
+		})
+	}
+}
+
+func TestConstructPossibleQuestionsWithRootSearchDomain(t *testing.T) {
+	tests := []struct {
+		name       string
+		qName      string
+		ndots      int
+		searchList []string
+		want       []string
+	}{
+		{
+			name:       "root search does not append an extra trailing dot",
+			qName:      "non-existent.test",
+			ndots:      0,
+			searchList: []string{"."},
+			want:       []string{"non-existent.test."},
+		},
+		{
+			name:       "root search is de-duplicated when original name is tried first",
+			qName:      "non-existent.test",
+			ndots:      1,
+			searchList: []string{"."},
+			want:       []string{"non-existent.test."},
+		},
+		{
+			name:       "root search can follow regular search domains",
+			qName:      "printer",
+			ndots:      1,
+			searchList: []string{"lan", "."},
+			want:       []string{"printer.lan.", "printer."},
+		},
+		{
+			name:       "fully qualified names ignore search domains",
+			qName:      "example.com.",
+			ndots:      1,
+			searchList: []string{"."},
+			want:       []string{"example.com."},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := constructPossibleQuestions(tt.qName, tt.ndots, tt.searchList)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("constructPossibleQuestions() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}

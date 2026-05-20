@@ -128,16 +128,34 @@ func constructPossibleQuestions(name string, ndots int, searchList []string) []s
 
 	// If name has enough dots, try that first.
 	if hasNdots {
-		names = append(names, name)
+		names = appendQuestionName(names, name)
 	}
 	for _, s := range searchList {
-		names = append(names, dns.Fqdn(name+s))
+		names = appendQuestionName(names, joinSearchDomain(name, s))
 	}
 	// If we didn't have enough dots, try after suffixes.
 	if !hasNdots {
-		names = append(names, name)
+		names = appendQuestionName(names, name)
 	}
 	return names
+}
+
+func joinSearchDomain(name, searchDomain string) string {
+	if searchDomain == "." {
+		return name
+	}
+
+	return dns.Fqdn(strings.TrimSuffix(name, ".") + "." + strings.TrimSuffix(searchDomain, "."))
+}
+
+func appendQuestionName(names []string, name string) []string {
+	for _, existing := range names {
+		if existing == name {
+			return names
+		}
+	}
+
+	return append(names, name)
 }
 
 // toUnicodeDomain converts a punycode domain name to Unicode.
