@@ -1,6 +1,6 @@
 module github.com/mr-karan/doggo
 
-go 1.26.2
+go 1.26.3
 
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.4.0
