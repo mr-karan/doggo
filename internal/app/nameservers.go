@@ -30,6 +30,13 @@ func (app *App) LoadNameservers() error {
 				app.Logger.Debug("Added nameserver", "nameserver", ns)
 			}
 		}
+
+		var err error
+		app.Nameservers, err = applyNameserverStrategy(app.Nameservers, app.QueryFlags.Strategy)
+		if err != nil {
+			app.Logger.Error("error applying nameserver strategy", "error", err)
+			return err
+		}
 	}
 
 	// If no nameservers were successfully loaded, fall back to system nameservers
@@ -314,6 +321,52 @@ func filterNameserversByIPVersion(servers []string, useIPv4, useIPv6 bool) []str
 	return filtered
 }
 
+func applyNameserverStrategy(nameservers []models.Nameserver, strategy string) ([]models.Nameserver, error) {
+	if len(nameservers) == 0 {
+		return nameservers, nil
+	}
+
+	switch strategy {
+	case "random":
+		src := rand.NewSource(time.Now().UnixNano())
+		rnd := rand.New(src)
+		return []models.Nameserver{nameservers[rnd.Intn(len(nameservers))]}, nil
+
+	case "first":
+		return []models.Nameserver{nameservers[0]}, nil
+
+	case "internal":
+		internalServers := make([]models.Nameserver, 0)
+		for _, ns := range nameservers {
+			if isPrivateIP(nameserverHost(ns)) {
+				internalServers = append(internalServers, ns)
+			}
+		}
+
+		if len(internalServers) == 0 {
+			return nil, fmt.Errorf("no internal (private IP) nameservers found")
+		}
+
+		return internalServers, nil
+
+	default:
+		return nameservers, nil
+	}
+}
+
+func nameserverHost(ns models.Nameserver) string {
+	if u, err := url.Parse(ns.Address); err == nil && u.Hostname() != "" {
+		return u.Hostname()
+	}
+
+	host, _, err := net.SplitHostPort(ns.Address)
+	if err == nil {
+		return host
+	}
+
+	return ns.Address
+}
+
 func getDefaultServers(strategy string, useIPv4, useIPv6 bool) ([]models.Nameserver, int, []string, error) {
 	// Load nameservers from `/etc/resolv.conf`.
 	dnsServers, ndots, search, err := config.GetDefaultServers()
@@ -334,62 +387,17 @@ func getDefaultServers(strategy string, useIPv4, useIPv6 bool) ([]models.Nameser
 	}
 
 	servers := make([]models.Nameserver, 0, len(dnsServers))
-
-	switch strategy {
-	case "random":
-		// Create a new local random source and generator.
-		src := rand.NewSource(time.Now().UnixNano())
-		rnd := rand.New(src)
-
-		// Choose a random server from the list.
-		srv := dnsServers[rnd.Intn(len(dnsServers))]
+	for _, s := range dnsServers {
 		ns := models.Nameserver{
 			Type:    models.UDPResolver,
-			Address: net.JoinHostPort(srv, models.DefaultUDPPort),
+			Address: net.JoinHostPort(s, models.DefaultUDPPort),
 		}
 		servers = append(servers, ns)
+	}
 
-	case "first":
-		// Choose the first from the list, always.
-		srv := dnsServers[0]
-		ns := models.Nameserver{
-			Type:    models.UDPResolver,
-			Address: net.JoinHostPort(srv, models.DefaultUDPPort),
-		}
-		servers = append(servers, ns)
-
-	case "internal":
-		// Filter for nameservers with private IPs only (RFC 1918 / RFC 4193 ULA)
-		internalServers := make([]string, 0)
-		for _, srv := range dnsServers {
-			if isPrivateIP(srv) {
-				internalServers = append(internalServers, srv)
-			}
-		}
-
-		// Return error if no internal servers found
-		if len(internalServers) == 0 {
-			return nil, ndots, search, fmt.Errorf("no internal (private IP) nameservers found in system configuration")
-		}
-
-		// Return all internal servers
-		for _, s := range internalServers {
-			ns := models.Nameserver{
-				Type:    models.UDPResolver,
-				Address: net.JoinHostPort(s, models.DefaultUDPPort),
-			}
-			servers = append(servers, ns)
-		}
-
-	default:
-		// Default behaviour is to load all nameservers.
-		for _, s := range dnsServers {
-			ns := models.Nameserver{
-				Type:    models.UDPResolver,
-				Address: net.JoinHostPort(s, models.DefaultUDPPort),
-			}
-			servers = append(servers, ns)
-		}
+	servers, err = applyNameserverStrategy(servers, strategy)
+	if err != nil {
+		return nil, ndots, search, fmt.Errorf("%w in system configuration", err)
 	}
 
 	return servers, ndots, search, nil

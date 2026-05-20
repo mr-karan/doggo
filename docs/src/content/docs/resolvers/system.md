@@ -42,7 +42,7 @@ $ doggo example --search=false
 
 ## Resolver Strategy
 
-The resolver strategy determines how Doggo uses the nameservers listed in `/etc/resolv.conf`. You can specify a strategy using the `--strategy` flag:
+The resolver strategy determines how Doggo uses nameservers, whether they come from the system resolver configuration or are specified directly with `@host` / `--nameserver`. You can specify a strategy using the `--strategy` flag:
 
 ```bash
 $ doggo example.com --strategy=first
@@ -50,16 +50,17 @@ $ doggo example.com --strategy=first
 
 Available strategies:
 
-- `all` (default): Use all nameservers listed in `/etc/resolv.conf`.
+- `all` (default): Use all nameservers.
 - `first`: Use only the first nameserver in the list.
 - `random`: Randomly choose one nameserver from the list for each query. This can help distribute the load across multiple nameservers.
+- `internal`: Use private IP nameservers only (RFC 1918 IPv4 or RFC 4193 IPv6 ULA).
 
 ## Command-line Options
 
 ```bash
 --ndots=INT             Specify ndots parameter. Takes value from /etc/resolv.conf if using the system nameserver or 1 otherwise.
 --search                Use the search list defined in resolv.conf. Defaults to true. Set --search=false to disable search list.
---strategy=STRATEGY     Specify strategy to query nameservers listed in /etc/resolv.conf. Options: all, first, random. Defaults to all.
+--strategy=STRATEGY     Specify strategy to query nameservers. Options: all, first, random, internal. Defaults to all.
 --timeout=DURATION    Set the timeout for resolver responses (e.g., 5s, 400ms, 1m).
 ```
 
@@ -84,6 +85,10 @@ Available strategies:
    ```bash
    doggo example.com @1.1.1.1 @8.8.8.8
    ```
-   Note: When specifying nameservers directly, the system resolver configuration (including strategy) is not used.
+
+5. Use only the first explicitly specified nameserver:
+   ```bash
+   doggo example.com --strategy=first @1.1.1.1 @8.8.8.8
+   ```
 
 You can find more examples at [Examples](/guide/examples) section.
