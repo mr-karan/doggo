@@ -41,6 +41,11 @@ func NewDNSCryptResolver(server string, dnscryptOpts DNSCryptResolverOpts, resol
 	}, nil
 }
 
+// Address implements the Resolver interface.
+func (r *DNSCryptResolver) Address() string {
+	return r.server
+}
+
 // Lookup implements the Resolver interface
 func (r *DNSCryptResolver) Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error) {
 	return ConcurrentLookup(ctx, questions, flags, r.query, r.resolverOptions.Logger)

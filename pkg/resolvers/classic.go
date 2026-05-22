@@ -135,6 +135,11 @@ func (r *ClassicResolver) query(ctx context.Context, question dns.Question, flag
 	return rsp, nil
 }
 
+// Address implements the Resolver interface.
+func (r *ClassicResolver) Address() string {
+	return r.server
+}
+
 // Lookup implements the Resolver interface
 func (r *ClassicResolver) Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error) {
 	return ConcurrentLookup(ctx, questions, flags, r.query, r.resolverOptions.Logger)

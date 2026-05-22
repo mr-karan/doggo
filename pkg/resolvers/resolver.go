@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -29,7 +30,28 @@ type Options struct {
 // Client. Different types of providers can load
 // a DNS Resolver satisfying this interface.
 type Resolver interface {
+	// Address returns the nameserver identity used when reporting errors.
+	Address() string
 	Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error)
+}
+
+// LookupError tags a resolver failure with the nameserver that produced it
+// so partial failures can be reported per-resolver instead of as an opaque
+// top-level error.
+type LookupError struct {
+	Nameserver string
+	Err        error
+}
+
+func (e *LookupError) Error() string {
+	if e.Nameserver == "" {
+		return e.Err.Error()
+	}
+	return fmt.Sprintf("%s: %v", e.Nameserver, e.Err)
+}
+
+func (e *LookupError) Unwrap() error {
+	return e.Err
 }
 
 // Response represents a custom output format

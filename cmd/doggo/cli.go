@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -17,6 +18,15 @@ import (
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/mr-karan/doggo/pkg/utils"
 	flag "github.com/spf13/pflag"
+)
+
+// Exit codes used by the CLI. Exit 0 is implicit success; partial success
+// (some resolvers answered, others failed) is 2; full lookup failure remains
+// 9 to preserve compatibility with the pre-existing convention.
+const (
+	exitGenericFailure = 1
+	exitPartialFailure = 2
+	exitLookupFailure  = 9
 )
 
 var (
@@ -89,8 +99,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	responses, errors := performLookup(app, cfg)
-	outputResults(app, responses, errors)
+	responses, lookupErrors := performLookup(app, cfg)
+	outputResults(app, responses, lookupErrors)
 }
 
 type config struct {
@@ -283,12 +293,16 @@ func performLookup(app *app.App, cfg *config) ([]resolvers.Response, []error) {
 			defer wg.Done()
 			responses, err := r.Lookup(ctx, app.Questions, cfg.queryFlags)
 			mu.Lock()
+			defer mu.Unlock()
+			// Collect any responses the resolver produced even when err != nil
+			// so partial successes within a single resolver still surface.
+			allResponses = append(allResponses, responses...)
 			if err != nil {
-				allErrors = append(allErrors, err)
-			} else {
-				allResponses = append(allResponses, responses...)
+				allErrors = append(allErrors, &resolvers.LookupError{
+					Nameserver: r.Address(),
+					Err:        err,
+				})
 			}
-			mu.Unlock()
 		}(resolver)
 	}
 
@@ -300,30 +314,83 @@ func outputResults(app *app.App, responses []resolvers.Response, responseErrors 
 	if app.QueryFlags.ShowJSON {
 		outputJSON(app.Logger, responses, responseErrors)
 	} else {
-		if len(responseErrors) > 0 {
-			app.Logger.Error("Error looking up DNS records", "error", responseErrors[0])
-			os.Exit(9)
+		// Full failure: no resolver produced a usable response. Surface every
+		// per-resolver error so the user can see which nameservers failed and
+		// why, then exit with the legacy lookup-failure code.
+		if len(responses) == 0 && len(responseErrors) > 0 {
+			for _, err := range responseErrors {
+				logResolverError(app.Logger, slog.LevelError, "Error looking up DNS records", err)
+			}
+			os.Exit(exitLookupFailure)
+		}
+		// Partial success: at least one resolver answered while another
+		// failed. Demote the failure to a warning and print whatever we have.
+		for _, err := range responseErrors {
+			logResolverError(app.Logger, slog.LevelWarn, "lookup failed", err)
 		}
 		app.Output(responses)
 	}
+
+	if len(responseErrors) > 0 && len(responses) > 0 {
+		os.Exit(exitPartialFailure)
+	}
+	if len(responseErrors) > 0 {
+		os.Exit(exitLookupFailure)
+	}
+}
+
+// logResolverError emits a per-resolver lookup error at the given level,
+// unwrapping LookupError so the nameserver shows up as its own structured
+// field rather than embedded in the message.
+func logResolverError(logger *slog.Logger, level slog.Level, msg string, err error) {
+	var lookupErr *resolvers.LookupError
+	if errors.As(err, &lookupErr) {
+		logger.Log(context.Background(), level, msg,
+			"nameserver", lookupErr.Nameserver,
+			"error", lookupErr.Err,
+		)
+		return
+	}
+	logger.Log(context.Background(), level, msg, "error", err)
+}
+
+// resolverErrorJSON is the per-resolver error shape returned in JSON output.
+type resolverErrorJSON struct {
+	Nameserver string `json:"nameserver,omitempty"`
+	Error      string `json:"error"`
 }
 
 func outputJSON(logger *slog.Logger, responses []resolvers.Response, responseErrors []error) {
 	jsonOutput := struct {
 		Responses []resolvers.Response `json:"responses,omitempty"`
-		Error     string               `json:"error,omitempty"`
+		Errors    []resolverErrorJSON  `json:"errors,omitempty"`
+		// Error is kept for backwards compatibility with scripts that parsed
+		// the previous schema. It is populated only on full failure.
+		Error string `json:"error,omitempty"`
 	}{
 		Responses: responses,
 	}
 
-	if len(responseErrors) > 0 {
+	for _, err := range responseErrors {
+		var lookupErr *resolvers.LookupError
+		if errors.As(err, &lookupErr) {
+			jsonOutput.Errors = append(jsonOutput.Errors, resolverErrorJSON{
+				Nameserver: lookupErr.Nameserver,
+				Error:      lookupErr.Err.Error(),
+			})
+			continue
+		}
+		jsonOutput.Errors = append(jsonOutput.Errors, resolverErrorJSON{Error: err.Error()})
+	}
+
+	if len(responses) == 0 && len(responseErrors) > 0 {
 		jsonOutput.Error = responseErrors[0].Error()
 	}
 
 	jsonData, err := json.MarshalIndent(jsonOutput, "", "  ")
 	if err != nil {
 		logger.Error("Error marshaling JSON")
-		os.Exit(1)
+		os.Exit(exitGenericFailure)
 	}
 	fmt.Println(string(jsonData))
 }

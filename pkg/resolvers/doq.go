@@ -57,6 +57,11 @@ func NewDOQResolver(server string, resolverOpts Options) (Resolver, error) {
 	}, nil
 }
 
+// Address implements the Resolver interface.
+func (r *DOQResolver) Address() string {
+	return r.server
+}
+
 // Lookup implements the Resolver interface
 func (r *DOQResolver) Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error) {
 	return ConcurrentLookup(ctx, questions, flags, r.query, r.resolverOptions.Logger)

@@ -151,6 +151,11 @@ func (r *DOHResolver) query(ctx context.Context, question dns.Question, flags Qu
 	return rsp, nil
 }
 
+// Address implements the Resolver interface.
+func (r *DOHResolver) Address() string {
+	return r.server
+}
+
 // Lookup implements the Resolver interface
 func (r *DOHResolver) Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error) {
 	return ConcurrentLookup(ctx, questions, flags, r.query, r.resolverOptions.Logger)
