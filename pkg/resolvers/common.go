@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 
@@ -11,55 +12,48 @@ import (
 // QueryFunc represents the signature of a query function
 type QueryFunc func(ctx context.Context, question dns.Question, flags QueryFlags) (Response, error)
 
-// ConcurrentLookup performs concurrent DNS lookups
+// ConcurrentLookup performs concurrent DNS lookups across multiple questions
+// against a single resolver. It always waits for all in-flight goroutines so
+// completed work is never discarded when the context is cancelled or expires
+// mid-flight; callers receive whatever responses finished plus a joined error
+// describing any per-question failures.
 func ConcurrentLookup(ctx context.Context, questions []dns.Question, flags QueryFlags, queryFunc QueryFunc, logger *slog.Logger) ([]Response, error) {
 	var wg sync.WaitGroup
 	responses := make([]Response, len(questions))
-	errors := make([]error, len(questions))
-	done := make(chan struct{})
+	errs := make([]error, len(questions))
 
 	for i, q := range questions {
 		wg.Add(1)
 		go func(i int, q dns.Question) {
 			defer wg.Done()
-			select {
-			case <-ctx.Done():
-				errors[i] = ctx.Err()
-			default:
-				resp, err := queryFunc(ctx, q, flags)
-				responses[i] = resp
-				errors[i] = err
+			if err := ctx.Err(); err != nil {
+				errs[i] = err
+				return
 			}
+			resp, err := queryFunc(ctx, q, flags)
+			responses[i] = resp
+			errs[i] = err
 		}(i, q)
 	}
 
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
+	wg.Wait()
 
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-done:
-		// All goroutines have finished
-	}
-
-	// Collect non-nil responses and handle errors
 	var validResponses []Response
+	var lookupErrs []error
 	for i, resp := range responses {
-		if errors[i] != nil {
-			if errors[i] != context.Canceled && errors[i] != context.DeadlineExceeded {
-				logger.Error("error in lookup", "error", errors[i])
+		if errs[i] != nil {
+			lookupErrs = append(lookupErrs, errs[i])
+			if !errors.Is(errs[i], context.Canceled) && !errors.Is(errs[i], context.DeadlineExceeded) {
+				logger.Error("error in lookup", "error", errs[i])
 			}
-		} else {
-			validResponses = append(validResponses, resp)
+			continue
 		}
+		validResponses = append(validResponses, resp)
 	}
 
-	if len(validResponses) == 0 && ctx.Err() != nil {
-		return nil, ctx.Err()
+	if len(validResponses) == 0 && len(lookupErrs) > 0 {
+		return nil, errors.Join(lookupErrs...)
 	}
 
-	return validResponses, nil
+	return validResponses, errors.Join(lookupErrs...)
 }
