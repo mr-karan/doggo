@@ -32,7 +32,7 @@ func (app *App) LoadNameservers() error {
 		}
 
 		var err error
-		app.Nameservers, err = applyNameserverStrategy(app.Nameservers, app.QueryFlags.Strategy)
+		app.Nameservers, err = app.applyNameserverStrategy(app.Nameservers, "explicit")
 		if err != nil {
 			app.Logger.Error("error applying nameserver strategy", "error", err)
 			return err
@@ -50,7 +50,7 @@ func (app *App) LoadNameservers() error {
 
 func (app *App) loadSystemNameservers() error {
 	app.Logger.Debug("No user specified nameservers, falling back to system nameservers")
-	ns, ndots, search, err := getDefaultServers(app.QueryFlags.Strategy, app.QueryFlags.UseIPv4, app.QueryFlags.UseIPv6)
+	ns, ndots, search, err := app.getDefaultServers()
 	if err != nil {
 		app.Logger.Error("error fetching system default nameserver", "error", err)
 		return fmt.Errorf("error fetching system default nameserver: %v", err)
@@ -321,19 +321,36 @@ func filterNameserversByIPVersion(servers []string, useIPv4, useIPv6 bool) []str
 	return filtered
 }
 
-func applyNameserverStrategy(nameservers []models.Nameserver, strategy string) ([]models.Nameserver, error) {
+// applyNameserverStrategy narrows the supplied nameserver list according to
+// app.QueryFlags.Strategy and emits debug logs describing what it did. The
+// source argument labels the origin of the list (e.g. "explicit" for CLI
+// overrides, "system" for resolv.conf) so the same log lines can describe
+// both call sites without ambiguity.
+func (app *App) applyNameserverStrategy(nameservers []models.Nameserver, source string) ([]models.Nameserver, error) {
 	if len(nameservers) == 0 {
 		return nameservers, nil
 	}
+
+	strategy := app.QueryFlags.Strategy
+	app.Logger.Debug("Applying nameserver strategy",
+		"source", source,
+		"strategy", strategy,
+		"before_count", len(nameservers),
+		"before", nameservers,
+	)
 
 	switch strategy {
 	case "random":
 		src := rand.NewSource(time.Now().UnixNano())
 		rnd := rand.New(src)
-		return []models.Nameserver{nameservers[rnd.Intn(len(nameservers))]}, nil
+		selected := []models.Nameserver{nameservers[rnd.Intn(len(nameservers))]}
+		app.logStrategyApplied(source, strategy, len(nameservers), selected)
+		return selected, nil
 
 	case "first":
-		return []models.Nameserver{nameservers[0]}, nil
+		selected := []models.Nameserver{nameservers[0]}
+		app.logStrategyApplied(source, strategy, len(nameservers), selected)
+		return selected, nil
 
 	case "internal":
 		internalServers := make([]models.Nameserver, 0)
@@ -344,14 +361,35 @@ func applyNameserverStrategy(nameservers []models.Nameserver, strategy string) (
 		}
 
 		if len(internalServers) == 0 {
+			app.Logger.Debug("Nameserver strategy rejected all nameservers",
+				"source", source,
+				"strategy", strategy,
+				"before_count", len(nameservers),
+			)
 			return nil, fmt.Errorf("no internal (private IP) nameservers found")
 		}
 
+		app.logStrategyApplied(source, strategy, len(nameservers), internalServers)
 		return internalServers, nil
 
 	default:
+		app.Logger.Debug("Nameserver strategy left nameservers unchanged",
+			"source", source,
+			"strategy", strategy,
+			"count", len(nameservers),
+		)
 		return nameservers, nil
 	}
+}
+
+func (app *App) logStrategyApplied(source, strategy string, beforeCount int, after []models.Nameserver) {
+	app.Logger.Debug("Applied nameserver strategy",
+		"source", source,
+		"strategy", strategy,
+		"after_count", len(after),
+		"dropped_count", beforeCount-len(after),
+		"after", after,
+	)
 }
 
 func nameserverHost(ns models.Nameserver) string {
@@ -367,20 +405,35 @@ func nameserverHost(ns models.Nameserver) string {
 	return ns.Address
 }
 
-func getDefaultServers(strategy string, useIPv4, useIPv6 bool) ([]models.Nameserver, int, []string, error) {
+func (app *App) getDefaultServers() ([]models.Nameserver, int, []string, error) {
 	// Load nameservers from `/etc/resolv.conf`.
 	dnsServers, ndots, search, err := config.GetDefaultServers()
 	if err != nil {
 		return nil, 0, nil, err
 	}
 
+	app.Logger.Debug("Loaded system resolver configuration",
+		"nameservers", dnsServers,
+		"ndots", ndots,
+		"search", search,
+	)
+
 	// Filter nameservers based on IPv4/IPv6 flags
-	dnsServers = filterNameserversByIPVersion(dnsServers, useIPv4, useIPv6)
+	beforeFilter := len(dnsServers)
+	dnsServers = filterNameserversByIPVersion(dnsServers, app.QueryFlags.UseIPv4, app.QueryFlags.UseIPv6)
+	if beforeFilter != len(dnsServers) {
+		app.Logger.Debug("Filtered system nameservers by IP version",
+			"use_ipv4", app.QueryFlags.UseIPv4,
+			"use_ipv6", app.QueryFlags.UseIPv6,
+			"before_count", beforeFilter,
+			"after_count", len(dnsServers),
+		)
+	}
 
 	// If after filtering we have no servers, return an error
 	if len(dnsServers) == 0 {
 		ipVersion := "IPv4"
-		if useIPv6 {
+		if app.QueryFlags.UseIPv6 {
 			ipVersion = "IPv6"
 		}
 		return nil, ndots, search, fmt.Errorf("no %s nameservers found in system configuration", ipVersion)
@@ -395,7 +448,7 @@ func getDefaultServers(strategy string, useIPv4, useIPv6 bool) ([]models.Nameser
 		servers = append(servers, ns)
 	}
 
-	servers, err = applyNameserverStrategy(servers, strategy)
+	servers, err = app.applyNameserverStrategy(servers, "system")
 	if err != nil {
 		return nil, ndots, search, fmt.Errorf("%w in system configuration", err)
 	}
