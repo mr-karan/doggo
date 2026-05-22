@@ -132,26 +132,35 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 			defer wg.Done()
 			responses, err := r.Lookup(ctx, app.Questions, queryFlags)
 			mu.Lock()
+			defer mu.Unlock()
+			// Collect any responses the resolver produced even when err != nil
+			// so partial successes (some questions answered, some failed) and
+			// multi-resolver fan-outs where one resolver is unreachable do not
+			// drop the responses we already have.
+			allResponses = append(allResponses, responses...)
 			if err != nil {
-				allErrors = append(allErrors, err)
-			} else {
-				allResponses = append(allResponses, responses...)
+				allErrors = append(allErrors, &resolvers.LookupError{
+					Nameserver: r.Address(),
+					Err:        err,
+				})
 			}
-			mu.Unlock()
 		}(resolver)
 	}
 
 	wg.Wait()
 
-	if len(allErrors) > 0 {
-		app.Logger.Error("errors looking up DNS records", "errors", allErrors)
-		sendErrorResponse(w, "Error looking up for records.", http.StatusInternalServerError, nil)
+	if len(allResponses) == 0 {
+		if len(allErrors) > 0 {
+			app.Logger.Error("errors looking up DNS records", "errors", allErrors)
+			sendErrorResponse(w, "Error looking up for records.", http.StatusInternalServerError, nil)
+			return
+		}
+		sendErrorResponse(w, "No records found.", http.StatusNotFound, nil)
 		return
 	}
 
-	if len(allResponses) == 0 {
-		sendErrorResponse(w, "No records found.", http.StatusNotFound, nil)
-		return
+	if len(allErrors) > 0 {
+		app.Logger.Warn("partial lookup failure", "errors", allErrors)
 	}
 
 	sendResponse(w, http.StatusOK, allResponses)
