@@ -59,6 +59,40 @@ func newTestApp() App {
 	}
 }
 
+func TestLoadNameserversExplicitNameserverTakesPrecedenceOverAuthoritative(t *testing.T) {
+	app := newTestApp()
+	app.QueryFlags.Nameservers = []string{"1.1.1.1"}
+	app.QueryFlags.UseAuthoritative = true
+	app.QueryFlags.QNames = []string{"github.com"}
+
+	if err := app.LoadNameservers(); err != nil {
+		t.Fatalf("LoadNameservers() error = %v", err)
+	}
+
+	want := []models.Nameserver{
+		{Address: "1.1.1.1:53", Type: models.UDPResolver},
+	}
+	assertNameservers(t, app.Nameservers, want)
+}
+
+func TestLoadAuthoritativeNameserver(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test requiring network")
+	}
+	app := newTestApp()
+	app.QueryFlags.UseAuthoritative = true
+	app.QueryFlags.QNames = []string{"github.com"}
+
+	if err := app.LoadNameservers(); err != nil {
+		t.Fatalf("LoadNameservers() error = %v", err)
+	}
+
+	if len(app.Nameservers) == 0 {
+		t.Fatal("expected at least one authoritative nameserver, got none")
+	}
+	t.Logf("resolved authoritative NS for github.com: %v", app.Nameservers[0].Address)
+}
+
 func assertNameservers(t *testing.T, got, want []models.Nameserver) {
 	t.Helper()
 

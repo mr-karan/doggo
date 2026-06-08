@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ameshkov/dnsstamps"
+	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/config"
 	"github.com/mr-karan/doggo/pkg/models"
 )
@@ -39,8 +40,11 @@ func (app *App) LoadNameservers() error {
 		}
 	}
 
-	// If no nameservers were successfully loaded, fall back to system nameservers
+	// If no nameservers were successfully loaded, check for authoritative flag
 	if len(app.Nameservers) == 0 {
+		if app.QueryFlags.UseAuthoritative && len(app.QueryFlags.QNames) > 0 {
+			return app.loadAuthoritativeNameserver(app.QueryFlags.QNames[0])
+		}
 		return app.loadSystemNameservers()
 	}
 
@@ -454,4 +458,54 @@ func (app *App) getDefaultServers() ([]models.Nameserver, int, []string, error) 
 	}
 
 	return servers, ndots, search, nil
+}
+
+// loadAuthoritativeNameserver walks up the domain hierarchy via SOA queries to
+// find the zone's primary nameserver and adds it to app.Nameservers.
+func (app *App) loadAuthoritativeNameserver(domain string) error {
+	systemServers, _, _, err := config.GetDefaultServers()
+	if err != nil || len(systemServers) == 0 {
+		return fmt.Errorf("unable to load system nameservers for SOA lookup: %w", err)
+	}
+	resolver := net.JoinHostPort(systemServers[0], models.DefaultUDPPort)
+
+	c := &dns.Client{Timeout: 5 * time.Second}
+	candidate := dns.Fqdn(domain)
+
+	for {
+		m := new(dns.Msg)
+		m.SetQuestion(candidate, dns.TypeSOA)
+		m.RecursionDesired = true
+
+		r, _, err := c.Exchange(m, resolver)
+		if err == nil {
+			if soa := firstSOA(r); soa != nil {
+				nsHost := strings.TrimSuffix(soa.Ns, ".")
+				ns, err := initNameserver(nsHost)
+				if err != nil {
+					return fmt.Errorf("invalid authoritative nameserver %q: %w", nsHost, err)
+				}
+				app.Logger.Debug("Resolved authoritative nameserver via SOA", "zone", candidate, "ns", nsHost)
+				app.Nameservers = append(app.Nameservers, ns)
+				return nil
+			}
+		}
+
+		// No SOA found — walk up to the parent zone.
+		labels := dns.SplitDomainName(candidate)
+		if len(labels) <= 1 {
+			return fmt.Errorf("no authoritative nameserver found for %q", domain)
+		}
+		candidate = dns.Fqdn(strings.Join(labels[1:], "."))
+	}
+}
+
+// firstSOA returns the first SOA record from the answer or authority section.
+func firstSOA(r *dns.Msg) *dns.SOA {
+	for _, rr := range append(r.Answer, r.Ns...) {
+		if soa, ok := rr.(*dns.SOA); ok {
+			return soa
+		}
+	}
+	return nil
 }

@@ -45,6 +45,7 @@ type QueryFlags struct {
 	InsecureSkipVerify bool          `koanf:"skip-hostname-verification" skip-hostname-verification:"-"`
 	TLSHostname        string        `koanf:"tls-hostname" tls-hostname:"-"`
 	QueryAny           bool          `koanf:"any" json:"any"`
+	UseAuthoritative   bool          `koanf:"authoritative" json:"authoritative"`
 
 	// DNS Query Flags
 	AA bool `koanf:"aa" json:"aa"` // Authoritative Answer
