@@ -32,7 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/mr-karan/doggo/main/install.sh | sh
 
 - Homebrew: `brew install doggo`
 - MacPorts (macOS): `port install doggo`
-- Arch Linux: `yay -S doggo-bin`
+- Arch Linux: `pacman -S doggo`
 - [Mise](https://github.com/jdx/mise): `mise use -g doggo@latest`
 - Nix: `nix profile install nixpkgs#doggo`
 - Scoop (Windows): `scoop install doggo`
