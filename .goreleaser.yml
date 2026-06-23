@@ -48,25 +48,38 @@ builds:
 
 archives:
   - id: cli
-    builds:
+    ids:
       - cli
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     name_template: >-
-      {{ .ProjectName }}_
-      {{- .Version }}_
-      {{- title .Os }}_
+      {{ .ProjectName }}-
+      {{- .Os }}-
       {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "arm64" }}aarch64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
-    wrap_in_directory: true
+    wrap_in_directory: false
+    builds_info:
+      owner: root
+      group: root
+      mode: 0755
     files:
-      - README.md
-      - LICENSE
+      - src: README.md
+        info:
+          owner: root
+          group: root
+          mode: 0644
+      - src: LICENSE
+        info:
+          owner: root
+          group: root
+          mode: 0644
 
   - id: web
-    builds:
+    ids:
       - web
     wrap_in_directory: true
     files:

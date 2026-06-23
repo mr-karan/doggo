@@ -21,4 +21,5 @@ jobs:
         with:
           go-version-file: go.mod
       - run: |
-          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+          # v1.4.0 currently panics under Go 1.26 while building the SSA call graph.
+          go run golang.org/x/vuln/cmd/govulncheck@v1.3.0 ./...
