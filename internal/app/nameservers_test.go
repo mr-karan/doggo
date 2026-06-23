@@ -3,6 +3,7 @@ package app
 import (
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 
 	"github.com/mr-karan/doggo/pkg/models"
@@ -57,6 +58,71 @@ func newTestApp() App {
 		},
 		Nameservers: []models.Nameserver{},
 	}
+}
+
+func TestLoadNameserversExplicitNameserverTakesPrecedenceOverAuthoritative(t *testing.T) {
+	app := newTestApp()
+	app.QueryFlags.Nameservers = []string{"1.1.1.1"}
+	app.QueryFlags.UseAuthoritative = true
+	app.QueryFlags.QNames = []string{"github.com"}
+
+	if err := app.LoadNameservers(); err != nil {
+		t.Fatalf("LoadNameservers() error = %v", err)
+	}
+
+	want := []models.Nameserver{
+		{Address: "1.1.1.1:53", Type: models.UDPResolver},
+	}
+	assertNameservers(t, app.Nameservers, want)
+}
+
+func TestLoadAuthoritativeNameserver(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test requiring network")
+	}
+	app := newTestApp()
+	app.QueryFlags.UseAuthoritative = true
+	app.QueryFlags.QNames = []string{"github.com"}
+
+	if err := app.LoadNameservers(); err != nil {
+		t.Fatalf("LoadNameservers() error = %v", err)
+	}
+
+	if len(app.Nameservers) == 0 {
+		t.Fatal("expected at least one authoritative nameserver, got none")
+	}
+	t.Logf("resolved authoritative NS for github.com: %v", app.Nameservers[0].Address)
+}
+
+// TestLoadAuthoritativeNameserverUsesDelegatedNS verifies the resolver targets
+// come from the zone's delegated NS RRset, not the SOA primary (MNAME). amazon.com
+// is the canonical case: its MNAME (dns-external-route53.us-east-1.amazonaws.com)
+// is not publicly queryable, while its delegated NS set lives under awsdns-*.
+func TestLoadAuthoritativeNameserverUsesDelegatedNS(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test requiring network")
+	}
+	app := newTestApp()
+	app.QueryFlags.UseAuthoritative = true
+	app.QueryFlags.QNames = []string{"amazon.com"}
+
+	if err := app.LoadNameservers(); err != nil {
+		t.Fatalf("LoadNameservers() error = %v", err)
+	}
+
+	if len(app.Nameservers) == 0 {
+		t.Fatal("expected at least one authoritative nameserver, got none")
+	}
+
+	for _, ns := range app.Nameservers {
+		if strings.Contains(ns.Address, "dns-external-route53") {
+			t.Fatalf("selected SOA primary (MNAME) instead of delegated NS: %v", ns.Address)
+		}
+		if !strings.Contains(ns.Address, "awsdns") {
+			t.Errorf("expected a delegated awsdns nameserver, got %v", ns.Address)
+		}
+	}
+	t.Logf("resolved authoritative NS for amazon.com: %v", app.Nameservers)
 }
 
 func assertNameservers(t *testing.T, got, want []models.Nameserver) {

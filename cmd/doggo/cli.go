@@ -182,6 +182,7 @@ func setupFlags() *flag.FlagSet {
 	f.Bool("skip-hostname-verification", false, "Skip TLS Hostname Verification")
 
 	f.Bool("any", false, "Query all supported DNS record types")
+	f.BoolP("authoritative", "A", false, "Automatically query the authoritative nameserver for the domain")
 
 	f.BoolP("json", "J", false, "Set the output format as JSON")
 	f.Bool("short", false, "Short output format")

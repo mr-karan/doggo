@@ -5,10 +5,12 @@ import (
 	"math/rand"
 	"net"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/ameshkov/dnsstamps"
+	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/config"
 	"github.com/mr-karan/doggo/pkg/models"
 )
@@ -39,8 +41,11 @@ func (app *App) LoadNameservers() error {
 		}
 	}
 
-	// If no nameservers were successfully loaded, fall back to system nameservers
+	// If no nameservers were successfully loaded, check for authoritative flag
 	if len(app.Nameservers) == 0 {
+		if app.QueryFlags.UseAuthoritative && len(app.QueryFlags.QNames) > 0 {
+			return app.loadAuthoritativeNameserver(app.QueryFlags.QNames[0])
+		}
 		return app.loadSystemNameservers()
 	}
 
@@ -454,4 +459,124 @@ func (app *App) getDefaultServers() ([]models.Nameserver, int, []string, error) 
 	}
 
 	return servers, ndots, search, nil
+}
+
+// loadAuthoritativeNameserver finds the closest enclosing zone for the domain
+// via SOA queries, then resolves that zone's delegated NS RRset and adds those
+// nameservers to app.Nameservers.
+//
+// SOA is used only to locate the zone cut. The actual query targets come from
+// the zone's NS records, which are the publicly delegated authoritative
+// servers. We deliberately avoid SOA.Ns (the zone primary/MNAME): it is often
+// an internal hostname that does not resolve publicly (e.g. amazon.com's MNAME
+// is dns-external-route53.us-east-1.amazonaws.com), whereas the delegated NS
+// set is what recursive resolvers actually query.
+func (app *App) loadAuthoritativeNameserver(domain string) error {
+	systemServers, _, _, err := config.GetDefaultServers()
+	if err != nil || len(systemServers) == 0 {
+		return fmt.Errorf("unable to load system nameservers for SOA lookup: %w", err)
+	}
+	resolver := net.JoinHostPort(systemServers[0], models.DefaultUDPPort)
+
+	c := &dns.Client{Timeout: 5 * time.Second}
+
+	// Step 1: use SOA to identify the closest enclosing zone (the zone cut).
+	zone, err := app.closestZone(c, resolver, dns.Fqdn(domain))
+	if err != nil {
+		return err
+	}
+
+	// Step 2: fetch that zone's delegated NS RRset — the public authoritative servers.
+	nsNames, err := app.zoneNameservers(c, resolver, zone)
+	if err != nil {
+		return err
+	}
+
+	servers := make([]models.Nameserver, 0, len(nsNames))
+	for _, name := range nsNames {
+		ns, err := initNameserver(strings.TrimSuffix(name, "."))
+		if err != nil {
+			app.Logger.Debug("Skipping invalid authoritative nameserver", "ns", name, "error", err)
+			continue
+		}
+		servers = append(servers, ns)
+	}
+	if len(servers) == 0 {
+		return fmt.Errorf("no usable authoritative nameservers found for zone %q", strings.TrimSuffix(zone, "."))
+	}
+
+	app.Logger.Debug("Resolved authoritative nameservers via NS RRset", "zone", zone, "nameservers", servers)
+
+	// Step 3: let the nameserver strategy select the query target(s).
+	servers, err = app.applyNameserverStrategy(servers, "authoritative")
+	if err != nil {
+		return err
+	}
+
+	app.Nameservers = append(app.Nameservers, servers...)
+	return nil
+}
+
+// closestZone walks up the domain hierarchy issuing SOA queries until it finds
+// the closest enclosing zone, returning that zone's apex as an FQDN.
+func (app *App) closestZone(c *dns.Client, resolver, candidate string) (string, error) {
+	domain := candidate
+	for {
+		m := new(dns.Msg)
+		m.SetQuestion(candidate, dns.TypeSOA)
+		m.RecursionDesired = true
+
+		r, _, err := c.Exchange(m, resolver)
+		if err == nil {
+			if soa := firstSOA(r); soa != nil {
+				// The SOA owner name is the zone apex regardless of the label
+				// we queried: a recursive resolver returns the enclosing zone's
+				// SOA in the authority section for sub-zone names.
+				return soa.Hdr.Name, nil
+			}
+		}
+
+		// No SOA found — walk up to the parent zone.
+		labels := dns.SplitDomainName(candidate)
+		if len(labels) <= 1 {
+			return "", fmt.Errorf("no authoritative zone found for %q", strings.TrimSuffix(domain, "."))
+		}
+		candidate = dns.Fqdn(strings.Join(labels[1:], "."))
+	}
+}
+
+// zoneNameservers queries the NS RRset for the given zone and returns the
+// delegated nameserver hostnames, sorted for deterministic selection.
+func (app *App) zoneNameservers(c *dns.Client, resolver, zone string) ([]string, error) {
+	m := new(dns.Msg)
+	m.SetQuestion(zone, dns.TypeNS)
+	m.RecursionDesired = true
+
+	r, _, err := c.Exchange(m, resolver)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query NS records for zone %q: %w", strings.TrimSuffix(zone, "."), err)
+	}
+
+	var names []string
+	for _, rr := range append(r.Answer, r.Ns...) {
+		if ns, ok := rr.(*dns.NS); ok {
+			names = append(names, ns.Ns)
+		}
+	}
+	if len(names) == 0 {
+		return nil, fmt.Errorf("no NS records found for zone %q", strings.TrimSuffix(zone, "."))
+	}
+	sort.Strings(names)
+
+	return names, nil
+}
+
+// firstSOA returns the first SOA record from the answer or authority section.
+func firstSOA(r *dns.Msg) *dns.SOA {
+	for _, rr := range append(r.Answer, r.Ns...) {
+		if soa, ok := rr.(*dns.SOA); ok {
+			return soa
+		}
+	}
+	return nil
 }

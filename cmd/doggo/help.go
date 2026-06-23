@@ -119,6 +119,7 @@ func renderCustomHelp() {
 			{"-c, --class=CLASS", "Network class of the DNS record (IN, CH, HS etc)."},
 			{"-x, --reverse", "Performs a DNS Lookup for an IPv4 or IPv6 address. Sets the query type and class to PTR and IN respectively."},
 			{"--any", "Query all supported DNS record types (A, AAAA, CNAME, MX, NS, PTR, SOA, SRV, TXT, CAA)."},
+			{"-A, --authoritative", "Find the domain's zone via SOA and query its delegated authoritative nameservers (the NS RRset). Honours --strategy to narrow the set."},
 		},
 		"ResolverOptions": []Option{
 			{"--strategy=STRATEGY", "Specify strategy to query nameservers. Options: all, random, first, internal (RFC 1918/ULA private IPs only)."},
