@@ -50,6 +50,41 @@ func TestLoadNameserversReturnsErrorWhenExplicitInternalStrategyHasNoPrivateName
 	}
 }
 
+func TestIsPrivateIP(t *testing.T) {
+	cases := []struct {
+		ip   string
+		want bool
+	}{
+		// RFC 1918
+		{"10.0.0.1", true},
+		{"172.16.0.1", true},
+		{"172.31.255.255", true},
+		{"172.32.0.1", false},
+		{"192.168.1.1", true},
+		// RFC 6598 CGNAT (e.g. Tailscale MagicDNS)
+		{"100.100.100.100", true},
+		{"100.64.0.0", true},
+		{"100.127.255.255", true},
+		{"100.63.255.255", false}, // just below the range
+		{"100.128.0.0", false},    // just above the range
+		// Public
+		{"8.8.8.8", false},
+		{"1.1.1.1", false},
+		// IPv6 ULA (RFC 4193): only the locally-assigned fd00::/8 half is matched
+		{"fd7a:115c:a1e0::53", true},
+		{"fc00::1", false}, // reserved/unused ULA half, not matched
+		{"2606:4700:4700::1111", false},
+		// Invalid
+		{"not-an-ip", false},
+	}
+
+	for _, tc := range cases {
+		if got := isPrivateIP(tc.ip); got != tc.want {
+			t.Errorf("isPrivateIP(%q) = %v, want %v", tc.ip, got, tc.want)
+		}
+	}
+}
+
 func newTestApp() App {
 	return App{
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),

@@ -27,9 +27,29 @@ type scutilResolver struct {
 
 // GetDefaultServers retrieves DNS configuration from macOS SystemConfiguration
 // by parsing the output of 'scutil --dns'. Falls back to /etc/resolv.conf on failure.
+//
+// Only general-purpose resolvers are returned: Supplemental and domain-scoped
+// resolvers are excluded because they apply to specific domains, not arbitrary
+// queries. See GetAllServers for the strategy-aware variant.
 func GetDefaultServers() ([]string, int, []string, error) {
+	return getSystemServers(false)
+}
+
+// GetAllServers is like GetDefaultServers but also includes Supplemental and
+// domain-scoped resolvers (e.g. the resolvers a VPN or Tailscale installs for
+// split-DNS). It exists so the "internal" nameserver strategy can discover
+// private corporate/VPN resolvers that GetDefaultServers intentionally hides.
+// mDNS resolvers (.local and reverse-DNS) are still excluded.
+func GetAllServers() ([]string, int, []string, error) {
+	return getSystemServers(true)
+}
+
+// getSystemServers tries scutil first and falls back to /etc/resolv.conf.
+// includeSupplemental controls whether Supplemental/domain-scoped resolvers
+// are kept (see GetAllServers).
+func getSystemServers(includeSupplemental bool) ([]string, int, []string, error) {
 	// Try scutil first
-	resolvers, ndots, search, err := getResolversFromScutil()
+	resolvers, ndots, search, err := getResolversFromScutil(includeSupplemental)
 	if err != nil {
 		// Fallback to /etc/resolv.conf
 		return fallbackToResolvConf()
@@ -39,7 +59,7 @@ func GetDefaultServers() ([]string, int, []string, error) {
 }
 
 // getResolversFromScutil executes scutil --dns and parses the output
-func getResolversFromScutil() ([]string, int, []string, error) {
+func getResolversFromScutil(includeSupplemental bool) ([]string, int, []string, error) {
 	// Execute scutil --dns
 	cmd := exec.Command("scutil", "--dns")
 	var stdout bytes.Buffer
@@ -60,16 +80,7 @@ func getResolversFromScutil() ([]string, int, []string, error) {
 		return nil, 0, nil, fmt.Errorf("failed to parse scutil output: %w", err)
 	}
 
-	// Filter out resolvers that shouldn't be used for general queries:
-	// - mDNS resolvers (for .local domains)
-	// - Supplemental resolvers (flagged as domain-specific)
-	// - Domain-specific resolvers (have explicit domain field)
-	validResolvers := make([]scutilResolver, 0)
-	for _, r := range resolvers {
-		if !isMDNS(r) && !isSupplemental(r) && !isDomainSpecific(r) && len(r.nameservers) > 0 {
-			validResolvers = append(validResolvers, r)
-		}
-	}
+	validResolvers := filterResolvers(resolvers, includeSupplemental)
 
 	if len(validResolvers) == 0 {
 		return nil, 0, nil, fmt.Errorf("no valid resolvers found")
@@ -186,6 +197,28 @@ func parseScutilOutput(output string) ([]scutilResolver, error) {
 	}
 
 	return resolvers, nil
+}
+
+// filterResolvers selects resolvers usable for outbound DNS queries.
+//
+// mDNS resolvers (.local and reverse-DNS) and resolvers with no nameservers are
+// always excluded. By default Supplemental and domain-scoped resolvers are also
+// excluded, since they apply only to specific domains rather than general
+// queries. When includeSupplemental is set they are kept, so the "internal"
+// strategy can discover private VPN/Tailscale resolvers that would otherwise be
+// hidden.
+func filterResolvers(resolvers []scutilResolver, includeSupplemental bool) []scutilResolver {
+	validResolvers := make([]scutilResolver, 0)
+	for _, r := range resolvers {
+		if isMDNS(r) || len(r.nameservers) == 0 {
+			continue
+		}
+		if !includeSupplemental && (isSupplemental(r) || isDomainSpecific(r)) {
+			continue
+		}
+		validResolvers = append(validResolvers, r)
+	}
+	return validResolvers
 }
 
 // isMDNS checks if a resolver is for mDNS (.local)

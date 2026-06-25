@@ -28,3 +28,10 @@ func GetDefaultServers() ([]string, int, []string, error) {
 	}
 	return servers, cfg.Ndots, cfg.Search, nil
 }
+
+// GetAllServers returns the same servers as GetDefaultServers. On UNIX,
+// resolv.conf has no concept of Supplemental/scoped resolvers, so every
+// configured nameserver is already visible to every strategy.
+func GetAllServers() ([]string, int, []string, error) {
+	return GetDefaultServers()
+}
