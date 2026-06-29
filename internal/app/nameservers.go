@@ -273,15 +273,16 @@ func isIPv6(ipStr string) bool {
 	return ip.To4() == nil
 }
 
-// isPrivateIP checks if an IP address is in RFC 1918 private address space (IPv4)
-// or RFC 4193 Unique Local Address space (IPv6)
+// isPrivateIP reports whether an IP address belongs to a private/internal
+// range: RFC 1918 (IPv4), RFC 6598 Carrier-Grade NAT (IPv4, used by Tailscale's
+// 100.100.100.100 MagicDNS resolver), or RFC 4193 Unique Local Addresses (IPv6).
 func isPrivateIP(ipStr string) bool {
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
 		return false
 	}
 
-	// IPv4 RFC 1918 ranges
+	// IPv4 ranges
 	if ipv4 := ip.To4(); ipv4 != nil {
 		// 10.0.0.0/8
 		if ipv4[0] == 10 {
@@ -293,6 +294,10 @@ func isPrivateIP(ipStr string) bool {
 		}
 		// 192.168.0.0/16
 		if ipv4[0] == 192 && ipv4[1] == 168 {
+			return true
+		}
+		// 100.64.0.0/10 (RFC 6598 CGNAT, e.g. Tailscale)
+		if ipv4[0] == 100 && ipv4[1] >= 64 && ipv4[1] <= 127 {
 			return true
 		}
 		return false
@@ -411,8 +416,16 @@ func nameserverHost(ns models.Nameserver) string {
 }
 
 func (app *App) getDefaultServers() ([]models.Nameserver, int, []string, error) {
-	// Load nameservers from `/etc/resolv.conf`.
-	dnsServers, ndots, search, err := config.GetDefaultServers()
+	// Load nameservers from the system resolver configuration. The "internal"
+	// strategy needs to see Supplemental/domain-scoped resolvers (e.g. a VPN or
+	// Tailscale split-DNS resolver), which GetDefaultServers hides, so it sources
+	// the broader GetAllServers list instead.
+	loadServers := config.GetDefaultServers
+	if app.QueryFlags.Strategy == "internal" {
+		loadServers = config.GetAllServers
+	}
+
+	dnsServers, ndots, search, err := loadServers()
 	if err != nil {
 		return nil, 0, nil, err
 	}
