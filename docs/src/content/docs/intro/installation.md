@@ -19,6 +19,10 @@ This script will automatically download and install the latest version of Doggo 
 
 You can download pre-compiled binaries for various operating systems and architectures from the [Releases](https://github.com/mr-karan/doggo/releases) section of the GitHub repository.
 
+Linux 32-bit ARM releases use explicit architecture levels: `doggo-linux-armv6.tar.gz` for ARMv6 devices and `doggo-linux-armv7.tar.gz` for ARMv7 or 32-bit ARMv8 devices. The legacy-compatible `doggo-linux-arm.tar.gz` asset contains the ARMv7 build.
+
+FreeBSD, OpenBSD, and NetBSD ARMv7 releases use the explicit `doggo-<os>-armv7.tar.gz` name while retaining the historical `doggo-<os>-arm.tar.gz` aliases.
+
 ### Docker
 
 Doggo is available as a Docker image hosted on GitHub Container Registry (ghcr.io). It supports both x86 and ARM architectures.

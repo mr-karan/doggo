@@ -44,6 +44,10 @@ curl -fsSL https://raw.githubusercontent.com/mr-karan/doggo/main/install.sh | sh
 
 You can download pre-compiled binaries for various operating systems and architectures from the [Releases](https://github.com/mr-karan/doggo/releases) page.
 
+Linux 32-bit ARM releases are available as `doggo-linux-armv6.tar.gz` (ARMv6) and `doggo-linux-armv7.tar.gz` (ARMv7 and 32-bit ARMv8). The `doggo-linux-arm.tar.gz` compatibility asset is the ARMv7 build.
+
+FreeBSD, OpenBSD, and NetBSD ARMv7 releases use the explicit `doggo-<os>-armv7.tar.gz` name and retain their historical `doggo-<os>-arm.tar.gz` aliases.
+
 ### Go Install
 
 If you have Go installed on your system, you can use the `go install` command:

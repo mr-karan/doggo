@@ -11,6 +11,8 @@ before:
 builds:
   - binary: doggo
     id: cli
+    # ARM archive CI sets this switch; normal tagged releases leave it unset and build the full matrix.
+    skip: '{{ if index .Env "DOGGO_RELEASE_ARM_ONLY" }}{{ eq (index .Env "DOGGO_RELEASE_ARM_ONLY") "1" }}{{ else }}false{{ end }}'
     ldflags:
       - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
     main: ./cmd/doggo/
@@ -25,17 +27,41 @@ builds:
       - amd64
       - arm64
       - "386"
-      - arm
-    goarm:
-      - "7"
     ignore:
       - goos: windows
         goarch: arm64
-      - goos: windows
-        goarm: "7"
+
+  - binary: doggo
+    id: cli-armv6
+    ldflags:
+      - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
+    main: ./cmd/doggo/
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - "6"
+
+  - binary: doggo
+    id: cli-armv7
+    ldflags:
+      - -s -w -X "main.buildVersion={{ .Tag }} ({{ .ShortCommit }} {{ .Date }})"
+    main: ./cmd/doggo/
+    goos:
+      - linux
+      - freebsd
+      - openbsd
+      - netbsd
+    goarch:
+      - arm
+    goarm:
+      - "7"
 
   - binary: doggo-web.bin
     id: web
+    # Snapshot CI validates CLI archives without the docs toolchain; tagged releases still build and package web.
+    skip: "{{ .IsSnapshot }}"
     goos:
       - linux
     goarch:
@@ -50,6 +76,8 @@ archives:
   - id: cli
     ids:
       - cli
+      - cli-armv6
+      - cli-armv7
     format_overrides:
       - goos: windows
         formats:
@@ -60,7 +88,30 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "arm64" }}aarch64
       {{- else if eq .Arch "386" }}i386
+      {{- else if eq .Arch "arm" }}armv{{ .Arm }}
       {{- else }}{{ .Arch }}{{ end }}
+    wrap_in_directory: false
+    builds_info:
+      owner: root
+      group: root
+      mode: 0755
+    files:
+      - src: README.md
+        info:
+          owner: root
+          group: root
+          mode: 0644
+      - src: LICENSE
+        info:
+          owner: root
+          group: root
+          mode: 0644
+
+  # Keep the historical OS-arm filenames as GOARM=7 compatibility assets.
+  - id: cli-arm-compat
+    ids:
+      - cli-armv7
+    name_template: "{{ .ProjectName }}-{{ .Os }}-arm"
     wrap_in_directory: false
     builds_info:
       owner: root
