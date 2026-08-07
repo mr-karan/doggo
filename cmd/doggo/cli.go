@@ -98,14 +98,17 @@ func main() {
 		os.Exit(2)
 	}
 
-	resolvers, err := loadResolvers(app, cfg)
+	loadedResolvers, err := loadResolvers(app, cfg)
 	if err != nil {
 		logger.Error("Error loading resolvers", "error", err)
 		os.Exit(2)
 	}
-	app.Resolvers = resolvers
+	app.Resolvers = loadedResolvers
 
 	responses, lookupErrors := performLookup(app, cfg)
+	if err := resolvers.CloseResolvers(app.Resolvers); err != nil {
+		logger.Debug("Error closing resolvers", "error", err)
+	}
 	outputResults(app, responses, lookupErrors)
 }
 
@@ -217,6 +220,7 @@ func setupFlags() *flag.FlagSet {
 	f.Int("ndots", -1, "Specify the ndots parameter")
 	f.BoolP("ipv4", "4", false, "Use IPv4 only")
 	f.BoolP("ipv6", "6", false, "Use IPv6 only")
+	f.Bool("http3", false, "Use HTTP/3 for DNS-over-HTTPS nameservers")
 	f.String("strategy", "all", "Strategy to query nameservers (all, random, first, internal)")
 	f.String("tls-hostname", "", "Hostname for certificate verification")
 	f.Bool("skip-hostname-verification", false, "Skip TLS Hostname Verification")
@@ -333,6 +337,7 @@ func loadResolvers(app *app.App, cfg *config) ([]resolvers.Resolver, error) {
 		Nameservers:        app.Nameservers,
 		UseIPv4:            app.QueryFlags.UseIPv4,
 		UseIPv6:            app.QueryFlags.UseIPv6,
+		UseHTTP3:           app.QueryFlags.UseHTTP3,
 		SearchList:         app.ResolverOpts.SearchList,
 		Ndots:              app.ResolverOpts.Ndots,
 		Timeout:            cfg.timeout,

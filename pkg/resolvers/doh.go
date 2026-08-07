@@ -9,17 +9,24 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/models"
+	"github.com/quic-go/quic-go/http3"
 )
+
+const maxErrorBodyDrain = 64 << 10
 
 // DOHResolver represents the config options for setting up a DOH based resolver.
 type DOHResolver struct {
 	client          *http.Client
 	server          string
 	resolverOptions Options
+	closeTransport  func() error
+	closeMu         sync.Mutex
+	closed          bool
 }
 
 // NewDOHResolver accepts a nameserver address and configures a DOH based resolver.
@@ -32,10 +39,27 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 	if u.Scheme != "https" {
 		return nil, fmt.Errorf("missing https in %s", server)
 	}
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig = &tls.Config{
+	tlsConfig := &tls.Config{
 		ServerName:         resolverOpts.TLSHostname,
 		InsecureSkipVerify: resolverOpts.InsecureSkipVerify,
+	}
+
+	var (
+		transport      http.RoundTripper
+		closeTransport func() error
+	)
+	if resolverOpts.UseHTTP3 {
+		h3Transport := &http3.Transport{TLSClientConfig: tlsConfig}
+		transport = h3Transport
+		closeTransport = h3Transport.Close
+	} else {
+		httpsTransport := http.DefaultTransport.(*http.Transport).Clone()
+		httpsTransport.TLSClientConfig = tlsConfig
+		transport = httpsTransport
+		closeTransport = func() error {
+			httpsTransport.CloseIdleConnections()
+			return nil
+		}
 	}
 	httpClient := &http.Client{
 		Timeout:   resolverOpts.Timeout,
@@ -45,6 +69,7 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 		client:          httpClient,
 		server:          server,
 		resolverOptions: resolverOpts,
+		closeTransport:  closeTransport,
 	}, nil
 }
 
@@ -81,9 +106,10 @@ func (r *DOHResolver) query(ctx context.Context, question dns.Question, flags Qu
 		if err != nil {
 			return rsp, err
 		}
-		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusMethodNotAllowed {
+			drainAndClose(resp.Body)
+
 			url, err := url.Parse(r.server)
 			if err != nil {
 				return rsp, err
@@ -98,9 +124,9 @@ func (r *DOHResolver) query(ctx context.Context, question dns.Question, flags Qu
 			if err != nil {
 				return rsp, err
 			}
-			defer resp.Body.Close()
 		}
 		if resp.StatusCode != http.StatusOK {
+			drainAndClose(resp.Body)
 			return rsp, fmt.Errorf("error from nameserver %s", resp.Status)
 		}
 		rtt := time.Since(now)
@@ -113,7 +139,11 @@ func (r *DOHResolver) query(ctx context.Context, question dns.Question, flags Qu
 		// extract the binary response in DNS Message.
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
+			_ = resp.Body.Close()
 			return rsp, err
+		}
+		if err := resp.Body.Close(); err != nil {
+			r.resolverOptions.Logger.Debug("Error closing DOH response body", "error", err)
 		}
 
 		err = msg.Unpack(body)
@@ -150,6 +180,25 @@ func (r *DOHResolver) query(ctx context.Context, question dns.Question, flags Qu
 		}
 	}
 	return rsp, nil
+}
+
+func drainAndClose(body io.ReadCloser) {
+	_, _ = io.CopyN(io.Discard, body, maxErrorBodyDrain)
+	_ = body.Close()
+}
+
+// Close releases connections and sockets owned by the HTTP transport.
+func (r *DOHResolver) Close() error {
+	r.closeMu.Lock()
+	defer r.closeMu.Unlock()
+	if r.closed || r.closeTransport == nil {
+		return nil
+	}
+	if err := r.closeTransport(); err != nil {
+		return err
+	}
+	r.closed = true
+	return nil
 }
 
 // Address implements the Resolver interface.

@@ -13,7 +13,7 @@ _doggo() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do --nsid --cookie --padding --ede --ecs --bufsize -J --json --short --color --debug --time --gp-from --gp-limit --config"
+    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --http3 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do --nsid --cookie --padding --ede --ecs --bufsize -J --json --short --color --debug --time --gp-from --gp-limit --config"
 
     case "${prev}" in
         --config)
@@ -36,7 +36,7 @@ _doggo() {
             COMPREPLY=( $(compgen -W "all random first internal" -- ${cur}) )
             return 0
             ;;
-        --search|--color)
+        --search|--color|--http3)
             COMPREPLY=( $(compgen -W "true false" -- ${cur}) )
             return 0
             ;;
@@ -75,6 +75,7 @@ _doggo() {
     '--timeout[Timeout (in seconds) for the resolver to return a response]:seconds' \
     '(-4 --ipv4)'{-4,--ipv4}'[Use IPv4 only]' \
     '(-6 --ipv6)'{-6,--ipv6}'[Use IPv6 only]' \
+    '--http3[Use HTTP/3 for DNS-over-HTTPS nameservers]' \
     '--tls-hostname[Hostname used for verification of certificate incase the provided DoT nameserver is an IP]:hostname:_hosts' \
     '--skip-hostname-verification[Skip TLS hostname verification in case of DoT lookups]' \
     '--aa[Set Authoritative Answer flag]' \
@@ -141,6 +142,7 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'search'    -d "Use the sea
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'timeout'   -d "Specify timeout (in seconds) for the resolver to return a response"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s '4' -l 'ipv4' -d "Use IPv4 only"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s '6' -l 'ipv6' -d "Use IPv6 only"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'http3' -d "Use HTTP/3 for DNS-over-HTTPS nameservers"
 
 # Query flags
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'aa' -d "Set Authoritative Answer flag"

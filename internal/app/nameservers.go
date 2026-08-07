@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"net"
@@ -14,6 +15,11 @@ import (
 	"github.com/mr-karan/doggo/pkg/config"
 	"github.com/mr-karan/doggo/pkg/models"
 )
+
+// ErrSystemNameservers identifies failures to load the host's resolver
+// configuration. Callers can classify the failure without discarding the
+// underlying error, which remains available through errors.Is/errors.As.
+var ErrSystemNameservers = errors.New("unable to load system nameservers")
 
 func (app *App) LoadNameservers() error {
 	app.Logger.Debug("LoadNameservers: Initial nameservers", "nameservers", app.QueryFlags.Nameservers)
@@ -54,11 +60,17 @@ func (app *App) LoadNameservers() error {
 }
 
 func (app *App) loadSystemNameservers() error {
+	return app.loadSystemNameserversWith(app.getDefaultServers)
+}
+
+type systemNameserverLoader func() ([]models.Nameserver, int, []string, error)
+
+func (app *App) loadSystemNameserversWith(load systemNameserverLoader) error {
 	app.Logger.Debug("No user specified nameservers, falling back to system nameservers")
-	ns, ndots, search, err := app.getDefaultServers()
+	ns, ndots, search, err := load()
 	if err != nil {
 		app.Logger.Error("error fetching system default nameserver", "error", err)
-		return fmt.Errorf("error fetching system default nameserver: %v", err)
+		return fmt.Errorf("%w: error fetching system default nameserver: %w", ErrSystemNameservers, err)
 	}
 
 	if app.ResolverOpts.Ndots == -1 {
@@ -486,8 +498,11 @@ func (app *App) getDefaultServers() ([]models.Nameserver, int, []string, error) 
 // set is what recursive resolvers actually query.
 func (app *App) loadAuthoritativeNameserver(domain string) error {
 	systemServers, _, _, err := config.GetDefaultServers()
-	if err != nil || len(systemServers) == 0 {
-		return fmt.Errorf("unable to load system nameservers for SOA lookup: %w", err)
+	if err != nil {
+		return fmt.Errorf("%w for SOA lookup: %w", ErrSystemNameservers, err)
+	}
+	if len(systemServers) == 0 {
+		return fmt.Errorf("%w for SOA lookup: no system nameservers found", ErrSystemNameservers)
 	}
 	resolver := net.JoinHostPort(systemServers[0], models.DefaultUDPPort)
 

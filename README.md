@@ -100,12 +100,18 @@ Defaults for any flag can be set via a TOML config file or `DOGGO_*` environment
 strategy = "first"
 color    = false
 timeout  = "10s"
+
+# HTTP/3 must be paired with a persistent HTTPS (DoH) nameserver.
+nameserver = ["https://cloudflare-dns.com/dns-query"]
+http3     = true
 ```
 
 ```shell
 # Equivalent environment variables
 export DOGGO_STRATEGY=first
 export DOGGO_COLOR=false
+export DOGGO_NAMESERVER=https://cloudflare-dns.com/dns-query
+export DOGGO_HTTP3=true
 ```
 
 Precedence (lowest to highest): flag defaults < config file < environment variables < command line flags. Use `--config=PATH` or `DOGGO_CONFIG` to load a file from a custom location.
@@ -117,6 +123,7 @@ Precedence (lowest to highest): flag defaults < config file < environment variab
 - Human-readable output with color-coded and tabular format
 - JSON output support for easy scripting and parsing
 - Multiple transport protocols: DoH, DoT, DoQ, TCP, UDP, DNSCrypt
+- Explicit DNS-over-HTTPS over HTTP/3 with `--http3`
 - EDNS support with Client Subnet (ECS), NSID, Cookies, Padding, and Extended Errors
 - Additional section support for glue records and supplementary data
 - Internationalized Domain Names (IDN) with automatic punycode conversion

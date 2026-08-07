@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"io"
 	"log/slog"
 	"strings"
@@ -8,6 +9,24 @@ import (
 
 	"github.com/mr-karan/doggo/pkg/models"
 )
+
+func TestLoadSystemNameserversWrapsSentinelAndCause(t *testing.T) {
+	app := newTestApp()
+	cause := errors.New("permission denied reading /private/system/resolvers")
+
+	err := app.loadSystemNameserversWith(func() ([]models.Nameserver, int, []string, error) {
+		return nil, 0, nil, cause
+	})
+	if !errors.Is(err, ErrSystemNameservers) {
+		t.Fatalf("error = %v, want ErrSystemNameservers", err)
+	}
+	if !errors.Is(err, cause) {
+		t.Fatalf("error = %v, want wrapped cause", err)
+	}
+	if !strings.Contains(err.Error(), cause.Error()) {
+		t.Fatalf("error = %q, want detailed cause for CLI/logging", err)
+	}
+}
 
 func TestLoadNameserversAppliesFirstStrategyToExplicitNameservers(t *testing.T) {
 	app := newTestApp()

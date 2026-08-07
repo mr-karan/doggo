@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/mr-karan/doggo/internal/app"
+	application "github.com/mr-karan/doggo/internal/app"
 	"github.com/mr-karan/doggo/pkg/models"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 )
@@ -20,9 +21,11 @@ type httpResp struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
+const systemNameserverErrorMessage = "Unable to load system DNS configuration."
+
 func handleIndexAPI(w http.ResponseWriter, r *http.Request) {
 	var (
-		app = r.Context().Value("app").(app.App)
+		app = r.Context().Value("app").(application.App)
 	)
 
 	sendResponse(w, http.StatusOK, fmt.Sprintf("Welcome to Doggo API. Version: %s", app.Version))
@@ -34,7 +37,7 @@ func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 
 func handleLookup(w http.ResponseWriter, r *http.Request) {
 	var (
-		app = r.Context().Value("app").(app.App)
+		app = r.Context().Value("app").(application.App)
 	)
 
 	// Read body.
@@ -72,7 +75,7 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	// Load Nameservers.
 	if err := app.LoadNameservers(); err != nil {
 		app.Logger.Error("error loading nameservers", "error", err)
-		sendErrorResponse(w, "Error looking up for records.", http.StatusInternalServerError, nil)
+		sendNameserverLoadError(w, err)
 		return
 	}
 
@@ -80,17 +83,20 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 
 	// Load Resolvers.
 	rslvrs, err := resolvers.LoadResolvers(resolvers.Options{
-		Nameservers: app.Nameservers,
-		UseIPv4:     app.QueryFlags.UseIPv4,
-		UseIPv6:     app.QueryFlags.UseIPv6,
-		SearchList:  app.ResolverOpts.SearchList,
-		Ndots:       app.ResolverOpts.Ndots,
-		Timeout:     app.QueryFlags.Timeout * time.Second,
-		Logger:      app.Logger,
+		Nameservers:        app.Nameservers,
+		UseIPv4:            app.QueryFlags.UseIPv4,
+		UseIPv6:            app.QueryFlags.UseIPv6,
+		UseHTTP3:           app.QueryFlags.UseHTTP3,
+		SearchList:         app.ResolverOpts.SearchList,
+		Ndots:              app.ResolverOpts.Ndots,
+		Timeout:            app.QueryFlags.Timeout * time.Second,
+		Logger:             app.Logger,
+		InsecureSkipVerify: app.QueryFlags.InsecureSkipVerify,
+		TLSHostname:        app.QueryFlags.TLSHostname,
 	})
 	if err != nil {
 		app.Logger.Error("error loading resolver", "error", err)
-		sendErrorResponse(w, "Error looking up for records.", http.StatusInternalServerError, nil)
+		sendErrorResponse(w, err.Error(), http.StatusBadRequest, nil)
 		return
 	}
 	app.Resolvers = rslvrs
@@ -122,6 +128,11 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
+	defer func() {
+		if err := resolvers.CloseResolvers(app.Resolvers); err != nil {
+			app.Logger.Debug("error closing resolvers", "error", err)
+		}
+	}()
 
 	var (
 		wg           sync.WaitGroup
@@ -170,8 +181,16 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, http.StatusOK, allResponses)
 }
 
+func sendNameserverLoadError(w http.ResponseWriter, err error) {
+	if errors.Is(err, application.ErrSystemNameservers) {
+		sendErrorResponse(w, systemNameserverErrorMessage, http.StatusInternalServerError, nil)
+		return
+	}
+	sendErrorResponse(w, err.Error(), http.StatusBadRequest, nil)
+}
+
 // wrap is a middleware that wraps HTTP handlers and injects the "app" context.
-func wrap(app app.App, next http.HandlerFunc) http.HandlerFunc {
+func wrap(app application.App, next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), "app", app)
 		next.ServeHTTP(w, r.WithContext(ctx))

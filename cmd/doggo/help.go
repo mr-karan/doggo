@@ -127,6 +127,7 @@ func renderCustomHelp() {
 			{"mrkaran.dev --aa --ad", "Query with Authoritative Answer and Authenticated Data flags set."},
 			{"mrkaran.dev --cd --do", "Query with Checking Disabled and DNSSEC OK flags set."},
 			{"mrkaran.dev --gp-from Germany", "Query using Globalping API from a specific location."},
+			{"mrkaran.dev @https://dns.google/dns-query --http3", "Query a DoH nameserver over HTTP/3."},
 		},
 		"TransportOptions": []TransportOption{
 			{"@udp://", "eg: @1.1.1.1", "initiates a UDP query to 1.1.1.1:53."},
@@ -159,8 +160,9 @@ func renderCustomHelp() {
 			{"--timeout=DURATION", "Specify timeout for the resolver to return a response (e.g., 5s, 400ms, 1m)."},
 			{"-4, --ipv4", "Use IPv4 only."},
 			{"-6, --ipv6", "Use IPv6 only."},
-			{"--tls-hostname=HOSTNAME", "Provide a hostname for verification of the certificate if the provided DoT nameserver is an IP."},
-			{"--skip-hostname-verification", "Skip TLS Hostname Verification in case of DOT Lookups."},
+			{"--http3", "Use HTTP/3 for HTTPS (DoH) nameservers. Requires at least one DoH nameserver."},
+			{"--tls-hostname=HOSTNAME", "Provide a hostname for TLS certificate verification."},
+			{"--skip-hostname-verification", "Skip TLS hostname verification for encrypted resolvers."},
 		},
 		"QueryFlags": []Option{
 			{"--aa", "Set Authoritative Answer flag."},

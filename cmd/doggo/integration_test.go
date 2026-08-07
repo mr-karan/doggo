@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,6 +19,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/quic-go/quic-go/http3"
 )
 
 // integrationBuild lazily compiles the doggo binary for the integration suite
@@ -107,6 +111,72 @@ func startDNSServer(t *testing.T, domain, answer string) (string, func()) {
 	}
 }
 
+// startDOHHTTP3Server starts a local HTTP/3-only DoH server. A successful CLI
+// lookup against it proves that --http3 selected QUIC rather than ordinary
+// HTTPS; there is no TCP listener for the returned URL.
+func startDOHHTTP3Server(t *testing.T, domain, answer string) string {
+	t.Helper()
+	bootstrap := httptest.NewTLSServer(http.NotFoundHandler())
+	tlsConfig := bootstrap.TLS.Clone()
+	bootstrap.Close()
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor != 3 || r.Method != http.MethodPost {
+			http.Error(w, "HTTP/3 POST required", http.StatusBadRequest)
+			return
+		}
+		wire, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "invalid body", http.StatusBadRequest)
+			return
+		}
+		var request dns.Msg
+		if err := request.Unpack(wire); err != nil {
+			http.Error(w, "invalid DNS message", http.StatusBadRequest)
+			return
+		}
+		response := new(dns.Msg)
+		response.SetReply(&request)
+		for _, question := range request.Question {
+			if question.Name != dns.Fqdn(domain) || question.Qtype != dns.TypeA {
+				continue
+			}
+			rr, err := dns.NewRR(fmt.Sprintf("%s 60 IN A %s", question.Name, answer))
+			if err == nil {
+				response.Answer = append(response.Answer, rr)
+			}
+		}
+		packed, err := response.Pack()
+		if err != nil {
+			http.Error(w, "failed to pack DNS message", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/dns-message")
+		_, _ = w.Write(packed)
+	})
+
+	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
+	if err != nil {
+		t.Fatalf("ListenUDP: %v", err)
+	}
+	server := &http3.Server{Handler: handler, TLSConfig: tlsConfig}
+	serveErr := make(chan error, 1)
+	go func() { serveErr <- server.Serve(conn) }()
+	t.Cleanup(func() {
+		_ = server.Close()
+		_ = conn.Close()
+		select {
+		case err := <-serveErr:
+			if err != nil && !errors.Is(err, http.ErrServerClosed) && !errors.Is(err, net.ErrClosed) {
+				t.Errorf("HTTP/3 server stopped with error: %v", err)
+			}
+		case <-time.After(2 * time.Second):
+			t.Error("timed out waiting for HTTP/3 server shutdown")
+		}
+	})
+	return "https://" + conn.LocalAddr().String() + "/dns-query"
+}
+
 // reservedClosedPort returns a TCP/UDP port that almost certainly has nothing
 // listening: we bind, capture the port, then close. There is a TOCTOU window
 // but it is large enough for these tests and the port lives on loopback only.
@@ -176,6 +246,38 @@ func writeConfigFile(t *testing.T, dir, contents string) string {
 		t.Fatalf("WriteFile: %v", err)
 	}
 	return path
+}
+
+func TestHTTP3WithoutDOHNameserverFailsClearly(t *testing.T) {
+	stdout, stderr, exit := runDoggo(t,
+		"--http3",
+		"--nameserver=127.0.0.1",
+		"example.test",
+	)
+	if exit == 0 {
+		t.Fatalf("exit = 0, want failure\nstdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
+	if !strings.Contains(stderr, "HTTP/3 requires at least one HTTPS (DoH) nameserver") {
+		t.Fatalf("stderr missing clear HTTP/3 requirement\nstderr:\n%s", stderr)
+	}
+}
+
+func TestCLIUsesHTTP3ForDOH(t *testing.T) {
+	serverURL := startDOHHTTP3Server(t, "example.test", "192.0.2.188")
+	stdout, stderr, exit := runDoggo(t,
+		"--http3",
+		"--skip-hostname-verification",
+		"--timeout=2s",
+		"--short",
+		"@"+serverURL,
+		"example.test",
+	)
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "192.0.2.188") {
+		t.Fatalf("stdout missing local HTTP/3 answer\nstdout:\n%s", stdout)
+	}
 }
 
 func TestPartialFailureExitsTwoAndPrintsResponse(t *testing.T) {

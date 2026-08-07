@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -18,6 +19,7 @@ type Options struct {
 	Nameservers        []models.Nameserver
 	UseIPv4            bool
 	UseIPv6            bool
+	UseHTTP3           bool
 	SearchList         []string
 	Ndots              int
 	Timeout            time.Duration
@@ -33,6 +35,22 @@ type Resolver interface {
 	// Address returns the nameserver identity used when reporting errors.
 	Address() string
 	Lookup(ctx context.Context, questions []dns.Question, flags QueryFlags) ([]Response, error)
+}
+
+// CloseResolvers closes resolver-owned resources and joins any close errors.
+// Resolvers without a Close method don't own persistent resources.
+func CloseResolvers(resolvers []Resolver) error {
+	var closeErrors []error
+	for _, resolver := range resolvers {
+		closer, ok := resolver.(interface{ Close() error })
+		if !ok {
+			continue
+		}
+		if err := closer.Close(); err != nil {
+			closeErrors = append(closeErrors, fmt.Errorf("closing resolver %s: %w", resolver.Address(), err))
+		}
+	}
+	return errors.Join(closeErrors...)
 }
 
 // LookupError tags a resolver failure with the nameserver that produced it
@@ -116,74 +134,64 @@ type ExtendedError struct {
 // LoadResolvers loads differently configured
 // resolvers based on a list of nameserver.
 func LoadResolvers(opts Options) ([]Resolver, error) {
+	return loadResolvers(opts, newResolver)
+}
+
+type resolverFactory func(models.Nameserver, Options) (Resolver, error)
+
+func loadResolvers(opts Options, factory resolverFactory) ([]Resolver, error) {
+	if opts.UseHTTP3 {
+		hasDOH := false
+		for _, ns := range opts.Nameservers {
+			if ns.Type == models.DOHResolver {
+				hasDOH = true
+				break
+			}
+		}
+		if !hasDOH {
+			return nil, fmt.Errorf("HTTP/3 requires at least one HTTPS (DoH) nameserver")
+		}
+	}
+
 	// For each nameserver, initialise the correct resolver.
 	rslvrs := make([]Resolver, 0, len(opts.Nameservers))
 
 	for _, ns := range opts.Nameservers {
-		if ns.Type == models.DOHResolver {
-			opts.Logger.Debug("initiating DOH resolver")
-			rslvr, err := NewDOHResolver(ns.Address, opts)
-			if err != nil {
-				return rslvrs, err
+		rslvr, err := factory(ns, opts)
+		if err != nil {
+			if closeErr := CloseResolvers(rslvrs); closeErr != nil {
+				err = errors.Join(err, closeErr)
 			}
-			rslvrs = append(rslvrs, rslvr)
+			return nil, err
 		}
-		if ns.Type == models.DOTResolver {
-			opts.Logger.Debug("initiating DOT resolver")
-			rslvr, err := NewClassicResolver(ns.Address,
-				ClassicResolverOpts{
-					UseTLS: true,
-					UseTCP: true,
-				}, opts)
-
-			if err != nil {
-				return rslvrs, err
-			}
-			rslvrs = append(rslvrs, rslvr)
-		}
-		if ns.Type == models.TCPResolver {
-			opts.Logger.Debug("initiating TCP resolver")
-			rslvr, err := NewClassicResolver(ns.Address,
-				ClassicResolverOpts{
-					UseTLS: false,
-					UseTCP: true,
-				}, opts)
-			if err != nil {
-				return rslvrs, err
-			}
-			rslvrs = append(rslvrs, rslvr)
-		}
-		if ns.Type == models.UDPResolver {
-			opts.Logger.Debug("initiating UDP resolver")
-			rslvr, err := NewClassicResolver(ns.Address,
-				ClassicResolverOpts{
-					UseTLS: false,
-					UseTCP: false,
-				}, opts)
-			if err != nil {
-				return rslvrs, err
-			}
-			rslvrs = append(rslvrs, rslvr)
-		}
-		if ns.Type == models.DNSCryptResolver {
-			opts.Logger.Debug("initiating DNSCrypt resolver")
-			rslvr, err := NewDNSCryptResolver(ns.Address,
-				DNSCryptResolverOpts{
-					UseTCP: false,
-				}, opts)
-			if err != nil {
-				return rslvrs, err
-			}
-			rslvrs = append(rslvrs, rslvr)
-		}
-		if ns.Type == models.DOQResolver {
-			opts.Logger.Debug("initiating DOQ resolver")
-			rslvr, err := NewDOQResolver(ns.Address, opts)
-			if err != nil {
-				return rslvrs, err
-			}
+		if rslvr != nil {
 			rslvrs = append(rslvrs, rslvr)
 		}
 	}
 	return rslvrs, nil
+}
+
+func newResolver(ns models.Nameserver, opts Options) (Resolver, error) {
+	switch ns.Type {
+	case models.DOHResolver:
+		opts.Logger.Debug("initiating DOH resolver")
+		return NewDOHResolver(ns.Address, opts)
+	case models.DOTResolver:
+		opts.Logger.Debug("initiating DOT resolver")
+		return NewClassicResolver(ns.Address, ClassicResolverOpts{UseTLS: true, UseTCP: true}, opts)
+	case models.TCPResolver:
+		opts.Logger.Debug("initiating TCP resolver")
+		return NewClassicResolver(ns.Address, ClassicResolverOpts{UseTCP: true}, opts)
+	case models.UDPResolver:
+		opts.Logger.Debug("initiating UDP resolver")
+		return NewClassicResolver(ns.Address, ClassicResolverOpts{}, opts)
+	case models.DNSCryptResolver:
+		opts.Logger.Debug("initiating DNSCrypt resolver")
+		return NewDNSCryptResolver(ns.Address, DNSCryptResolverOpts{}, opts)
+	case models.DOQResolver:
+		opts.Logger.Debug("initiating DOQ resolver")
+		return NewDOQResolver(ns.Address, opts)
+	default:
+		return nil, nil
+	}
 }

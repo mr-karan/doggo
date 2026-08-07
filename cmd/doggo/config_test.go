@@ -180,6 +180,28 @@ func TestConfigDefaultsWithoutFileOrEnv(t *testing.T) {
 	if got := k.Duration("timeout"); got != 5*time.Second {
 		t.Errorf("timeout = %v, want 5s", got)
 	}
+	if k.Bool("http3") {
+		t.Error("http3 should default to false")
+	}
+}
+
+func TestHTTP3ConfigEnvAndFlagPrecedence(t *testing.T) {
+	xdg, _ := isolateConfigEnv(t)
+	writeXDGConfig(t, xdg, "http3 = true\n")
+	t.Setenv("DOGGO_HTTP3", "false")
+
+	a, k, _ := buildAppFromConfig(t, "--http3=true")
+	if !k.Bool("http3") {
+		t.Fatal("--http3=true should override DOGGO_HTTP3 and TOML")
+	}
+	if !a.QueryFlags.UseHTTP3 {
+		t.Fatal("http3 was not unmarshaled into QueryFlags")
+	}
+
+	k, _ = loadTestConfigFull(t)
+	if k.Bool("http3") {
+		t.Fatal("DOGGO_HTTP3=false should override http3=true in TOML")
+	}
 }
 
 func TestConfigFileOverridesDefaults(t *testing.T) {

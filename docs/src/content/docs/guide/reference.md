@@ -37,6 +37,7 @@ request is sent; the lookup API reports the same validation failures as HTTP
 | `--timeout=DURATION`           | Specify timeout for the resolver to return a response (e.g., 5s, 400ms, 1m) |
 | `-4, --ipv4`                   | Use IPv4 only                                                               |
 | `-6, --ipv6`                   | Use IPv6 only                                                               |
+| `--http3`                      | Use HTTP/3 for HTTPS (DoH) nameservers                                      |
 | `--tls-hostname=HOSTNAME`      | Provide a hostname for TLS certificate verification                         |
 | `--skip-hostname-verification` | Skip TLS Hostname Verification for DoT lookups                              |
 
@@ -172,9 +173,25 @@ export DOGGO_STRATEGY=first
 export DOGGO_COLOR=false
 export DOGGO_TIMEOUT=10s
 
+# HTTP/3 requires an HTTPS (DoH) nameserver.
+export DOGGO_NAMESERVER=https://cloudflare-dns.com/dns-query
+export DOGGO_HTTP3=true
+
 # List flags accept comma-separated values.
-export DOGGO_NAMESERVER="1.1.1.1,9.9.9.9"
+export DOGGO_TYPE="A,AAAA"
 ```
+
+### Web lookup API resolver security
+
+`POST /api/lookup/` accepts the resolver URL and encrypted-transport policy in
+the JSON payload. The relevant fields are `nameservers`, `http3`,
+`tls_hostname`, and `skip_hostname_verification`.
+
+The API client controls both the resolver destination and its certificate
+verification policy. Setting `skip_hostname_verification` to `true` disables
+TLS certificate verification for that client-selected resolver. Deployments
+that expose this API should apply appropriate authentication and outbound
+network controls.
 
 ## Examples
 

@@ -70,6 +70,10 @@
 # ipv4 = false
 # ipv6 = false
 
+# Use HTTP/3 for HTTPS (DoH) nameservers. At least one `https://` nameserver
+# (or a DoH DNS stamp) is required when this is enabled.
+# http3 = false
+
 # Hostname to verify the certificate against for DoT/DoH/DoQ.
 # tls-hostname = ""
 

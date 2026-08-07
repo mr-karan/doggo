@@ -33,6 +33,7 @@ type QueryFlags struct {
 	Nameservers        []string      `koanf:"nameservers" json:"nameservers"`
 	UseIPv4            bool          `koanf:"ipv4" json:"ipv4"`
 	UseIPv6            bool          `koanf:"ipv6" json:"ipv6"`
+	UseHTTP3           bool          `koanf:"http3" json:"http3"`
 	Ndots              int           `koanf:"ndots" json:"ndots"`
 	Timeout            time.Duration `koanf:"timeout" json:"timeout"`
 	Color              bool          `koanf:"color" json:"-"`
@@ -42,8 +43,8 @@ type QueryFlags struct {
 	UseSearchList      bool          `koanf:"search" json:"-"`
 	ReverseLookup      bool          `koanf:"reverse" reverse:"-"`
 	Strategy           string        `koanf:"strategy" strategy:"-"`
-	InsecureSkipVerify bool          `koanf:"skip-hostname-verification" skip-hostname-verification:"-"`
-	TLSHostname        string        `koanf:"tls-hostname" tls-hostname:"-"`
+	InsecureSkipVerify bool          `koanf:"skip-hostname-verification" json:"skip_hostname_verification"`
+	TLSHostname        string        `koanf:"tls-hostname" json:"tls_hostname"`
 	QueryAny           bool          `koanf:"any" json:"any"`
 	UseAuthoritative   bool          `koanf:"authoritative" json:"authoritative"`
 
