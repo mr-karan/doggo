@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/mr-karan/doggo/pkg/models"
 )
 
 // ClassicResolver represents the config options for setting up a Resolver.
@@ -106,7 +107,7 @@ func (r *ClassicResolver) query(ctx context.Context, question dns.Question, flag
 			ques := Question{
 				Name:  q.Name,
 				Class: dns.ClassToString[q.Qclass],
-				Type:  dns.TypeToString[q.Qtype],
+				Type:  models.RecordTypeString(q.Qtype),
 			}
 			rsp.Questions = append(rsp.Questions, ques)
 		}

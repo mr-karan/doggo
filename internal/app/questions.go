@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -32,26 +33,38 @@ func (app *App) LoadFallbacks() {
 
 // PrepareQuestions takes a list of query names, query types and query classes
 // and prepare a question for each combination of the above.
-func (app *App) PrepareQuestions() {
+func (app *App) PrepareQuestions() error {
+	queryTypes := make([]uint16, len(app.QueryFlags.QTypes))
+	normalizedTypes := make([]string, len(app.QueryFlags.QTypes))
+	for i, value := range app.QueryFlags.QTypes {
+		queryType, err := models.ParseRecordType(value)
+		if err != nil {
+			return err
+		}
+		queryTypes[i] = queryType
+		normalizedTypes[i] = models.RecordTypeString(queryType)
+	}
+	app.QueryFlags.QTypes = normalizedTypes
+
 	for _, n := range app.QueryFlags.QNames {
 		// Convert IDN (internationalized domain names) to ASCII-compatible encoding (punycode)
 		// This allows domains with unicode characters (umlauts, etc.) to be resolved properly
 		asciiName, err := idna.ToASCII(n)
 		if err != nil {
-			app.Logger.Error("error converting domain name to ASCII", "domain", n, "error", err)
-			os.Exit(2)
+			return fmt.Errorf("converting domain name %q to ASCII: %w", n, err)
 		}
 
-		for _, t := range app.QueryFlags.QTypes {
+		for _, queryType := range queryTypes {
 			for _, c := range app.QueryFlags.QClasses {
 				app.Questions = append(app.Questions, dns.Question{
 					Name:   asciiName,
-					Qtype:  dns.StringToType[strings.ToUpper(t)],
+					Qtype:  queryType,
 					Qclass: dns.StringToClass[strings.ToUpper(c)],
 				})
 			}
 		}
 	}
+	return nil
 }
 
 // ReverseLookup is used to perform a reverse DNS Lookup

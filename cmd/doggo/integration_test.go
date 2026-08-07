@@ -248,6 +248,172 @@ func TestCleanSuccessExitsZero(t *testing.T) {
 	}
 }
 
+func TestRecordTypeFormsReachTheWire(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "types.test", "192.0.2.25")
+	defer stop()
+
+	tests := []struct {
+		name     string
+		extraEnv []string
+		args     []string
+		want     string
+	}{
+		{name: "positional HTTPS", args: []string{"HTTPS", "types.test"}, want: "HTTPS"},
+		{name: "positional SVCB", args: []string{"SVCB", "types.test"}, want: "SVCB"},
+		{name: "positional TYPE65", args: []string{"TYPE65", "types.test"}, want: "HTTPS"},
+		{name: "positional decimal", args: []string{"65", "types.test"}, want: "HTTPS"},
+		{name: "type flag HTTPS", args: []string{"--type", "HTTPS", "types.test"}, want: "HTTPS"},
+		{name: "type flag SVCB", args: []string{"--type", "SVCB", "types.test"}, want: "SVCB"},
+		{name: "type flag TYPE65", args: []string{"--type", "TYPE65", "types.test"}, want: "HTTPS"},
+		{name: "type flag decimal", args: []string{"--type", "65", "types.test"}, want: "HTTPS"},
+		{name: "reserved upper boundary decimal", args: []string{"--type", "65535", "types.test"}, want: "TYPE65535"},
+		{name: "reserved upper boundary TYPE", args: []string{"TYPE65535", "types.test"}, want: "TYPE65535"},
+		{name: "environment", extraEnv: []string{"DOGGO_TYPE=TYPE64"}, args: []string{"types.test"}, want: "SVCB"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			args := append([]string{"--json", "--timeout=2s", "@" + serverAddr}, test.args...)
+			stdout, stderr, exit := runDoggoEnv(t, test.extraEnv, args...)
+			if exit != 0 {
+				t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+			}
+			var payload struct {
+				Responses []struct {
+					Questions []struct {
+						Type string `json:"type"`
+					} `json:"questions"`
+				} `json:"responses"`
+			}
+			if err := json.Unmarshal([]byte(stdout), &payload); err != nil {
+				t.Fatalf("invalid JSON: %v\nstdout:\n%s", err, stdout)
+			}
+			if len(payload.Responses) != 1 || len(payload.Responses[0].Questions) != 1 {
+				t.Fatalf("unexpected response questions\nstdout:\n%s", stdout)
+			}
+			if got := payload.Responses[0].Questions[0].Type; got != test.want {
+				t.Fatalf("question type = %q, want %q", got, test.want)
+			}
+		})
+	}
+
+	t.Run("config", func(t *testing.T) {
+		xdg := t.TempDir()
+		writeConfigFile(t, filepath.Join(xdg, "doggo"), `type = "HTTPS"`)
+		stdout, stderr, exit := runDoggoEnv(t,
+			[]string{"XDG_CONFIG_HOME=" + xdg},
+			"--json", "--timeout=2s", "@"+serverAddr, "types.test",
+		)
+		if exit != 0 {
+			t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+		}
+		if !strings.Contains(stdout, `"type": "HTTPS"`) {
+			t.Fatalf("configured HTTPS type did not reach the wire\nstdout:\n%s", stdout)
+		}
+	})
+}
+
+func TestPositionalNoneClassReachesTheWire(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "class.test", "192.0.2.26")
+	defer stop()
+
+	stdout, stderr, exit := runDoggo(t,
+		"--json", "--timeout=2s", "@"+serverAddr, "NONE", "class.test",
+	)
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+	var payload struct {
+		Responses []struct {
+			Questions []struct {
+				Type  string `json:"type"`
+				Class string `json:"class"`
+			} `json:"questions"`
+		} `json:"responses"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &payload); err != nil {
+		t.Fatalf("invalid JSON: %v\nstdout:\n%s", err, stdout)
+	}
+	seen := map[string]bool{}
+	for _, response := range payload.Responses {
+		for _, question := range response.Questions {
+			if question.Class != "NONE" {
+				t.Fatalf("question class = %q, want NONE", question.Class)
+			}
+			if question.Type == "TYPE0" || question.Type == "None" {
+				t.Fatalf("positional NONE became QTYPE 0: %+v", question)
+			}
+			seen[question.Type] = true
+		}
+	}
+	if !seen["A"] || !seen["AAAA"] {
+		t.Fatalf("question types = %v, want default A and AAAA", seen)
+	}
+}
+
+func TestInvalidRecordTypesFailClearly(t *testing.T) {
+	assertFailure := func(t *testing.T, stdout, stderr string, exit int, input, wantMessage string) {
+		t.Helper()
+		if exit != 1 {
+			t.Fatalf("exit = %d, want 1\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+		}
+		output := stdout + stderr
+		if !strings.Contains(output, wantMessage) {
+			t.Fatalf("output does not contain %q\n%s", wantMessage, output)
+		}
+		if !strings.Contains(output, input) {
+			t.Fatalf("output does not identify invalid value %q\n%s", input, output)
+		}
+	}
+
+	tests := []struct {
+		name     string
+		extraEnv []string
+		args     []string
+		input    string
+		message  string
+	}{
+		{name: "invalid name", args: []string{"--type", "NOTATYPE", "example.test"}, input: "NOTATYPE", message: "invalid DNS record type"},
+		{name: "invalid TYPE notation", args: []string{"--type", "TYPEfoo", "example.test"}, input: "TYPEfoo", message: "invalid DNS record type"},
+		{name: "reserved zero", args: []string{"--type", "0", "example.test"}, input: "0", message: "reserved and cannot be used in a question"},
+		{name: "reserved TYPE0", args: []string{"TYPE0", "example.test"}, input: "TYPE0", message: "reserved and cannot be used in a question"},
+		{name: "OPT meta type", args: []string{"--type", "OPT", "example.test"}, input: "OPT", message: "cannot be used in a question"},
+		{name: "TKEY meta type", args: []string{"--type", "249", "example.test"}, input: "249", message: "cannot be used in a question"},
+		{name: "TSIG meta type", args: []string{"TYPE250", "example.test"}, input: "TYPE250", message: "cannot be used in a question"},
+		{name: "decimal out of range", args: []string{"--type", "65536", "example.test"}, input: "65536", message: "out of range"},
+		{name: "TYPE out of range", args: []string{"TYPE65536", "example.test"}, input: "TYPE65536", message: "out of range"},
+		{name: "reverse with invalid type", args: []string{"--reverse", "--type", "NOTATYPE", "192.0.2.1"}, input: "NOTATYPE", message: "invalid DNS record type"},
+		{name: "environment", extraEnv: []string{"DOGGO_TYPE=NOTATYPE"}, args: []string{"example.test"}, input: "NOTATYPE", message: "invalid DNS record type"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			stdout, stderr, exit := runDoggoEnv(t, test.extraEnv, test.args...)
+			assertFailure(t, stdout, stderr, exit, test.input, test.message)
+		})
+	}
+
+	t.Run("config", func(t *testing.T) {
+		xdg := t.TempDir()
+		writeConfigFile(t, filepath.Join(xdg, "doggo"), `type = "NOTATYPE"`)
+		stdout, stderr, exit := runDoggoEnv(t,
+			[]string{"XDG_CONFIG_HOME=" + xdg},
+			"example.test",
+		)
+		assertFailure(t, stdout, stderr, exit, "NOTATYPE", "invalid DNS record type")
+	})
+}
+
+func TestInvalidIDNExitsGenericFailure(t *testing.T) {
+	stdout, stderr, exit := runDoggo(t, "xn--example-.com")
+	if exit != 1 {
+		t.Fatalf("exit = %d, want 1\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+	if !strings.Contains(stderr, "Error preparing DNS questions") {
+		t.Fatalf("stderr missing question-preparation error\nstderr:\n%s", stderr)
+	}
+}
+
 func TestPartialFailureJSONOutputIncludesErrorsArray(t *testing.T) {
 	serverAddr, stop := startDNSServer(t, "json.test", "192.0.2.30")
 	defer stop()

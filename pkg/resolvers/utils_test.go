@@ -3,9 +3,55 @@ package resolvers
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/miekg/dns"
 )
+
+func TestParseMessageUsesGenericNamesForReservedTypesInAllSections(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		recordType uint16
+		want       string
+	}{
+		{name: "zero", recordType: dns.TypeNone, want: "TYPE0"},
+		{name: "upper boundary", recordType: dns.TypeReserved, want: "TYPE65535"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			header := dns.RR_Header{
+				Name:   "example.test.",
+				Rrtype: test.recordType,
+				Class:  dns.ClassINET,
+				Ttl:    60,
+			}
+			msg := &dns.Msg{
+				Answer: []dns.RR{&dns.RFC3597{Hdr: header, Rdata: "beef"}},
+				Ns: []dns.RR{&dns.SOA{
+					Hdr:     header,
+					Ns:      "ns.example.test.",
+					Mbox:    "hostmaster.example.test.",
+					Serial:  1,
+					Refresh: 2,
+					Retry:   3,
+					Expire:  4,
+					Minttl:  5,
+				}},
+				Extra: []dns.RR{&dns.RFC3597{Hdr: header, Rdata: "cafe"}},
+			}
+
+			response := parseMessage(msg, time.Millisecond, "127.0.0.1:53")
+			if len(response.Answers) != 1 || response.Answers[0].Type != test.want {
+				t.Fatalf("answer types = %+v, want %q", response.Answers, test.want)
+			}
+			if len(response.Authorities) != 1 || response.Authorities[0].Type != test.want {
+				t.Fatalf("authority types = %+v, want %q", response.Authorities, test.want)
+			}
+			if len(response.Additional) != 1 || response.Additional[0].Type != test.want {
+				t.Fatalf("additional types = %+v, want %q", response.Additional, test.want)
+			}
+		})
+	}
+}
 
 func TestPrepareMessagesEDNS(t *testing.T) {
 	q := dns.Question{Name: "example.com.", Qtype: dns.TypeA, Qclass: dns.ClassINET}

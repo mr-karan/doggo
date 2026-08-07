@@ -6,6 +6,7 @@ import (
 
 	"github.com/ameshkov/dnscrypt/v2"
 	"github.com/miekg/dns"
+	"github.com/mr-karan/doggo/pkg/models"
 )
 
 // DNSCryptResolver represents the config options for setting up a Resolver.
@@ -94,7 +95,7 @@ func (r *DNSCryptResolver) query(ctx context.Context, question dns.Question, fla
 				ques := Question{
 					Name:  q.Name,
 					Class: dns.ClassToString[q.Qclass],
-					Type:  dns.TypeToString[q.Qtype],
+					Type:  models.RecordTypeString(q.Qtype),
 				}
 				rsp.Questions = append(rsp.Questions, ques)
 			}

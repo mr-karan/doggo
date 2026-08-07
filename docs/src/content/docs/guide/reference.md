@@ -11,12 +11,18 @@ This guide provides a comprehensive list of all command-line options and flags a
 doggo [--] [query options] [arguments...]
 ```
 
+Free-form decimal arguments and `TYPE<number>` are interpreted as record
+types. Use `--query=65` when querying a numeric single-label hostname.
+Invalid, reserved, and non-question record types are rejected before a DNS
+request is sent; the lookup API reports the same validation failures as HTTP
+400 responses.
+
 ## Query Options
 
 | Option                  | Description                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------- |
 | `-q, --query=HOSTNAME`  | Hostname to query the DNS records for (e.g., example.com)                    |
-| `-t, --type=TYPE`       | Type of the DNS Record (A, MX, NS, etc.)                                     |
+| `-t, --type=TYPE`       | DNS record type by name, number, or RFC 3597 notation (e.g., `HTTPS`, `65`, `TYPE65`) |
 | `-n, --nameserver=ADDR` | Address of a specific nameserver to send queries to (e.g., 9.9.9.9, 8.8.8.8) |
 | `-c, --class=CLASS`     | Network class of the DNS record (IN, CH, HS, etc.)                           |
 | `-x, --reverse`         | Performs a reverse DNS lookup for an IPv4 or IPv6 address                    |

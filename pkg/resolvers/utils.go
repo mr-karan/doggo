@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/mr-karan/doggo/pkg/models"
 	"golang.org/x/net/idna"
 )
 
@@ -286,7 +287,7 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 		name := toUnicodeDomain(h.Name)
 		qclass := dns.Class(h.Class).String()
 		ttl := strconv.FormatInt(int64(h.Ttl), 10) + "s"
-		qtype := dns.Type(h.Rrtype).String()
+		qtype := models.RecordTypeString(h.Rrtype)
 		auth := Authority{
 			Name:       name,
 			Type:       qtype,
@@ -307,7 +308,7 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 			parts = strings.Split(a.String(), "\t")
 			ans   = Answer{
 				Name:       toUnicodeDomain(h.Name),
-				Type:       dns.Type(h.Rrtype).String(),
+				Type:       models.RecordTypeString(h.Rrtype),
 				TTL:        strconv.FormatInt(int64(h.Ttl), 10) + "s",
 				Class:      dns.Class(h.Class).String(),
 				Address:    parts[len(parts)-1],
@@ -331,7 +332,7 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 		parts := strings.Split(extra.String(), "\t")
 		ans := Answer{
 			Name:       toUnicodeDomain(h.Name),
-			Type:       dns.Type(h.Rrtype).String(),
+			Type:       models.RecordTypeString(h.Rrtype),
 			TTL:        strconv.FormatInt(int64(h.Ttl), 10) + "s",
 			Class:      dns.Class(h.Class).String(),
 			Address:    parts[len(parts)-1],

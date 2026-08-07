@@ -27,7 +27,9 @@
 # Default hostnames to query when none are given on the command line.
 # query = ["mrkaran.dev"]
 
-# Default record types. A positional type on the command line (doggo x.com MX)
+# Default record types. Names (HTTPS), decimal numbers (65), and RFC 3597
+# notation (TYPE65) are accepted. Type 0 and non-question types OPT, TKEY, and
+# TSIG are rejected. A positional type on the command line (doggo x.com MX)
 # replaces this; --type unions with it.
 # type = ["A"]
 

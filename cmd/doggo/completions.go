@@ -21,7 +21,7 @@ _doggo() {
             return 0
             ;;
         -t|--type)
-            COMPREPLY=( $(compgen -W "A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT" -- ${cur}) )
+            COMPREPLY=( $(compgen -W "A AAAA CAA CNAME HINFO HTTPS MX NS PTR SOA SRV SVCB TXT" -- ${cur}) )
             return 0
             ;;
         -c|--class)
@@ -64,7 +64,7 @@ _doggo() {
     '(-v --version)'{-v,--version}'[Show version of doggo]' \
     '(-h --help)'{-h,--help}'[Show list of command-line options]' \
     '(-q --query)'{-q,--query}'[Hostname to query the DNS records for]:hostname:_hosts' \
-    '(-t --type)'{-t,--type}'[Type of the DNS Record]:record type:(A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT)' \
+    '(-t --type)'{-t,--type}'[DNS record type by name, number, or TYPE<number>]:record type:(A AAAA CAA CNAME HINFO HTTPS MX NS PTR SOA SRV SVCB TXT)' \
     '(-n --nameserver)'{-n,--nameserver}'[Address of a specific nameserver to send queries to]:nameserver:_hosts' \
     '(-c --class)'{-c,--class}'[Network class of the DNS record being queried]:network class:(IN CH HS)' \
     '(-r --reverse)'{-r,--reverse}'[Performs a DNS Lookup for an IPv4 or IPv6 address]' \
@@ -128,7 +128,7 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'config'  -d "Load defaults
 
 # Query options
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'q' -l 'query'      -d "Hostname to query the DNS records for" -x -a "(__fish_print_hostnames)"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 't' -l 'type'       -d "Type of the DNS Record" -x -a "A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 't' -l 'type'       -d "DNS record type by name, number, or TYPE<number>" -x -a "A AAAA CAA CNAME HINFO HTTPS MX NS PTR SOA SRV SVCB TXT"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'n' -l 'nameserver' -d "Address of a specific nameserver to send queries to" -x -a "(__fish_print_hostnames)"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'c' -l 'class'      -d "Network class of the DNS record being queried" -x -a "IN CH HS"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'r' -l 'reverse'    -d "Performs a DNS Lookup for an IPv4 or IPv6 address"

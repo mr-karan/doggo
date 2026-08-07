@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"os"
@@ -10,12 +11,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jsdelivr/globalping-go"
 	"github.com/knadh/koanf/parsers/toml"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 	"github.com/mr-karan/doggo/internal/app"
 	flag "github.com/spf13/pflag"
 )
+
+type recordingGlobalpingClient struct {
+	globalping.Client
+	request *globalping.MeasurementCreate
+}
+
+func (c *recordingGlobalpingClient) CreateMeasurement(_ context.Context, request *globalping.MeasurementCreate) (*globalping.MeasurementCreateResponse, error) {
+	c.request = request
+	return &globalping.MeasurementCreateResponse{ID: "test"}, nil
+}
+
+func (c *recordingGlobalpingClient) AwaitMeasurement(_ context.Context, _ string) (*globalping.Measurement, error) {
+	return &globalping.Measurement{Status: globalping.StatusFinished}, nil
+}
 
 // isolateConfigEnv points all config file search paths at empty temp dirs and
 // clears any inherited DOGGO_* variables so tests are hermetic regardless of
@@ -81,8 +97,60 @@ func buildAppFromConfig(t *testing.T, args ...string) (*app.App, *koanf.Koanf, *
 	if err := k.Unmarshal("", &a.QueryFlags); err != nil {
 		t.Fatalf("k.Unmarshal: %v", err)
 	}
-	loadNameservers(a, k, f)
+	if err := loadNameservers(a, k, f); err != nil {
+		t.Fatalf("loadNameservers: %v", err)
+	}
 	return a, k, f
+}
+
+func TestRecordTypesFromConfigAndEnvAreNormalized(t *testing.T) {
+	t.Run("config", func(t *testing.T) {
+		xdg, _ := isolateConfigEnv(t)
+		writeXDGConfig(t, xdg, `type = ["HTTPS", "SVCB", "TYPE64", "65"]`)
+		a, _, _ := buildAppFromConfig(t, "example.com")
+		want := []string{"HTTPS", "SVCB", "SVCB", "HTTPS"}
+		for i := range want {
+			if a.QueryFlags.QTypes[i] != want[i] {
+				t.Errorf("QTypes[%d] = %q, want %q", i, a.QueryFlags.QTypes[i], want[i])
+			}
+		}
+	})
+
+	t.Run("environment", func(t *testing.T) {
+		isolateConfigEnv(t)
+		t.Setenv("DOGGO_TYPE", "SVCB,TYPE65,64")
+		a, _, _ := buildAppFromConfig(t, "example.com")
+		want := []string{"SVCB", "HTTPS", "SVCB"}
+		for i := range want {
+			if a.QueryFlags.QTypes[i] != want[i] {
+				t.Errorf("QTypes[%d] = %q, want %q", i, a.QueryFlags.QTypes[i], want[i])
+			}
+		}
+	})
+}
+
+func TestGlobalpingReceivesNormalizedNumericRecordType(t *testing.T) {
+	isolateConfigEnv(t)
+	k, f := loadTestConfigFull(t, "--type", "65", "--gp-from", "Germany", "example.com")
+	client := &recordingGlobalpingClient{}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	a := app.New(logger, client, "test")
+	if err := k.Unmarshal("", &a.QueryFlags); err != nil {
+		t.Fatalf("k.Unmarshal: %v", err)
+	}
+	if err := loadNameservers(&a, k, f); err != nil {
+		t.Fatalf("loadNameservers: %v", err)
+	}
+
+	if _, err := a.GlobalpingMeasurement(); err != nil {
+		t.Fatalf("GlobalpingMeasurement: %v", err)
+	}
+	if client.request == nil || client.request.Options == nil || client.request.Options.Query == nil {
+		t.Fatalf("Globalping request missing DNS query options: %+v", client.request)
+	}
+	if got := client.request.Options.Query.Type; got != "HTTPS" {
+		t.Fatalf("Globalping query type = %q, want HTTPS", got)
+	}
 }
 
 // newTestApp builds a minimal app.App for exercising loadNameservers without

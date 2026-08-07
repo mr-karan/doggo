@@ -19,6 +19,23 @@ These examples showcase how to combine different features for powerful DNS query
    doggo AAAA example.com
    ```
 
+   Record types can also be written as decimal numbers or in RFC 3597
+   `TYPE<number>` notation:
+
+   ```bash
+   doggo example.com HTTPS
+   doggo example.com 65
+   doggo example.com TYPE65
+   ```
+
+   Bare decimal arguments and names matching `TYPE<number>` are interpreted
+   as record types. To query a numeric single-label hostname, make the intent
+   explicit with `--query`, for example `doggo --query 65`.
+
+   Record type 0 is reserved and rejected. `OPT`, `TKEY`, and `TSIG` are also
+   rejected because they are not legal DNS question types; transfer query
+   types such as `AXFR` and `IXFR` remain supported.
+
 3. Query multiple record types simultaneously:
 
    ```bash

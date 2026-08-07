@@ -13,6 +13,7 @@ import (
 	"github.com/jsdelivr/globalping-go"
 	"github.com/knadh/koanf/v2"
 	"github.com/mr-karan/doggo/internal/app"
+	"github.com/mr-karan/doggo/pkg/models"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/mr-karan/doggo/pkg/utils"
 	flag "github.com/spf13/pflag"
@@ -51,7 +52,11 @@ func main() {
 	}
 
 	logger := utils.InitLogger(cfg.debug)
-	app := initializeApp(logger, cfg)
+	app, err := initializeApp(logger, cfg)
+	if err != nil {
+		logger.Error("Error loading query arguments", "error", err)
+		os.Exit(exitGenericFailure)
+	}
 
 	if len(app.QueryFlags.QNames) == 0 {
 		cfg.flagSet.Usage()
@@ -83,7 +88,10 @@ func main() {
 	}
 
 	app.LoadFallbacks()
-	app.PrepareQuestions()
+	if err := app.PrepareQuestions(); err != nil {
+		logger.Error("Error preparing DNS questions", "error", err)
+		os.Exit(exitGenericFailure)
+	}
 
 	if err := app.LoadNameservers(); err != nil {
 		logger.Error("Error loading nameservers", "error", err)
@@ -196,7 +204,7 @@ func setupFlags() *flag.FlagSet {
 	f.Usage = renderCustomHelp
 
 	f.StringSliceP("query", "q", []string{}, "Domain name to query")
-	f.StringSliceP("type", "t", []string{}, "Type of DNS record to be queried (A, AAAA, MX etc)")
+	f.StringSliceP("type", "t", []string{}, "DNS record type by name, number, or TYPE<number> (for example HTTPS, 65, or TYPE65)")
 	f.StringSliceP("class", "c", []string{}, "Network class of the DNS record to be queried (IN, CH, HS etc)")
 	f.StringSliceP("nameserver", "n", []string{}, "Address of the nameserver to send packets to")
 	f.BoolP("reverse", "x", false, "Performs a DNS Lookup for an IPv4 or IPv6 address")
@@ -244,7 +252,7 @@ func setupFlags() *flag.FlagSet {
 	return f
 }
 
-func initializeApp(logger *slog.Logger, cfg *config) *app.App {
+func initializeApp(logger *slog.Logger, cfg *config) (*app.App, error) {
 	gpConfig := globalping.Config{
 		UserAgent: fmt.Sprintf("doggo/%s (https://github.com/mr-karan/doggo)", buildVersion),
 		AuthToken: os.Getenv("GLOBALPING_TOKEN"),
@@ -254,12 +262,13 @@ func initializeApp(logger *slog.Logger, cfg *config) *app.App {
 	app := app.New(logger, globalpingClient, buildVersion)
 
 	if err := k.Unmarshal("", &app.QueryFlags); err != nil {
-		logger.Error("Error loading args", "error", err)
-		os.Exit(2)
+		return nil, fmt.Errorf("loading args: %w", err)
 	}
 
-	loadNameservers(&app, k, cfg.flagSet)
-	return &app
+	if err := loadNameservers(&app, k, cfg.flagSet); err != nil {
+		return nil, err
+	}
+	return &app, nil
 }
 
 // loadNameservers resolves the effective nameservers, query types, classes,
@@ -271,8 +280,11 @@ func initializeApp(logger *slog.Logger, cfg *config) *app.App {
 // (preserving the pre-config behavior when those flags are combined with
 // positional values). This keeps an ad-hoc query on the command line from
 // being silently redirected or widened by a config file.
-func loadNameservers(app *app.App, k *koanf.Koanf, f *flag.FlagSet) {
-	unparsedNameservers, qt, qc, qn := loadUnparsedArgs(f.Args())
+func loadNameservers(app *app.App, k *koanf.Koanf, f *flag.FlagSet) error {
+	unparsedNameservers, qt, qc, qn, err := loadUnparsedArgs(f.Args())
+	if err != nil {
+		return err
+	}
 
 	switch {
 	case f.Changed("nameserver"):
@@ -305,6 +317,15 @@ func loadNameservers(app *app.App, k *koanf.Koanf, f *flag.FlagSet) {
 	} else {
 		app.QueryFlags.QNames = append(app.QueryFlags.QNames, qn...)
 	}
+
+	// Normalize here because Globalping consumes QTypes before the normal DNS
+	// path reaches PrepareQuestions. PrepareQuestions revalidates for web and
+	// direct callers that do not pass through the CLI loader.
+	app.QueryFlags.QTypes, err = models.NormalizeRecordTypes(app.QueryFlags.QTypes)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func loadResolvers(app *app.App, cfg *config) ([]resolvers.Resolver, error) {

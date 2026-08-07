@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/mr-karan/doggo/pkg/models"
 )
 
 // DOHResolver represents the config options for setting up a DOH based resolver.
@@ -124,7 +125,7 @@ func (r *DOHResolver) query(ctx context.Context, question dns.Question, flags Qu
 			ques := Question{
 				Name:  q.Name,
 				Class: dns.ClassToString[q.Qclass],
-				Type:  dns.TypeToString[q.Qtype],
+				Type:  models.RecordTypeString(q.Qtype),
 			}
 			rsp.Questions = append(rsp.Questions, ques)
 		}

@@ -26,6 +26,9 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   Supply hostnames, query types, and classes without flags. Example:
   {{ .Name | color "green" "bold" }} {{ "mrkaran.dev A @1.1.1.1" | color "cyan" "" }}
 
+  Bare decimal arguments and TYPE<number> are record types. Use --query=65
+  to query a numeric single-label hostname.
+
 {{ "TRANSPORT OPTIONS" | color "" "heading" }}:
   Specify the protocol with a URL-type scheme.
   UDP is used if no scheme is specified.
@@ -142,7 +145,7 @@ func renderCustomHelp() {
 		},
 		"QueryOptions": []Option{
 			{"-q, --query=HOSTNAME", "Hostname to query the DNS records for (eg mrkaran.dev)."},
-			{"-t, --type=TYPE", "Type of the DNS Record (A, MX, NS etc)."},
+			{"-t, --type=TYPE", "DNS record type by name, number, or TYPE<number> (for example HTTPS, 65, or TYPE65)."},
 			{"-n, --nameserver=ADDR", "Address of a specific nameserver to send queries to (9.9.9.9, 8.8.8.8 etc)."},
 			{"-c, --class=CLASS", "Network class of the DNS record (IN, CH, HS etc)."},
 			{"-x, --reverse", "Performs a DNS Lookup for an IPv4 or IPv6 address. Sets the query type and class to PTR and IN respectively."},

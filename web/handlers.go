@@ -58,7 +58,11 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 	app.LoadFallbacks()
 
 	// Load Questions.
-	app.PrepareQuestions()
+	if err := app.PrepareQuestions(); err != nil {
+		app.Logger.Error("error preparing DNS questions", "error", err)
+		sendErrorResponse(w, err.Error(), http.StatusBadRequest, nil)
+		return
+	}
 
 	if len(app.Questions) == 0 {
 		sendErrorResponse(w, "Missing field `query`.", http.StatusBadRequest, nil)

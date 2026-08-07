@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/mr-karan/doggo/pkg/models"
 	"github.com/quic-go/quic-go"
 )
 
@@ -162,7 +163,7 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 			ques := Question{
 				Name:  q.Name,
 				Class: dns.ClassToString[q.Qclass],
-				Type:  dns.TypeToString[q.Qtype],
+				Type:  models.RecordTypeString(q.Qtype),
 			}
 			rsp.Questions = append(rsp.Questions, ques)
 		}
