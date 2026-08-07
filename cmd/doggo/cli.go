@@ -6,13 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/jsdelivr/globalping-cli/globalping"
-	"github.com/knadh/koanf/providers/posflag"
+	"github.com/jsdelivr/globalping-go"
 	"github.com/knadh/koanf/v2"
 	"github.com/mr-karan/doggo/internal/app"
 	"github.com/mr-karan/doggo/pkg/resolvers"
@@ -55,6 +53,11 @@ func main() {
 	logger := utils.InitLogger(cfg.debug)
 	app := initializeApp(logger, cfg)
 
+	if len(app.QueryFlags.QNames) == 0 {
+		cfg.flagSet.Usage()
+		return
+	}
+
 	if app.QueryFlags.GPFrom != "" {
 		res, err := app.GlobalpingMeasurement()
 		if err != nil {
@@ -94,11 +97,6 @@ func main() {
 	}
 	app.Resolvers = resolvers
 
-	if len(app.QueryFlags.QNames) == 0 {
-		cfg.flagSet.Usage()
-		os.Exit(0)
-	}
-
 	responses, lookupErrors := performLookup(app, cfg)
 	outputResults(app, responses, lookupErrors)
 }
@@ -119,7 +117,7 @@ func loadConfig() (*config, error) {
 	cfg := &config{}
 	cfg.flagSet = setupFlags()
 
-	if err := parseAndLoadFlags(cfg.flagSet); err != nil {
+	if err := parseAndLoadFlags(k, cfg.flagSet, os.Args[1:]); err != nil {
 		return nil, fmt.Errorf("error parsing or loading flags: %w", err)
 	}
 
@@ -130,6 +128,15 @@ func loadConfig() (*config, error) {
 	cfg.outputJSON = k.Bool("json")
 	cfg.showTime = k.Bool("time")
 	cfg.useColor = k.Bool("color")
+
+	if err := validateTimeout(k.Get("timeout")); err != nil {
+		return nil, err
+	}
+	switch s := k.String("strategy"); s {
+	case "", "all", "random", "first", "internal":
+	default:
+		return nil, fmt.Errorf("invalid strategy %q: must be one of all, random, first, internal", s)
+	}
 
 	bufsize := k.Int("bufsize")
 	if bufsize < 0 || bufsize > 65535 {
@@ -157,6 +164,31 @@ func loadConfig() (*config, error) {
 	}
 
 	return cfg, nil
+}
+
+// validateTimeout guards against the silent footgun where a bad timeout in a
+// config file or env var (a bare number like `timeout = 10`, a bool, or a
+// non-positive duration) is coerced to zero-or-nanoseconds by koanf's
+// cast-based Duration getter, making every query time out instantly. Only a
+// flag-sourced time.Duration or a string that time.ParseDuration accepts is
+// valid, and the resulting duration must be positive.
+func validateTimeout(raw any) error {
+	var d time.Duration
+	switch v := raw.(type) {
+	case time.Duration:
+		d = v
+	case string:
+		var err error
+		if d, err = time.ParseDuration(v); err != nil {
+			return fmt.Errorf("invalid timeout %q: %w", v, err)
+		}
+	default:
+		return fmt.Errorf(`invalid timeout %v: use a duration string like "5s" or "500ms"`, v)
+	}
+	if d <= 0 {
+		return fmt.Errorf("invalid timeout %v: must be positive", raw)
+	}
+	return nil
 }
 
 func setupFlags() *flag.FlagSet {
@@ -207,59 +239,72 @@ func setupFlags() *flag.FlagSet {
 	f.Int("bufsize", 0, "EDNS UDP buffer size in bytes (512-65535); setting this enables EDNS even without other EDNS options. Default is 1232 when EDNS is enabled.")
 
 	f.Bool("version", false, "Show version of doggo")
+	f.String("config", "", "Path to a TOML config file (default: $XDG_CONFIG_HOME/doggo/config.toml or ~/.doggo.toml)")
 
 	return f
 }
 
-func parseAndLoadFlags(f *flag.FlagSet) error {
-	if err := f.Parse(os.Args[1:]); err != nil {
-		return fmt.Errorf("error parsing flags: %w", err)
-	}
-	if err := k.Load(posflag.Provider(f, ".", k), nil); err != nil {
-		return fmt.Errorf("error loading flags: %w", err)
-	}
-	return nil
-}
-
 func initializeApp(logger *slog.Logger, cfg *config) *app.App {
 	gpConfig := globalping.Config{
-		APIURL:    "https://api.globalping.io/v1",
-		AuthURL:   "https://auth.globalping.io",
 		UserAgent: fmt.Sprintf("doggo/%s (https://github.com/mr-karan/doggo)", buildVersion),
+		AuthToken: os.Getenv("GLOBALPING_TOKEN"),
 	}
-	gpToken := os.Getenv("GLOBALPING_TOKEN")
-	if gpToken != "" {
-		gpConfig.AuthToken = &globalping.Token{
-			AccessToken: gpToken,
-			Expiry:      time.Now().Add(math.MaxInt64),
-		}
-	}
-	globlpingClient := globalping.NewClient(gpConfig)
+	globalpingClient := globalping.NewClient(gpConfig)
 
-	app := app.New(logger, globlpingClient, buildVersion)
+	app := app.New(logger, globalpingClient, buildVersion)
 
 	if err := k.Unmarshal("", &app.QueryFlags); err != nil {
 		logger.Error("Error loading args", "error", err)
 		os.Exit(2)
 	}
 
-	loadNameservers(&app, cfg.flagSet.Args())
+	loadNameservers(&app, k, cfg.flagSet)
 	return &app
 }
 
-func loadNameservers(app *app.App, args []string) {
-	flagNameservers := k.Strings("nameserver")
-	unparsedNameservers, qt, qc, qn := loadUnparsedArgs(args)
+// loadNameservers resolves the effective nameservers, query types, classes,
+// and names from koanf (config file/env/flags) and the positional args.
+//
+// Precedence for nameservers: --nameserver flag > positional @ns > config/env
+// > system fallback (empty). For type/class/query: positional args override
+// config/env defaults, but union with the --type/--class/--query flags
+// (preserving the pre-config behavior when those flags are combined with
+// positional values). This keeps an ad-hoc query on the command line from
+// being silently redirected or widened by a config file.
+func loadNameservers(app *app.App, k *koanf.Koanf, f *flag.FlagSet) {
+	unparsedNameservers, qt, qc, qn := loadUnparsedArgs(f.Args())
 
-	if len(flagNameservers) > 0 {
-		app.QueryFlags.Nameservers = flagNameservers
-	} else {
+	switch {
+	case f.Changed("nameserver"):
+		app.QueryFlags.Nameservers = k.Strings("nameserver")
+	case len(unparsedNameservers) > 0:
 		app.QueryFlags.Nameservers = unparsedNameservers
+	default:
+		app.QueryFlags.Nameservers = k.Strings("nameserver")
 	}
 
-	app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, qt...)
-	app.QueryFlags.QClasses = append(app.QueryFlags.QClasses, qc...)
-	app.QueryFlags.QNames = append(app.QueryFlags.QNames, qn...)
+	// Positional type/class/name values override config-file/env defaults but
+	// union with their --type/--class/--query flag equivalents.
+	// A lower-precedence `any` default must not widen an explicitly requested
+	// type; an explicit --any still keeps the pre-config behavior.
+	if (len(qt) > 0 || f.Changed("type")) && !f.Changed("any") {
+		app.QueryFlags.QueryAny = false
+	}
+	if len(qt) > 0 && !f.Changed("type") {
+		app.QueryFlags.QTypes = qt
+	} else {
+		app.QueryFlags.QTypes = append(app.QueryFlags.QTypes, qt...)
+	}
+	if len(qc) > 0 && !f.Changed("class") {
+		app.QueryFlags.QClasses = qc
+	} else {
+		app.QueryFlags.QClasses = append(app.QueryFlags.QClasses, qc...)
+	}
+	if len(qn) > 0 && !f.Changed("query") {
+		app.QueryFlags.QNames = qn
+	} else {
+		app.QueryFlags.QNames = append(app.QueryFlags.QNames, qn...)
+	}
 }
 
 func loadResolvers(app *app.App, cfg *config) ([]resolvers.Resolver, error) {

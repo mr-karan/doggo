@@ -13,9 +13,13 @@ _doggo() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do --nsid --cookie --padding --ede --ecs --bufsize -J --json --short --color --debug --time --gp-from --gp-limit"
+    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do --nsid --cookie --padding --ede --ecs --bufsize -J --json --short --color --debug --time --gp-from --gp-limit --config"
 
     case "${prev}" in
+        --config)
+            COMPREPLY=( $(compgen -f -- ${cur}) )
+            return 0
+            ;;
         -t|--type)
             COMPREPLY=( $(compgen -W "A AAAA CAA CNAME HINFO MX NS PTR SOA SRV TXT" -- ${cur}) )
             return 0
@@ -92,6 +96,7 @@ _doggo() {
     '--time[Shows how long the response took from the server]' \
     '--gp-from[Query using Globalping API from a specific location]' \
     '--gp-limit[Limit the number of probes to use from Globalping]' \
+    '--config[Load defaults from a TOML config file]:config file:_files' \
     '*:hostname:_hosts' \
     && ret=0
 
@@ -119,6 +124,7 @@ end
 # Meta options
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'version' -d "Show version of doggo"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'help'    -d "Show list of command-line options"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'config'  -d "Load defaults from a TOML config file" -r
 
 # Query options
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'q' -l 'query'      -d "Hostname to query the DNS records for" -x -a "(__fish_print_hostnames)"

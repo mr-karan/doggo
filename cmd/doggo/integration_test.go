@@ -123,9 +123,32 @@ func reservedClosedPort(t *testing.T) int {
 
 func runDoggo(t *testing.T, args ...string) (stdout, stderr string, exit int) {
 	t.Helper()
+	return runDoggoEnv(t, nil, args...)
+}
+
+// runDoggoEnv runs the doggo binary with extra environment variables. The
+// host's HOME, XDG_CONFIG_HOME and DOGGO_* variables are stripped and the
+// config search paths are pointed at an empty temp dir so tests stay hermetic
+// regardless of the developer's own doggo configuration. Values in extraEnv
+// override the hermetic defaults (Go keeps the last duplicate env entry).
+func runDoggoEnv(t *testing.T, extraEnv []string, args ...string) (stdout, stderr string, exit int) {
+	t.Helper()
 	bin := doggoBin(t)
 	cmd := exec.Command(bin, args...)
-	cmd.Env = append(os.Environ(), "NO_COLOR=1")
+
+	clean := t.TempDir()
+	env := make([]string, 0, len(os.Environ()))
+	for _, e := range os.Environ() {
+		if strings.HasPrefix(e, "HOME=") ||
+			strings.HasPrefix(e, "XDG_CONFIG_HOME=") ||
+			strings.HasPrefix(e, "DOGGO_") {
+			continue
+		}
+		env = append(env, e)
+	}
+	env = append(env, "NO_COLOR=1", "HOME="+clean, "XDG_CONFIG_HOME="+clean)
+	cmd.Env = append(env, extraEnv...)
+
 	var outBuf, errBuf strings.Builder
 	cmd.Stdout = &outBuf
 	cmd.Stderr = &errBuf
@@ -140,6 +163,19 @@ func runDoggo(t *testing.T, args ...string) (stdout, stderr string, exit int) {
 		}
 	}
 	return outBuf.String(), errBuf.String(), exit
+}
+
+// writeConfigFile writes a doggo config.toml under dir and returns its path.
+func writeConfigFile(t *testing.T, dir, contents string) string {
+	t.Helper()
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	path := filepath.Join(dir, "config.toml")
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	return path
 }
 
 func TestPartialFailureExitsTwoAndPrintsResponse(t *testing.T) {
@@ -324,5 +360,304 @@ func TestDebugLogsStrategyApplication(t *testing.T) {
 	}
 	if !regexp.MustCompile(`dropped_count=1`).MatchString(stderr) {
 		t.Fatalf("missing dropped_count=1 indicating @deadAddr was filtered\nstderr:\n%s", stderr)
+	}
+}
+
+// TestConfigFileSetsDefaults verifies a config file at the default XDG path
+// changes CLI behavior without any flags: strategy=first must drop the second
+// nameserver and the query must succeed via the first.
+func TestConfigFileSetsDefaults(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "cfg.test", "192.0.2.50")
+	defer stop()
+
+	deadPort := reservedClosedPort(t)
+	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
+
+	xdg := t.TempDir()
+	writeConfigFile(t, filepath.Join(xdg, "doggo"), "strategy = \"first\"\n")
+
+	stdout, stderr, exit := runDoggoEnv(t,
+		[]string{"XDG_CONFIG_HOME=" + xdg},
+		"--timeout=2s", "--debug",
+		"@"+serverAddr, "@"+deadAddr,
+		"A", "cfg.test",
+	)
+
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0 (strategy=first should only use the live server)\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "192.0.2.50") {
+		t.Fatalf("stdout missing answer\nstdout:\n%s", stdout)
+	}
+	if !regexp.MustCompile(`strategy=first`).MatchString(stderr) {
+		t.Fatalf("missing strategy=first from config file in debug log\nstderr:\n%s", stderr)
+	}
+	if !regexp.MustCompile(`dropped_count=1`).MatchString(stderr) {
+		t.Fatalf("missing dropped_count=1 indicating second nameserver was filtered\nstderr:\n%s", stderr)
+	}
+}
+
+// TestConfigFileJSONOutput verifies a boolean output option from the config
+// file (json = true) is honored end to end.
+func TestConfigFileJSONOutput(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "cfgjson.test", "192.0.2.60")
+	defer stop()
+
+	xdg := t.TempDir()
+	writeConfigFile(t, filepath.Join(xdg, "doggo"), "json = true\n")
+
+	stdout, stderr, exit := runDoggoEnv(t,
+		[]string{"XDG_CONFIG_HOME=" + xdg},
+		"--timeout=2s", "@"+serverAddr, "A", "cfgjson.test",
+	)
+
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0\nstderr:\n%s", exit, stderr)
+	}
+	var payload struct {
+		Responses []map[string]any `json:"responses"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &payload); err != nil {
+		t.Fatalf("stdout is not JSON despite json=true in config: %v\nstdout:\n%s", err, stdout)
+	}
+	if len(payload.Responses) == 0 {
+		t.Fatalf("expected responses in JSON output\nstdout:\n%s", stdout)
+	}
+}
+
+// TestCLIFlagOverridesConfigFile verifies explicit CLI flags beat the config
+// file: json = true in the file, but --json=false on the command line.
+func TestCLIFlagOverridesConfigFile(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "cfgoverride.test", "192.0.2.70")
+	defer stop()
+
+	xdg := t.TempDir()
+	writeConfigFile(t, filepath.Join(xdg, "doggo"), "json = true\n")
+
+	stdout, stderr, exit := runDoggoEnv(t,
+		[]string{"XDG_CONFIG_HOME=" + xdg},
+		"--timeout=2s", "--json=false", "@"+serverAddr, "A", "cfgoverride.test",
+	)
+
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0\nstderr:\n%s", exit, stderr)
+	}
+	if json.Valid([]byte(stdout)) {
+		t.Fatalf("stdout is JSON despite --json=false overriding config\nstdout:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "192.0.2.70") {
+		t.Fatalf("stdout missing answer\nstdout:\n%s", stdout)
+	}
+}
+
+// TestEnvVarSetsStrategy verifies DOGGO_* env vars map onto flags:
+// DOGGO_STRATEGY=first must narrow the nameserver set to the first entry.
+func TestEnvVarSetsStrategy(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "env.test", "192.0.2.80")
+	defer stop()
+
+	deadPort := reservedClosedPort(t)
+	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
+
+	stdout, stderr, exit := runDoggoEnv(t,
+		[]string{"DOGGO_STRATEGY=first"},
+		"--timeout=2s", "--debug",
+		"@"+serverAddr, "@"+deadAddr,
+		"A", "env.test",
+	)
+
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+	if !regexp.MustCompile(`strategy=first`).MatchString(stderr) {
+		t.Fatalf("missing strategy=first from env var in debug log\nstderr:\n%s", stderr)
+	}
+	if !regexp.MustCompile(`dropped_count=1`).MatchString(stderr) {
+		t.Fatalf("missing dropped_count=1 indicating second nameserver was filtered\nstderr:\n%s", stderr)
+	}
+}
+
+// TestExplicitConfigFlagLoadsFile verifies --config loads a file from an
+// arbitrary location outside the default search paths.
+func TestExplicitConfigFlagLoadsFile(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "explicit.test", "192.0.2.90")
+	defer stop()
+
+	deadPort := reservedClosedPort(t)
+	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
+
+	cfgPath := writeConfigFile(t, t.TempDir(), "strategy = \"first\"\n")
+
+	stdout, stderr, exit := runDoggo(t,
+		"--timeout=2s", "--debug", "--config", cfgPath,
+		"@"+serverAddr, "@"+deadAddr,
+		"A", "explicit.test",
+	)
+
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+	if !regexp.MustCompile(`strategy=first`).MatchString(stderr) {
+		t.Fatalf("missing strategy=first from --config file in debug log\nstderr:\n%s", stderr)
+	}
+}
+
+// TestMissingExplicitConfigFails verifies that requesting a nonexistent
+// config file is a hard error, not silently ignored.
+func TestMissingExplicitConfigFails(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "nope.toml")
+
+	stdout, _, exit := runDoggo(t, "--config", missing, "example.test")
+
+	if exit != 1 {
+		t.Fatalf("exit = %d, want 1 for missing --config file\nstdout:\n%s", exit, stdout)
+	}
+	if !strings.Contains(stdout, "config") {
+		t.Fatalf("error output should mention the config file\nstdout:\n%s", stdout)
+	}
+}
+
+// TestMalformedConfigFails verifies a config file with invalid TOML at a
+// default search path is a hard error.
+func TestMalformedConfigFails(t *testing.T) {
+	xdg := t.TempDir()
+	writeConfigFile(t, filepath.Join(xdg, "doggo"), "strategy = [unclosed")
+
+	stdout, _, exit := runDoggoEnv(t,
+		[]string{"XDG_CONFIG_HOME=" + xdg},
+		"example.test",
+	)
+
+	if exit != 1 {
+		t.Fatalf("exit = %d, want 1 for malformed config\nstdout:\n%s", exit, stdout)
+	}
+	if !strings.Contains(stdout, "config") {
+		t.Fatalf("error output should mention the config file\nstdout:\n%s", stdout)
+	}
+}
+
+// TestPositionalNameserverBeatsConfigFile guards against issue M1 from code
+// review: a nameserver set in the config file must not override a positional
+// @ns argument, otherwise an ad-hoc query is silently sent to the wrong
+// resolver.
+func TestPositionalNameserverBeatsConfigFile(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "pos.test", "192.0.2.120")
+	defer stop()
+
+	xdg := t.TempDir()
+	// Config points at a public resolver that does not serve pos.test; the
+	// positional @<serverAddr> must win for the query to succeed.
+	writeConfigFile(t, filepath.Join(xdg, "doggo"), "nameserver = [\"1.1.1.1\"]\n")
+
+	stdout, stderr, exit := runDoggoEnv(t,
+		[]string{"XDG_CONFIG_HOME=" + xdg},
+		"--timeout=2s", "@"+serverAddr, "A", "pos.test",
+	)
+
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0 (positional @ns must beat config)\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "192.0.2.120") {
+		t.Fatalf("stdout missing answer from positional @ns; config resolver leaked in?\nstdout:\n%s", stdout)
+	}
+}
+
+// TestPositionalTypeBeatsConfigFile guards against issue M2: a type set in
+// the config file must not widen an ad-hoc positional query. With config
+// type=["A"] and a positional MX, the effective query must be MX only. The
+// test server answers A and nothing else; an MX query returns an empty
+// NOERROR response, so:
+//   - with the M2 bug (A unioned in), the A answer 192.0.2.130 would appear;
+//   - with the fix (MX replaces A), the table is empty.
+//
+// Asserting the A answer is absent proves the positional type replaced the
+// config default end-to-end.
+func TestPositionalTypeBeatsConfigFile(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "ptype.test", "192.0.2.130")
+	defer stop()
+
+	xdg := t.TempDir()
+	writeConfigFile(t, filepath.Join(xdg, "doggo"), "type = [\"A\"]\n")
+
+	stdout, stderr, exit := runDoggoEnv(t,
+		[]string{"XDG_CONFIG_HOME=" + xdg},
+		"--timeout=2s", "@"+serverAddr, "MX", "ptype.test",
+	)
+
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0 (empty MX response is still success)\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+	if strings.Contains(stdout, "192.0.2.130") {
+		t.Fatalf("A answer leaked in; config type was unioned with positional MX instead of replaced\nstdout:\n%s", stdout)
+	}
+}
+
+func TestExplicitTypeBeatsConfiguredAny(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "any.test", "192.0.2.140")
+	defer stop()
+
+	xdg := t.TempDir()
+	writeConfigFile(t, filepath.Join(xdg, "doggo"), "any = true\n")
+
+	stdout, stderr, exit := runDoggoEnv(t,
+		[]string{"XDG_CONFIG_HOME=" + xdg},
+		"--json", "--timeout=2s", "@"+serverAddr, "MX", "any.test",
+	)
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+
+	var payload struct {
+		Responses []struct {
+			Questions []struct {
+				Type string `json:"type"`
+			} `json:"questions"`
+		} `json:"responses"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &payload); err != nil {
+		t.Fatalf("invalid JSON: %v\nstdout:\n%s", err, stdout)
+	}
+	if len(payload.Responses) == 0 {
+		t.Fatalf("expected a DNS response\nstdout:\n%s", stdout)
+	}
+	for _, response := range payload.Responses {
+		for _, question := range response.Questions {
+			if question.Type != "MX" {
+				t.Fatalf("question type = %q, want MX; configured any=true widened the query", question.Type)
+			}
+		}
+	}
+}
+
+func TestGlobalpingDefaultWithoutQueryShowsHelp(t *testing.T) {
+	stdout, stderr, exit := runDoggoEnv(t, []string{"DOGGO_GP_FROM=Germany"})
+
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0\nstdout:\n%s\nstderr:\n%s", exit, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "USAGE:") {
+		t.Fatalf("stdout missing help text\nstdout:\n%s", stdout)
+	}
+	if strings.Contains(stderr, "panic:") {
+		t.Fatalf("stderr contains panic\nstderr:\n%s", stderr)
+	}
+}
+
+// TestUnknownConfigKeyFails verifies a typo'd config key is rejected rather
+// than silently ignored.
+func TestUnknownConfigKeyFails(t *testing.T) {
+	xdg := t.TempDir()
+	writeConfigFile(t, filepath.Join(xdg, "doggo"), "strategiy = \"first\"\n")
+
+	stdout, _, exit := runDoggoEnv(t,
+		[]string{"XDG_CONFIG_HOME=" + xdg},
+		"example.test",
+	)
+
+	if exit != 1 {
+		t.Fatalf("exit = %d, want 1 for unknown config key\nstdout:\n%s", exit, stdout)
+	}
+	if !strings.Contains(stdout, "unknown config key") {
+		t.Fatalf("error output should mention unknown config key\nstdout:\n%s", stdout)
 	}
 }

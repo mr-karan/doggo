@@ -1,0 +1,127 @@
+# doggo CLI configuration reference.
+#
+# Copy this file to one of the default search locations and uncomment the keys
+# you want. Every key is optional; the value shown is the built-in default.
+#
+#   1. --config=PATH
+#   2. $DOGGO_CONFIG
+#   3. $XDG_CONFIG_HOME/doggo/config.toml
+#      (macOS: ~/Library/Application Support/doggo/config.toml,
+#       Windows: %AppData%\doggo\config.toml)
+#   4. ~/.doggo.toml
+#
+# Precedence, lowest to highest:
+#   built-in defaults < this file < DOGGO_* env vars < command line flags
+#
+# Keys are the long flag names, so `strategy = "first"` is the same as
+# passing --strategy=first. Every key here also has an environment variable:
+# DOGGO_ + the upper-cased key with "-" replaced by "_", e.g.
+# DOGGO_SKIP_HOSTNAME_VERIFICATION=true. List keys accept a comma-separated
+# string in the environment: DOGGO_NAMESERVER="1.1.1.1,9.9.9.9".
+#
+# Unknown keys are a hard error, so typos surface immediately instead of
+# being silently ignored.
+
+# --- Query -------------------------------------------------------------------
+
+# Default hostnames to query when none are given on the command line.
+# query = ["mrkaran.dev"]
+
+# Default record types. A positional type on the command line (doggo x.com MX)
+# replaces this; --type unions with it.
+# type = ["A"]
+
+# Default DNS classes.
+# class = ["IN"]
+
+# Default nameservers. A positional @ns on the command line takes precedence
+# over this; --nameserver overrides both. Accepts the same URL-ish schemes as
+# the flag: "tcp://1.1.1.1", "tls://1.1.1.1", "https://dns.google/dns-query",
+# "quic://dns.adguard.com", "sdns://...".
+# nameserver = ["1.1.1.1", "9.9.9.9"]
+
+# Treat query arguments as IPv4/IPv6 addresses and do a PTR lookup.
+# reverse = false
+
+# Query every common record type (A, AAAA, CNAME, MX, NS, PTR, SOA, SRV, TXT, CAA).
+# any = false
+
+# Look up the domain's authoritative nameservers and query those.
+# authoritative = false
+
+# --- Resolver ----------------------------------------------------------------
+
+# How to pick among multiple nameservers: "all", "random", "first", "internal".
+# strategy = "all"
+
+# Per-query timeout. Must be a duration string with a unit — a bare number
+# like `timeout = 5` is rejected rather than silently read as 5 nanoseconds.
+# timeout = "5s"
+
+# Use the search list from resolv.conf for unqualified names.
+# search = true
+
+# ndots value for the search list. -1 means "take it from resolv.conf".
+# ndots = -1
+
+# Restrict the transport to one address family.
+# ipv4 = false
+# ipv6 = false
+
+# Hostname to verify the certificate against for DoT/DoH/DoQ.
+# tls-hostname = ""
+
+# Skip TLS certificate verification. Leaves the connection open to
+# interception — only use it against a server you control.
+# skip-hostname-verification = false
+
+# --- Output ------------------------------------------------------------------
+
+# Emit machine-readable JSON instead of the table.
+# json = false
+
+# Print only the record values, one per line.
+# short = false
+
+# Show how long each response took.
+# time = false
+
+# Colored output. Honors NO_COLOR and non-TTY stdout regardless of this.
+# color = true
+
+# Verbose debug logging on stderr.
+# debug = false
+
+# --- DNS header flags --------------------------------------------------------
+
+# aa = false   # Authoritative Answer
+# ad = false   # Authenticated Data
+# cd = false   # Checking Disabled
+# rd = true    # Recursion Desired
+# z  = false   # Reserved, must be zero
+# do = false   # DNSSEC OK
+
+# --- EDNS0 -------------------------------------------------------------------
+
+# Setting any of these enables EDNS.
+
+# nsid    = false   # Request the Name Server Identifier
+# cookie  = false   # Request a DNS Cookie
+# padding = false   # Request EDNS padding
+# ede     = false   # Request Extended DNS Errors
+
+# EDNS Client Subnet. Leaks a prefix of your network to the resolver.
+# ecs = "192.0.2.0/24"
+
+# EDNS UDP buffer size. 0 uses the default of 1232 when EDNS is enabled;
+# any other value must be between 512 and 65535.
+# bufsize = 0
+
+# --- Globalping --------------------------------------------------------------
+
+# Setting gp-from routes every query through the Globalping API instead of
+# resolving locally, so leave it unset unless that is what you want.
+# gp-from = "Germany,Japan"
+
+# Number of probes to use per Globalping measurement.
+# gp-limit = 1

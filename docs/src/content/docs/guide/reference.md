@@ -105,6 +105,69 @@ Specify the protocol with a URL-type scheme. UDP is used if no scheme is specifi
 | `--gp-from`  | Specify the location to query from | `--gp-from Europe,Asia` |
 | `--gp-limit` | Limit the number of probes to use  | `--gp-limit 5`          |
 
+## General Options
+
+| Option          | Description                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| `--config=PATH` | Load defaults from a TOML config file at PATH, bypassing the default search locations               |
+| `--version`     | Show version of doggo                                                                              |
+
+## Configuration File and Environment Variables
+
+Defaults for any long flag can be set via a TOML config file or environment variables, so you don't have to repeat flags like `--color=false` or `--strategy=first` on every invocation.
+
+Precedence (lowest to highest):
+
+```
+flag defaults < config file < environment variables < command line flags
+```
+
+### Config file locations
+
+The config file is resolved in the following order (first match wins):
+
+1. `--config=PATH` flag
+2. `DOGGO_CONFIG` environment variable
+3. `$XDG_CONFIG_HOME/doggo/config.toml` (or the OS user config dir: `~/Library/Application Support/doggo/config.toml` on macOS, `%AppData%\doggo\config.toml` on Windows)
+4. `~/.doggo.toml`
+
+A missing file at a default location is silently ignored. A file requested explicitly via `--config` or `DOGGO_CONFIG` that is missing or malformed is an error.
+
+Keys are the long flag names. Example `config.toml`:
+
+```toml
+# Always pick the first nameserver instead of querying all.
+strategy = "first"
+
+# Disable colored output.
+color = false
+
+# Longer timeout for slow resolvers.
+timeout = "10s"
+```
+
+Unknown keys are rejected, so a typo like `strategiy` fails immediately instead of being silently ignored.
+
+[`config-cli-sample.toml`](https://github.com/mr-karan/doggo/blob/main/config-cli-sample.toml) in the repository documents every supported key with its default value. Copy it to one of the locations above and uncomment what you need:
+
+```shell
+mkdir -p ~/.config/doggo
+curl -fsSL https://raw.githubusercontent.com/mr-karan/doggo/main/config-cli-sample.toml -o ~/.config/doggo/config.toml
+```
+
+### Environment variables
+
+Environment variables are the `DOGGO_` prefix plus the upper-cased flag name with `-` replaced by `_`:
+
+```shell
+export DOGGO_STRATEGY=first
+export DOGGO_COLOR=false
+export DOGGO_TIMEOUT=10s
+
+# List flags accept comma-separated values.
+export DOGGO_NAMESERVER="1.1.1.1,9.9.9.9"
+```
+
 ## Examples
 
 1. Query a domain using defaults:

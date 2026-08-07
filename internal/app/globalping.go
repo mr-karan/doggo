@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,10 +9,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/fatih/color"
-	"github.com/jsdelivr/globalping-cli/globalping"
+	"github.com/jsdelivr/globalping-go"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
@@ -20,9 +20,15 @@ import (
 var (
 	ErrTargetIPVersionNotAllowed   = errors.New("ipVersion is not allowed when target is not a domain")
 	ErrResolverIPVersionNotAllowed = errors.New("ipVersion is not allowed when resolver is not a domain")
+	ErrGlobalpingTargetRequired    = errors.New("a target is required for globalping")
 )
 
 func (app *App) GlobalpingMeasurement() (*globalping.Measurement, error) {
+	ctx := context.Background()
+
+	if len(app.QueryFlags.QNames) == 0 {
+		return nil, ErrGlobalpingTargetRequired
+	}
 	if len(app.QueryFlags.QNames) > 1 {
 		return nil, errors.New("only one target is allowed for globalping")
 	}
@@ -46,7 +52,7 @@ func (app *App) GlobalpingMeasurement() (*globalping.Measurement, error) {
 	}
 
 	o := &globalping.MeasurementCreate{
-		Type:      "dns",
+		Type:      globalping.MeasurementTypeDNS,
 		Target:    target,
 		Limit:     app.QueryFlags.GPLimit,
 		Locations: parseGlobalpingLocations(app.QueryFlags.GPFrom),
@@ -68,26 +74,17 @@ func (app *App) GlobalpingMeasurement() (*globalping.Measurement, error) {
 			Type: app.QueryFlags.QTypes[0],
 		}
 	}
-	res, err := app.globalping.CreateMeasurement(o)
+	res, err := app.globalping.CreateMeasurement(ctx, o)
 	if err != nil {
 		return nil, err
 	}
-	measurement, err := app.globalping.GetMeasurement(res.ID)
+	measurement, err := app.globalping.AwaitMeasurement(ctx, res.ID)
 	if err != nil {
 		return nil, err
-	}
-	for measurement.Status == globalping.StatusInProgress {
-		time.Sleep(500 * time.Millisecond)
-		measurement, err = app.globalping.GetMeasurement(res.ID)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	if measurement.Status != globalping.StatusFinished {
-		return nil, &globalping.MeasurementError{
-			Message: "measurement did not complete successfully",
-		}
+		return nil, fmt.Errorf("globalping measurement did not complete successfully (status: %s)", measurement.Status)
 	}
 	return measurement, nil
 }

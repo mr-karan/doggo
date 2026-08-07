@@ -87,6 +87,27 @@ doggo --reverse 8.8.8.8 --short
 doggo example.com --gp-from Germany,Japan --gp-limit 2
 ```
 
+## Configuration
+
+Defaults for any flag can be set via a TOML config file or `DOGGO_*` environment variables, so you don't have to repeat flags on every invocation:
+
+```shell
+# ~/.config/doggo/config.toml (or $XDG_CONFIG_HOME/doggo/config.toml, ~/.doggo.toml)
+strategy = "first"
+color    = false
+timeout  = "10s"
+```
+
+```shell
+# Equivalent environment variables
+export DOGGO_STRATEGY=first
+export DOGGO_COLOR=false
+```
+
+Precedence (lowest to highest): flag defaults < config file < environment variables < command line flags. Use `--config=PATH` or `DOGGO_CONFIG` to load a file from a custom location.
+
+[`config-cli-sample.toml`](config-cli-sample.toml) documents every supported key with its default. See the [CLI reference](https://doggo.mrkaran.dev/docs/guide/reference/#configuration-file-and-environment-variables) for details.
+
 ## Features
 
 - Human-readable output with color-coded and tabular format

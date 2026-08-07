@@ -3,7 +3,7 @@ package app
 import (
 	"log/slog"
 
-	"github.com/jsdelivr/globalping-cli/globalping"
+	"github.com/jsdelivr/globalping-go"
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/models"
 	"github.com/mr-karan/doggo/pkg/resolvers"

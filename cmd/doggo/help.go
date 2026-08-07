@@ -39,6 +39,11 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{ printf "%-30s" $opt.Flag | color "yellow" "" }}{{ $opt.Description }}
   {{- end }}
 
+{{ "GENERAL OPTIONS" | color "" "heading" }}:
+  {{- range $opt := .GeneralOptions }}
+  {{ printf "%-30s" $opt.Flag | color "yellow" "" }}{{ $opt.Description }}
+  {{- end }}
+
 {{ "QUERY OPTIONS" | color "" "heading" }}:
   {{- range $opt := .QueryOptions }}
   {{ printf "%-30s" $opt.Flag | color "yellow" "" }}{{ $opt.Description }}
@@ -68,6 +73,25 @@ var appHelpTextTemplate = `{{ "NAME" | color "" "heading" }}:
   {{- range $opt := .GlobalPingOptions }}
   {{ printf "%-30s" $opt.Flag | color "yellow" "" }}{{ $opt.Description }}
   {{- end }}
+
+{{ "CONFIGURATION" | color "" "heading" }}:
+  Defaults for any long flag can be set via a TOML config file or environment
+  variables. Precedence (lowest to highest):
+  flag defaults < config file < environment variables < command line flags.
+
+  {{ "Config file search order" | color "" "bold" }} (first match wins):
+    1. --config=PATH
+    2. DOGGO_CONFIG environment variable
+    3. $XDG_CONFIG_HOME/doggo/config.toml (or the OS user config dir)
+    4. ~/.doggo.toml
+
+  {{ "Example config file" | color "" "bold" }}:
+    strategy = "first"
+    color    = false
+    timeout  = "10s"
+
+  {{ "Environment variables" | color "" "bold" }}: DOGGO_ + upper-cased flag name with "-" as "_".
+  Example: DOGGO_STRATEGY=first, DOGGO_COLOR=false, DOGGO_NAMESERVER="1.1.1.1,9.9.9.9"
 `
 
 func renderCustomHelp() {
@@ -111,6 +135,10 @@ func renderCustomHelp() {
 		},
 		"Subcommands": []Option{
 			{"completions [bash|zsh|fish]", "Generate the shell completion script for the specified shell."},
+		},
+		"GeneralOptions": []Option{
+			{"--config=PATH", "Load defaults from a TOML config file. See CONFIGURATION below."},
+			{"--version", "Show version of doggo."},
 		},
 		"QueryOptions": []Option{
 			{"-q, --query=HOSTNAME", "Hostname to query the DNS records for (eg mrkaran.dev)."},
