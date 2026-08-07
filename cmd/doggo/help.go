@@ -174,7 +174,7 @@ func renderCustomHelp() {
 			{"--nsid", "Request Name Server Identifier (NSID) to identify the nameserver."},
 			{"--cookie", "Request DNS Cookie for enhanced security and protection against spoofing."},
 			{"--padding", "Request EDNS padding for privacy. Helps mitigate traffic analysis attacks."},
-			{"--ede", "Request Extended DNS Errors for detailed error information."},
+			{"--ede", "Enable EDNS to receive Extended DNS Errors with detailed error information."},
 			{"--ecs=SUBNET", "EDNS Client Subnet (e.g., '192.0.2.0/24' or '2001:db8::/32'). Send client subnet for geo-aware responses."},
 			{"--bufsize=BYTES", "EDNS UDP buffer size in bytes (512-65535). Setting this enables EDNS even without other EDNS options. Default is 1232 when EDNS is enabled."},
 		},

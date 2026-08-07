@@ -59,7 +59,7 @@ type QueryFlags struct {
 	NSID    bool   `koanf:"nsid" json:"nsid"`       // Request Name Server Identifier
 	Cookie  bool   `koanf:"cookie" json:"cookie"`   // Request DNS Cookie
 	Padding bool   `koanf:"padding" json:"padding"` // Request EDNS padding for privacy
-	EDE     bool   `koanf:"ede" json:"ede"`         // Request Extended DNS Errors
+	EDE     bool   `koanf:"ede" json:"ede"`         // Enable EDNS to receive Extended DNS Errors
 	ECS     string `koanf:"ecs" json:"ecs"`         // EDNS Client Subnet
 	Bufsize uint16 `koanf:"bufsize" json:"bufsize"` // EDNS UDP buffer size (default: 1232 when EDNS enabled)
 

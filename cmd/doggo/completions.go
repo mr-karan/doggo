@@ -86,7 +86,7 @@ _doggo() {
     '--nsid[Request Name Server Identifier (NSID)]' \
     '--cookie[Request DNS Cookie]' \
     '--padding[Request EDNS padding for privacy]' \
-    '--ede[Request Extended DNS Errors]' \
+    '--ede[Enable EDNS to receive Extended DNS Errors]' \
     '--ecs[EDNS Client Subnet]:subnet' \
     '--bufsize[EDNS UDP buffer size in bytes]:buffer size' \
     '(-J --json)'{-J,--json}'[Format the output as JSON]' \
@@ -154,7 +154,7 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -l 'do' -d "Set DNSSEC OK flag
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'nsid'    -d "Request Name Server Identifier (NSID)"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'cookie'  -d "Request DNS Cookie"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'padding' -d "Request EDNS padding for privacy"
-complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ede'     -d "Request Extended DNS Errors"
+complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ede'     -d "Enable EDNS to receive Extended DNS Errors"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ecs'     -d "EDNS Client Subnet" -x
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'bufsize' -d "EDNS UDP buffer size in bytes" -x
 

@@ -26,7 +26,7 @@ type QueryFlags struct {
 	NSID    bool   // Request Name Server Identifier
 	Cookie  bool   // Request DNS Cookie
 	Padding bool   // Request EDNS padding for privacy
-	EDE     bool   // Request Extended DNS Errors
+	EDE     bool   // Enable EDNS to receive Extended DNS Errors
 	ECS     string // EDNS Client Subnet (e.g., "192.0.2.0/24" or "2001:db8::/32")
 	Bufsize uint16 // EDNS UDP buffer size (default: 1232 when EDNS enabled)
 }
@@ -58,6 +58,8 @@ func prepareMessages(q dns.Question, flags QueryFlags, ndots int, searchList []s
 				bufsize = 1232
 			}
 			msg.SetEdns0(bufsize, flags.DO)
+			// RFC 8914 defines EDE as response information, not a request
+			// payload. The OPT record itself allows the server to return EDE.
 
 			// Add EDNS0 options
 			opt := msg.IsEdns0()
@@ -77,13 +79,6 @@ func prepareMessages(q dns.Question, flags QueryFlags, ndots int, searchList []s
 						Padding: make([]byte, 128), // Standard padding size
 					}
 					opt.Option = append(opt.Option, padding)
-				}
-
-				if flags.EDE {
-					// EDE is typically returned by the server, but we can set up
-					// the EDNS0 to signal we understand EDE responses
-					ede := &dns.EDNS0_EDE{}
-					opt.Option = append(opt.Option, ede)
 				}
 
 				if flags.ECS != "" {
@@ -249,14 +244,53 @@ func parseEdns(msg *dns.Msg) *EdnsInfo {
 			edns.Subnet = fmt.Sprintf("%s/%d", o.Address.String(), o.SourceNetmask)
 			edns.SubnetScope = o.SourceScope
 		case *dns.EDNS0_EDE:
-			edns.ExtendedErr = fmt.Sprintf("Code: %d", o.InfoCode)
-			if o.ExtraText != "" {
-				edns.ExtendedErr += fmt.Sprintf(", Info: %s", o.ExtraText)
+			extendedErr := ExtendedError{
+				Code:        o.InfoCode,
+				Description: dns.ExtendedErrorCodeToString[o.InfoCode],
+				ExtraText:   o.ExtraText,
+			}
+			edns.ExtendedErrors = append(edns.ExtendedErrors, extendedErr)
+
+			// Preserve the original scalar field for JSON compatibility. It
+			// represents the first EDE option when a response contains several;
+			// ExtendedErrors contains the complete ordered set.
+			if edns.ExtendedErr == "" {
+				edns.ExtendedErr = fmt.Sprintf("Code: %d", o.InfoCode)
+				if o.ExtraText != "" {
+					edns.ExtendedErr += fmt.Sprintf(", Info: %s", o.ExtraText)
+				}
 			}
 		}
 	}
 
 	return edns
+}
+
+// mergeEdnsInfo accumulates EDE options across search-list attempts. When the
+// latest response carries EDNS metadata it becomes authoritative; otherwise
+// the accumulated metadata is retained. The legacy scalar remains first-wins,
+// while ExtendedErrors is the authoritative ordered representation.
+func mergeEdnsInfo(accumulated, latest *EdnsInfo) *EdnsInfo {
+	if latest == nil {
+		return accumulated
+	}
+
+	merged := *latest
+	errorCount := len(latest.ExtendedErrors)
+	if accumulated != nil {
+		errorCount += len(accumulated.ExtendedErrors)
+	}
+	merged.ExtendedErrors = make([]ExtendedError, 0, errorCount)
+	if accumulated != nil {
+		merged.ExtendedErr = accumulated.ExtendedErr
+		merged.ExtendedErrors = append(merged.ExtendedErrors, accumulated.ExtendedErrors...)
+	}
+	if merged.ExtendedErr == "" {
+		merged.ExtendedErr = latest.ExtendedErr
+	}
+	merged.ExtendedErrors = append(merged.ExtendedErrors, latest.ExtendedErrors...)
+
+	return &merged
 }
 
 // parseMessage takes a `dns.Message` and returns a custom
@@ -267,6 +301,9 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 
 	// Parse EDNS0 options if present
 	resp.Edns = parseEdns(msg)
+	if resp.Edns != nil {
+		resp.Edns.Nameserver = server
+	}
 
 	// Parse Authorities section.
 	for _, ns := range msg.Ns {

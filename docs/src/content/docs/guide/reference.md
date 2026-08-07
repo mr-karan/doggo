@@ -60,9 +60,11 @@ EDNS (Extension Mechanisms for DNS) provides additional capabilities beyond basi
 | `--nsid`      | Request Name Server Identifier (NSID) to identify which nameserver responded                                |
 | `--cookie`    | Request DNS Cookie for enhanced security and protection against spoofing and amplification attacks          |
 | `--padding`   | Request EDNS padding for privacy (helps mitigate traffic analysis attacks by standardizing packet sizes)    |
-| `--ede`       | Request Extended DNS Errors for detailed error information when queries fail                                 |
+| `--ede`       | Enable EDNS to receive Extended DNS Errors with detailed error information when queries fail                 |
 | `--ecs=SUBNET`| EDNS Client Subnet - sends client subnet information for geo-aware responses (e.g., `192.0.2.0/24` or `2001:db8::/32`) |
 | `--bufsize=BYTES` | EDNS UDP buffer size in bytes (512-65535). Setting this enables EDNS even without other EDNS options. Default is 1232 when EDNS is enabled — the [DNS Flagday 2020](https://dnsflagday.net/2020/) recommendation to avoid IP fragmentation. |
+
+`--ede` enables EDNS by adding an OPT record; it does not send an EDE option or payload. A resolver may return EDE information for any query carrying an OPT record, and Doggo displays it regardless of which EDNS-enabling option (`--do`, `--nsid`, `--cookie`, `--padding`, `--ede`, `--ecs`, or `--bufsize`) added that record.
 
 ### EDNS Examples
 

@@ -110,7 +110,7 @@
 # nsid    = false   # Request the Name Server Identifier
 # cookie  = false   # Request a DNS Cookie
 # padding = false   # Request EDNS padding
-# ede     = false   # Request Extended DNS Errors
+# ede     = false   # Add an OPT record so resolvers can return Extended DNS Errors
 
 # EDNS Client Subnet. Leaks a prefix of your network to the resolver.
 # ecs = "192.0.2.0/24"

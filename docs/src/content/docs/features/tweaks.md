@@ -43,9 +43,11 @@ EDNS (Extension Mechanisms for DNS) provides additional capabilities beyond basi
 --nsid      Request Name Server Identifier
 --cookie    Request DNS Cookie for enhanced security
 --padding   Request EDNS padding for privacy
---ede       Request Extended DNS Errors
+--ede       Enable EDNS to receive Extended DNS Errors
 --ecs       EDNS Client Subnet (e.g., '192.0.2.0/24')
 ```
+
+`--ede` adds an OPT record to enable EDNS; it does not send an EDE option or fabricated EDE payload. Resolvers can return EDE information for any query carrying an OPT record, so Doggo also displays returned EDEs when EDNS is enabled by `--do`, `--nsid`, `--cookie`, `--padding`, `--ecs`, or `--bufsize`.
 
 ### EDNS Examples
 

@@ -242,7 +242,7 @@ func setupFlags() *flag.FlagSet {
 	f.Bool("nsid", false, "Request Name Server Identifier (NSID)")
 	f.Bool("cookie", false, "Request DNS Cookie")
 	f.Bool("padding", false, "Request EDNS padding for privacy")
-	f.Bool("ede", false, "Request Extended DNS Errors")
+	f.Bool("ede", false, "Enable EDNS to receive Extended DNS Errors")
 	f.String("ecs", "", "EDNS Client Subnet (e.g., '192.0.2.0/24' or '2001:db8::/32')")
 	f.Int("bufsize", 0, "EDNS UDP buffer size in bytes (512-65535); setting this enables EDNS even without other EDNS options. Default is 1232 when EDNS is enabled.")
 
@@ -347,33 +347,41 @@ func performLookup(app *app.App, cfg *config) ([]resolvers.Response, []error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.timeout)
 	defer cancel()
 
-	var (
-		wg           sync.WaitGroup
-		mu           sync.Mutex
-		allResponses []resolvers.Response
-		allErrors    []error
-	)
+	type lookupResult struct {
+		responses  []resolvers.Response
+		err        error
+		nameserver string
+	}
 
-	for _, resolver := range app.Resolvers {
+	var wg sync.WaitGroup
+	results := make([]lookupResult, len(app.Resolvers))
+
+	for i, resolver := range app.Resolvers {
 		wg.Add(1)
-		go func(r resolvers.Resolver) {
+		go func(i int, r resolvers.Resolver) {
 			defer wg.Done()
 			responses, err := r.Lookup(ctx, app.Questions, cfg.queryFlags)
-			mu.Lock()
-			defer mu.Unlock()
-			// Collect any responses the resolver produced even when err != nil
-			// so partial successes within a single resolver still surface.
-			allResponses = append(allResponses, responses...)
-			if err != nil {
-				allErrors = append(allErrors, &resolvers.LookupError{
-					Nameserver: r.Address(),
-					Err:        err,
-				})
-			}
-		}(resolver)
+			results[i] = lookupResult{responses: responses, err: err, nameserver: r.Address()}
+		}(i, resolver)
 	}
 
 	wg.Wait()
+
+	var (
+		allResponses []resolvers.Response
+		allErrors    []error
+	)
+	for _, result := range results {
+		// Collect any responses the resolver produced even when err != nil
+		// so partial successes within a single resolver still surface.
+		allResponses = append(allResponses, result.responses...)
+		if result.err != nil {
+			allErrors = append(allErrors, &resolvers.LookupError{
+				Nameserver: result.nameserver,
+				Err:        result.err,
+			})
+		}
+	}
 	return allResponses, allErrors
 }
 

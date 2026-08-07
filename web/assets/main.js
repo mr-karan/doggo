@@ -189,20 +189,20 @@ const apiURL = '/api/lookup/';
             return;
         }
 
-        const ednsFields = [
+        const ednsFieldsBeforeErrors = [
             { key: 'nsid', label: 'NSID' },
             { key: 'cookie', label: 'Cookie' },
             { key: 'subnet', label: 'Client Subnet' },
-            { key: 'subnet_scope', label: 'Subnet Scope' },
-            { key: 'extended_error', label: 'Extended Error' },
+            { key: 'subnet_scope', label: 'Subnet Scope' }
+        ];
+        const ednsFieldsAfterErrors = [
             { key: 'udp_size', label: 'UDP Size' },
             { key: 'dnssec_ok', label: 'DNSSEC OK' }
         ];
 
         let hasData = false;
 
-        ednsFields.forEach(({ key, label }) => {
-            const value = edns[key];
+        const addEdnsField = (label, value) => {
             if (value !== undefined && value !== null && value !== '' && value !== false) {
                 hasData = true;
                 const item = $new('div');
@@ -220,7 +220,15 @@ const apiURL = '/api/lookup/';
                 item.appendChild(valueEl);
                 ednsGrid.appendChild(item);
             }
-        });
+        };
+
+        ednsFieldsBeforeErrors.forEach(({ key, label }) => addEdnsField(label, edns[key]));
+        const extendedErrorValues = typeof window.DoggoEdns?.getExtendedErrorDisplayValues === 'function'
+            ? window.DoggoEdns.getExtendedErrorDisplayValues(edns)
+            : (edns.extended_error ? [edns.extended_error] : []);
+        extendedErrorValues
+            .forEach(value => addEdnsField('Extended Error', value));
+        ednsFieldsAfterErrors.forEach(({ key, label }) => addEdnsField(label, edns[key]));
 
         if (!hasData && emptyMsg) {
             $show(emptyMsg);

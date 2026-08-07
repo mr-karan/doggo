@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/fatih/color"
 	"github.com/miekg/dns"
@@ -11,6 +14,8 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 )
+
+const maxEDEExtraTextDisplayLength = 256
 
 var (
 	TerminalColorGreen   = color.New(color.FgGreen, color.Bold).SprintFunc()
@@ -159,37 +164,136 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 	}
 	table.Render()
 
-	// Display EDNS information if present (only once, from the first response)
-	hasEdns := false
-	for _, r := range rsp {
-		if r.Edns != nil && !hasEdns {
-			hasEdns = true
-			fmt.Println()
-			fmt.Println(TerminalColorYellow("EDNS Information:"))
-			if r.Edns.NSID != "" {
-				fmt.Printf("  NSID: %s\n", TerminalColorCyan(r.Edns.NSID))
-			}
-			if r.Edns.Cookie != "" {
-				fmt.Printf("  Cookie: %s\n", TerminalColorCyan(r.Edns.Cookie))
-			}
-			if r.Edns.Subnet != "" {
-				fmt.Printf("  Client Subnet: %s (Scope: %d)\n",
-					TerminalColorCyan(r.Edns.Subnet), r.Edns.SubnetScope)
-			}
-			if r.Edns.ExtendedErr != "" {
-				fmt.Printf("  Extended Error: %s\n", TerminalColorRed(r.Edns.ExtendedErr))
-			}
-			if r.Edns.UDPSize > 0 {
-				fmt.Printf("  UDP Size: %s\n", TerminalColorCyan(fmt.Sprintf("%d", r.Edns.UDPSize)))
-			}
-			if r.Edns.DNSSECOk {
-				fmt.Printf("  DNSSEC OK: %s\n", TerminalColorGreen("true"))
-			}
-			break // Only display EDNS info once
+	groups := groupEdnsByNameserver(rsp)
+	if len(groups) == 0 {
+		return
+	}
+
+	fmt.Println()
+	fmt.Println(TerminalColorYellow("EDNS Information:"))
+	for _, group := range groups {
+		fmt.Printf("  Nameserver: %s\n", TerminalColorCyan(group.nameserver))
+		metadata := group.metadata
+		if metadata.NSID != "" {
+			fmt.Printf("    NSID: %s\n", TerminalColorCyan(metadata.NSID))
+		}
+		if metadata.Cookie != "" {
+			fmt.Printf("    Cookie: %s\n", TerminalColorCyan(metadata.Cookie))
+		}
+		if metadata.Subnet != "" {
+			fmt.Printf("    Client Subnet: %s (Scope: %d)\n",
+				TerminalColorCyan(metadata.Subnet), metadata.SubnetScope)
+		}
+		if metadata.UDPSize > 0 {
+			fmt.Printf("    UDP Size: %s\n", TerminalColorCyan(fmt.Sprintf("%d", metadata.UDPSize)))
+		}
+		if metadata.DNSSECOk {
+			fmt.Printf("    DNSSEC OK: %s\n", TerminalColorGreen("true"))
+		}
+		for _, extendedErr := range group.extendedErrors {
+			fmt.Printf("    Extended Error: %s\n", TerminalColorRed(formatExtendedError(extendedErr)))
 		}
 	}
 }
 
+type ednsOutputGroup struct {
+	nameserver     string
+	metadata       *resolvers.EdnsInfo
+	extendedErrors []resolvers.ExtendedError
+}
+
+func groupEdnsByNameserver(responses []resolvers.Response) []ednsOutputGroup {
+	groups := make([]ednsOutputGroup, 0)
+	groupIndexes := make(map[string]int)
+
+	for _, response := range responses {
+		if response.Edns == nil {
+			continue
+		}
+		nameserver := response.Edns.Nameserver
+		if nameserver == "" {
+			nameserver = "unknown"
+		}
+
+		groupIndex, exists := groupIndexes[nameserver]
+		if !exists {
+			groupIndex = len(groups)
+			groupIndexes[nameserver] = groupIndex
+			// Response order is deterministic, so the first response supplies
+			// representative metadata without repeating it for every question.
+			groups = append(groups, ednsOutputGroup{
+				nameserver: nameserver,
+				metadata:   response.Edns,
+			})
+		}
+		groups[groupIndex].extendedErrors = append(
+			groups[groupIndex].extendedErrors,
+			response.Edns.ExtendedErrors...,
+		)
+	}
+
+	return groups
+}
+
+func formatExtendedError(extendedErr resolvers.ExtendedError) string {
+	result := fmt.Sprintf("%d", extendedErr.Code)
+	if extendedErr.Description != "" {
+		result += fmt.Sprintf(" (%s)", extendedErr.Description)
+	}
+	if extendedErr.ExtraText != "" {
+		result += fmt.Sprintf(": %s", sanitizeEDEExtraText(extendedErr.ExtraText))
+	}
+	return result
+}
+
+func sanitizeEDEExtraText(text string) string {
+	var (
+		result          strings.Builder
+		displayedLength int
+	)
+
+	for offset := 0; offset < len(text); {
+		r, size := utf8.DecodeRuneInString(text[offset:])
+		offset += size
+
+		var token string
+		switch r {
+		case '\n':
+			token = `\n`
+		case '\r':
+			token = `\r`
+		case '\t':
+			token = `\t`
+		default:
+			if r <= 0x1f || (r >= 0x7f && r <= 0x9f) {
+				token = fmt.Sprintf(`\x%02x`, r)
+			} else if unicode.Is(unicode.Cf, r) {
+				if r <= 0xffff {
+					token = fmt.Sprintf(`\u%04x`, r)
+				} else {
+					token = fmt.Sprintf(`\U%08x`, r)
+				}
+			} else {
+				token = string(r)
+			}
+		}
+
+		tokenLength := utf8.RuneCountInString(token)
+		limit := maxEDEExtraTextDisplayLength
+		if offset < len(text) {
+			limit-- // Reserve one display character for the ellipsis.
+		}
+		if displayedLength+tokenLength > limit {
+			result.WriteRune('…')
+			return result.String()
+		}
+
+		result.WriteString(token)
+		displayedLength += tokenLength
+	}
+
+	return result.String()
+}
 func getColoredType(t string) string {
 	switch t {
 	case "A":

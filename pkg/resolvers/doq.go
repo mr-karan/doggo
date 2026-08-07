@@ -172,7 +172,7 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 		rsp.Authorities = output.Authorities
 		rsp.Answers = output.Answers
 		rsp.Additional = output.Additional
-		rsp.Edns = output.Edns
+		rsp.Edns = mergeEdnsInfo(rsp.Edns, output.Edns)
 
 		if len(output.Answers) > 0 || msg.Rcode == dns.RcodeSuccess {
 			// stop iterating the searchlist.

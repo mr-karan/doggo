@@ -94,13 +94,23 @@ type Authority struct {
 }
 
 type EdnsInfo struct {
-	NSID         string `json:"nsid,omitempty"`
-	Cookie       string `json:"cookie,omitempty"`
-	Subnet       string `json:"subnet,omitempty"`
-	SubnetScope  uint8  `json:"subnet_scope,omitempty"`
-	ExtendedErr  string `json:"extended_error,omitempty"`
-	UDPSize      uint16 `json:"udp_size,omitempty"`
-	DNSSECOk     bool   `json:"dnssec_ok,omitempty"`
+	Nameserver  string `json:"nameserver,omitempty"`
+	NSID        string `json:"nsid,omitempty"`
+	Cookie      string `json:"cookie,omitempty"`
+	Subnet      string `json:"subnet,omitempty"`
+	SubnetScope uint8  `json:"subnet_scope,omitempty"`
+	// ExtendedErr is retained for JSON compatibility and contains the first
+	// EDE option. ExtendedErrors is the authoritative ordered representation.
+	ExtendedErr    string          `json:"extended_error,omitempty"`
+	ExtendedErrors []ExtendedError `json:"extended_errors,omitempty"`
+	UDPSize        uint16          `json:"udp_size,omitempty"`
+	DNSSECOk       bool            `json:"dnssec_ok,omitempty"`
+}
+
+type ExtendedError struct {
+	Code        uint16 `json:"code"`
+	Description string `json:"description,omitempty"`
+	ExtraText   string `json:"extra_text,omitempty"`
 }
 
 // LoadResolvers loads differently configured

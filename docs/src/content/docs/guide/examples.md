@@ -226,11 +226,13 @@ These examples showcase how to combine different features for powerful DNS query
     doggo example.com --debug
     ```
 
-28. Request Extended DNS Errors (EDE) for detailed failure information:
+28. Enable EDNS to receive Extended DNS Errors (EDE) with detailed failure information:
 
     ```bash
     doggo nonexistent.example --ede @1.1.1.1
     ```
+
+    `--ede` adds an OPT record without sending an EDE payload. Doggo also displays EDEs returned to queries where another option, such as `--do` or `--bufsize`, enabled EDNS.
 
 29. Test DNSSEC validation:
 

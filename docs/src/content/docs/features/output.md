@@ -44,6 +44,10 @@ For scripting and programmatic use, Doggo supports JSON output using the `--json
 doggo internetfreedom.in --json | jq
 ```
 
+When a response contains EDNS data, `edns.nameserver` identifies the resolver that returned that metadata. For Extended DNS Errors, `edns.extended_errors` is the authoritative array and preserves every EDE in response order with its `code`, standardized `description`, and raw `extra_text`. The legacy string field `edns.extended_error` remains for compatibility and contains only the first EDE.
+
+Compatibility note: before this EDE correctness fix, a multi-EDE response repeatedly overwrote `edns.extended_error`, making the scalar last-wins. It is now intentionally first-wins; consumers that need complete or stable multi-EDE diagnostics should use `edns.extended_errors`.
+
 ```json
 {
   "responses": {
