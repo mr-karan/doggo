@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"sync"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/mr-karan/doggo/pkg/models"
+	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 )
 
@@ -50,11 +52,40 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 	)
 	if resolverOpts.UseHTTP3 {
 		h3Transport := &http3.Transport{TLSClientConfig: tlsConfig}
+		if resolverOpts.SourceAddr != "" {
+			laddr, err := sourceUDPAddr(resolverOpts.SourceAddr)
+			if err != nil {
+				return nil, err
+			}
+			h3Transport.Dial = func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
+				remote, err := net.ResolveUDPAddr("udp", addr)
+				if err != nil {
+					return nil, err
+				}
+				conn, err := net.ListenUDP("udp", laddr)
+				if err != nil {
+					return nil, err
+				}
+				session, err := quic.DialEarly(ctx, conn, remote, tlsCfg, cfg)
+				if err != nil {
+					conn.Close()
+					return nil, err
+				}
+				return session, nil
+			}
+		}
 		transport = h3Transport
 		closeTransport = h3Transport.Close
 	} else {
 		httpsTransport := http.DefaultTransport.(*http.Transport).Clone()
 		httpsTransport.TLSClientConfig = tlsConfig
+		if resolverOpts.SourceAddr != "" {
+			dialer, err := sourceDialer("tcp", resolverOpts.SourceAddr)
+			if err != nil {
+				return nil, err
+			}
+			httpsTransport.DialContext = dialer.DialContext
+		}
 		transport = httpsTransport
 		closeTransport = func() error {
 			httpsTransport.CloseIdleConnections()

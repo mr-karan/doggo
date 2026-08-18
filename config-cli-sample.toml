@@ -81,6 +81,11 @@
 # interception — only use it against a server you control.
 # skip-hostname-verification = false
 
+# Bind outgoing queries to a local source address (an IP, optionally with a
+# port), like dig -b. Useful for choosing the egress interface on a multi-homed
+# host. Not supported for DNSCrypt resolvers.
+# source = "192.0.2.1"
+
 # --- Output ------------------------------------------------------------------
 
 # Emit machine-readable JSON instead of the table.

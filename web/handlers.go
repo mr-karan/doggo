@@ -93,6 +93,7 @@ func handleLookup(w http.ResponseWriter, r *http.Request) {
 		Logger:             app.Logger,
 		InsecureSkipVerify: app.QueryFlags.InsecureSkipVerify,
 		TLSHostname:        app.QueryFlags.TLSHostname,
+		SourceAddr:         app.QueryFlags.SourceAddr,
 	})
 	if err != nil {
 		app.Logger.Error("error loading resolver", "error", err)

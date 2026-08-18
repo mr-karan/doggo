@@ -929,3 +929,45 @@ func TestUnknownConfigKeyFails(t *testing.T) {
 		t.Fatalf("error output should mention unknown config key\nstdout:\n%s", stdout)
 	}
 }
+
+func TestSourceAddressBindsAndResolves(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "source.test", "192.0.2.30")
+	defer stop()
+
+	// Binding the query to the loopback source address must still reach a
+	// loopback test server and return the answer.
+	stdout, _, exit := runDoggo(t,
+		"--timeout=2s",
+		"--source=127.0.0.1",
+		"@"+serverAddr,
+		"A",
+		"source.test",
+	)
+
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0", exit)
+	}
+	if !strings.Contains(stdout, "192.0.2.30") {
+		t.Fatalf("stdout missing answer\nstdout:\n%s", stdout)
+	}
+}
+
+func TestInvalidSourceAddressFailsClearly(t *testing.T) {
+	serverAddr, stop := startDNSServer(t, "source.test", "192.0.2.30")
+	defer stop()
+
+	_, stderr, exit := runDoggo(t,
+		"--timeout=2s",
+		"--source=not-an-ip",
+		"@"+serverAddr,
+		"A",
+		"source.test",
+	)
+
+	if exit == 0 {
+		t.Fatal("expected a non-zero exit for an invalid --source address")
+	}
+	if !strings.Contains(stderr, "invalid source address") {
+		t.Fatalf("stderr should explain the invalid source address\nstderr:\n%s", stderr)
+	}
+}

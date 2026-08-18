@@ -129,6 +129,7 @@ Precedence (lowest to highest): flag defaults < config file < environment variab
 - Internationalized Domain Names (IDN) with automatic punycode conversion
 - Support for `ndots` and `search` configurations
 - Multiple resolver support with customizable query strategies
+- Bind queries to a local source address with `-b`/`--source`, like `dig -b`
 - IPv4 and IPv6 support
 - Web interface available
 - Shell completions for `zsh` and `fish`

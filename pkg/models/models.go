@@ -45,6 +45,7 @@ type QueryFlags struct {
 	Strategy           string        `koanf:"strategy" strategy:"-"`
 	InsecureSkipVerify bool          `koanf:"skip-hostname-verification" json:"skip_hostname_verification"`
 	TLSHostname        string        `koanf:"tls-hostname" json:"tls_hostname"`
+	SourceAddr         string        `koanf:"source" json:"source"`
 	QueryAny           bool          `koanf:"any" json:"any"`
 	UseAuthoritative   bool          `koanf:"authoritative" json:"authoritative"`
 

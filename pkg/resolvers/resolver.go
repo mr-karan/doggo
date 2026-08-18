@@ -26,6 +26,9 @@ type Options struct {
 	Strategy           string
 	InsecureSkipVerify bool
 	TLSHostname        string
+	// SourceAddr binds outgoing queries to a local source address (an IP,
+	// optionally with a port). Empty means the OS picks the source address.
+	SourceAddr string
 }
 
 // Resolver implements the configuration for a DNS

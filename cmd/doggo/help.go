@@ -163,6 +163,7 @@ func renderCustomHelp() {
 			{"--http3", "Use HTTP/3 for HTTPS (DoH) nameservers. Requires at least one DoH nameserver."},
 			{"--tls-hostname=HOSTNAME", "Provide a hostname for TLS certificate verification."},
 			{"--skip-hostname-verification", "Skip TLS hostname verification for encrypted resolvers."},
+			{"-b, --source=ADDR", "Bind queries to a local source address (IP or IP:port), like dig -b. Not supported for DNSCrypt."},
 		},
 		"QueryFlags": []Option{
 			{"--aa", "Set Authoritative Answer flag."},

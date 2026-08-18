@@ -52,6 +52,14 @@ func NewClassicResolver(server string, classicOpts ClassicResolverOpts, resolver
 
 	client.Net = net
 
+	if resolverOpts.SourceAddr != "" {
+		dialer, err := sourceDialer(net, resolverOpts.SourceAddr)
+		if err != nil {
+			return nil, err
+		}
+		client.Dialer = dialer
+	}
+
 	return &ClassicResolver{
 		client:          client,
 		server:          server,
@@ -97,6 +105,16 @@ func (r *ClassicResolver) query(ctx context.Context, question dns.Question, flag
 				r.client.Net = "tcp6"
 			default:
 				r.client.Net = "tcp"
+			}
+			// The source-address dialer is typed to the original (UDP)
+			// network, so rebuild it for the TCP retry or the local address
+			// type would no longer match the dialed network.
+			if r.client.Dialer != nil {
+				dialer, err := sourceDialer(r.client.Net, r.resolverOptions.SourceAddr)
+				if err != nil {
+					return rsp, err
+				}
+				r.client.Dialer = dialer
 			}
 			r.resolverOptions.Logger.Debug("Response truncated; retrying now", "protocol", r.client.Net)
 			return r.query(ctx, question, flags)

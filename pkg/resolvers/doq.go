@@ -76,9 +76,31 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 		messages = prepareMessages(question, flags, r.resolverOptions.Ndots, r.resolverOptions.SearchList)
 	)
 
-	session, err := quic.DialAddr(ctx, r.server, r.tls, nil)
-	if err != nil {
-		return rsp, err
+	var session *quic.Conn
+	if r.resolverOptions.SourceAddr != "" {
+		laddr, err := sourceUDPAddr(r.resolverOptions.SourceAddr)
+		if err != nil {
+			return rsp, err
+		}
+		remote, err := net.ResolveUDPAddr("udp", r.server)
+		if err != nil {
+			return rsp, err
+		}
+		conn, err := net.ListenUDP("udp", laddr)
+		if err != nil {
+			return rsp, err
+		}
+		defer conn.Close()
+		session, err = quic.Dial(ctx, conn, remote, r.tls, nil)
+		if err != nil {
+			return rsp, err
+		}
+	} else {
+		var err error
+		session, err = quic.DialAddr(ctx, r.server, r.tls, nil)
+		if err != nil {
+			return rsp, err
+		}
 	}
 	defer session.CloseWithError(quic.ApplicationErrorCode(quic.NoError), "")
 

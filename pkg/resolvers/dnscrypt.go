@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ameshkov/dnscrypt/v2"
@@ -24,6 +25,9 @@ type DNSCryptResolverOpts struct {
 
 // NewDNSCryptResolver accepts a list of nameservers and configures a DNS resolver.
 func NewDNSCryptResolver(server string, dnscryptOpts DNSCryptResolverOpts, resolverOpts Options) (Resolver, error) {
+	if resolverOpts.SourceAddr != "" {
+		return nil, fmt.Errorf("binding to a source address (--source) is not supported for DNSCrypt resolvers")
+	}
 	net := "udp"
 	if dnscryptOpts.UseTCP {
 		net = "tcp"

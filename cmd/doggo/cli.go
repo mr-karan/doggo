@@ -224,6 +224,7 @@ func setupFlags() *flag.FlagSet {
 	f.String("strategy", "all", "Strategy to query nameservers (all, random, first, internal)")
 	f.String("tls-hostname", "", "Hostname for certificate verification")
 	f.Bool("skip-hostname-verification", false, "Skip TLS Hostname Verification")
+	f.StringP("source", "b", "", "Bind queries to a local source address (IP or IP:port), like dig -b")
 
 	f.Bool("any", false, "Query all supported DNS record types")
 	f.BoolP("authoritative", "A", false, "Automatically query the authoritative nameserver for the domain")
@@ -345,6 +346,7 @@ func loadResolvers(app *app.App, cfg *config) ([]resolvers.Resolver, error) {
 		Strategy:           app.QueryFlags.Strategy,
 		InsecureSkipVerify: app.QueryFlags.InsecureSkipVerify,
 		TLSHostname:        app.QueryFlags.TLSHostname,
+		SourceAddr:         app.QueryFlags.SourceAddr,
 	})
 }
 
