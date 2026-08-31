@@ -42,11 +42,6 @@ _doggo() {
             COMPREPLY=()
             return 0
             ;;
-        --search|--color|--http3)
-            # Boolean flags (pflag): no separate value follows; use --flag=false.
-            COMPREPLY=()
-            return 0
-            ;;
     esac
 
     if [[ ${cur} == -* ]]; then
@@ -137,23 +132,23 @@ complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'help'    
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'config'  -d "Load defaults from a TOML config file" -r
 
 # Query options
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'q' -l 'query'      -d "Hostname to query the DNS records for" -x -a "(__fish_print_hostnames)"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 't' -l 'type'       -d "DNS record type by name, number, or TYPE<number>" -x -a "A AAAA CAA CNAME HINFO HTTPS MX NS PTR SOA SRV SVCB TXT"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'n' -l 'nameserver' -d "Address of a specific nameserver to send queries to" -x -a "(__fish_print_hostnames)"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'c' -l 'class'      -d "Network class of the DNS record being queried" -x -a "IN CH HS"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'x' -l 'reverse'    -d "Performs a DNS Lookup for an IPv4 or IPv6 address"
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s 'q' -l 'query'      -d "Hostname to query the DNS records for" -x -a "(__fish_print_hostnames)"
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s 't' -l 'type'       -d "DNS record type by name, number, or TYPE<number>" -x -a "A AAAA CAA CNAME HINFO HTTPS MX NS PTR SOA SRV SVCB TXT"
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s 'n' -l 'nameserver' -d "Address of a specific nameserver to send queries to" -x -a "(__fish_print_hostnames)"
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s 'c' -l 'class'      -d "Network class of the DNS record being queried" -x -a "IN CH HS"
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s 'x' -l 'reverse'    -d "Performs a DNS Lookup for an IPv4 or IPv6 address"
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'any'               -d "Query all supported DNS record types"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'A' -l 'authoritative' -d "Automatically query the authoritative nameserver for the domain"
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s 'A' -l 'authoritative' -d "Automatically query the authoritative nameserver for the domain"
 
 # Resolver options
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'strategy'  -d "Strategy to query nameservers" -x -a "all random first internal"
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'ndots'     -d "Specify ndots parameter" -x
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'search'    -d "Use the search list defined in resolv.conf"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'T' -l 'timeout'   -d "Timeout for the resolver to return a response (e.g., 5s, 400ms, 1m)" -x
-complete -c doggo -n '__fish_doggo_no_subcommand' -s '4' -l 'ipv4' -d "Use IPv4 only"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s '6' -l 'ipv6' -d "Use IPv6 only"
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s 'T' -l 'timeout'   -d "Timeout for the resolver to return a response (e.g., 5s, 400ms, 1m)" -x
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s '4' -l 'ipv4' -d "Use IPv4 only"
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s '6' -l 'ipv6' -d "Use IPv6 only"
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'http3' -d "Use HTTP/3 for DNS-over-HTTPS nameservers"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'b' -l 'source' -d "Bind queries to a local source IP address" -x
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s 'b' -l 'source' -d "Bind queries to a local source IP address" -x
 
 # Query flags
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'aa' -d "Set Authoritative Answer flag"
@@ -172,7 +167,7 @@ complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'ecs'     
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'bufsize' -d "EDNS UDP buffer size in bytes" -x
 
 # Output options
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'J' -l 'json'  -d "Format the output as JSON"
+complete -c doggo -n 'not __fish_seen_subcommand_from completions' -s 'J' -l 'json'  -d "Format the output as JSON"
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'short'        -d "Shows only the response section in the output"
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'color'        -d "Colored output"
 complete -c doggo -n 'not __fish_seen_subcommand_from completions' -l 'debug'        -d "Enable debug logging"
