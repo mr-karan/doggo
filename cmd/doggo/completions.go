@@ -40,6 +40,12 @@ _doggo() {
             COMPREPLY=( $(compgen -W "true false" -- ${cur}) )
             return 0
             ;;
+        -T|--timeout|--ndots|--ecs|--bufsize|-b|--source|--gp-from|--gp-limit)
+            # Value-taking flags with no sensible static completion; suppress
+            # the fallback hostname completion below.
+            COMPREPLY=()
+            return 0
+            ;;
     esac
 
     if [[ ${cur} == -* ]]; then
@@ -73,7 +79,7 @@ _doggo() {
     '--strategy[Strategy to query nameservers]:strategy:(all random first internal)' \
     '--ndots[Number of required dots in hostname to assume FQDN]:number of dots' \
     '--search[Use the search list defined in resolv.conf]:setting:(true false)' \
-    '(-T --timeout)'{-T,--timeout}'[Timeout (in seconds) for the resolver to return a response]:seconds' \
+    '(-T --timeout)'{-T,--timeout}'[Timeout for the resolver to return a response (e.g., 5s, 400ms, 1m)]:duration' \
     '(-4 --ipv4)'{-4,--ipv4}'[Use IPv4 only]' \
     '(-6 --ipv6)'{-6,--ipv6}'[Use IPv6 only]' \
     '--http3[Use HTTP/3 for DNS-over-HTTPS nameservers]' \
@@ -142,7 +148,7 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -s 'A' -l 'authoritative' -d "
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'strategy'  -d "Strategy to query nameservers" -x -a "all random first internal"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ndots'     -d "Specify ndots parameter"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'search'    -d "Use the search list defined in resolv.conf" -x -a "true false"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'T' -l 'timeout'   -d "Specify timeout (in seconds) for the resolver to return a response"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'T' -l 'timeout'   -d "Timeout for the resolver to return a response (e.g., 5s, 400ms, 1m)" -x
 complete -c doggo -n '__fish_doggo_no_subcommand' -s '4' -l 'ipv4' -d "Use IPv4 only"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s '6' -l 'ipv6' -d "Use IPv6 only"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'http3' -d "Use HTTP/3 for DNS-over-HTTPS nameservers"
