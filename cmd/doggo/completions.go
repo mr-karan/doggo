@@ -13,7 +13,7 @@ _doggo() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="-v --version -h --help -q --query -t --type -n --nameserver -c --class -r --reverse --any --strategy --ndots --search --timeout -4 --ipv4 -6 --ipv6 --http3 --tls-hostname --skip-hostname-verification --aa --ad --cd --rd --z --do --nsid --cookie --padding --ede --ecs --bufsize -J --json --short --color --debug --time --gp-from --gp-limit --config"
+    opts="--version -h --help -q --query -t --type -n --nameserver -c --class -x --reverse --any -A --authoritative --strategy --ndots --search -T --timeout -4 --ipv4 -6 --ipv6 --http3 --tls-hostname --skip-hostname-verification -b --source --aa --ad --cd --rd --z --do --nsid --cookie --padding --ede --ecs --bufsize -J --json --short --color --debug --time --gp-from --gp-limit --config"
 
     case "${prev}" in
         --config)
@@ -61,23 +61,25 @@ _doggo() {
   )
 
   _arguments -C \
-    '(-v --version)'{-v,--version}'[Show version of doggo]' \
+    '--version[Show version of doggo]' \
     '(-h --help)'{-h,--help}'[Show list of command-line options]' \
     '(-q --query)'{-q,--query}'[Hostname to query the DNS records for]:hostname:_hosts' \
     '(-t --type)'{-t,--type}'[DNS record type by name, number, or TYPE<number>]:record type:(A AAAA CAA CNAME HINFO HTTPS MX NS PTR SOA SRV SVCB TXT)' \
     '(-n --nameserver)'{-n,--nameserver}'[Address of a specific nameserver to send queries to]:nameserver:_hosts' \
     '(-c --class)'{-c,--class}'[Network class of the DNS record being queried]:network class:(IN CH HS)' \
-    '(-r --reverse)'{-r,--reverse}'[Performs a DNS Lookup for an IPv4 or IPv6 address]' \
+    '(-x --reverse)'{-x,--reverse}'[Performs a DNS Lookup for an IPv4 or IPv6 address]' \
     '--any[Query all supported DNS record types]' \
+    '(-A --authoritative)'{-A,--authoritative}'[Automatically query the authoritative nameserver for the domain]' \
     '--strategy[Strategy to query nameservers]:strategy:(all random first internal)' \
     '--ndots[Number of required dots in hostname to assume FQDN]:number of dots' \
     '--search[Use the search list defined in resolv.conf]:setting:(true false)' \
-    '--timeout[Timeout (in seconds) for the resolver to return a response]:seconds' \
+    '(-T --timeout)'{-T,--timeout}'[Timeout (in seconds) for the resolver to return a response]:seconds' \
     '(-4 --ipv4)'{-4,--ipv4}'[Use IPv4 only]' \
     '(-6 --ipv6)'{-6,--ipv6}'[Use IPv6 only]' \
     '--http3[Use HTTP/3 for DNS-over-HTTPS nameservers]' \
     '--tls-hostname[Hostname used for verification of certificate incase the provided DoT nameserver is an IP]:hostname:_hosts' \
     '--skip-hostname-verification[Skip TLS hostname verification in case of DoT lookups]' \
+    '(-b --source)'{-b,--source}'[Bind queries to a local source IP address]:IP address' \
     '--aa[Set Authoritative Answer flag]' \
     '--ad[Set Authenticated Data flag]' \
     '--cd[Set Checking Disabled flag]' \
@@ -132,17 +134,19 @@ complete -c doggo -n '__fish_doggo_no_subcommand' -s 'q' -l 'query'      -d "Hos
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 't' -l 'type'       -d "DNS record type by name, number, or TYPE<number>" -x -a "A AAAA CAA CNAME HINFO HTTPS MX NS PTR SOA SRV SVCB TXT"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'n' -l 'nameserver' -d "Address of a specific nameserver to send queries to" -x -a "(__fish_print_hostnames)"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s 'c' -l 'class'      -d "Network class of the DNS record being queried" -x -a "IN CH HS"
-complete -c doggo -n '__fish_doggo_no_subcommand' -s 'r' -l 'reverse'    -d "Performs a DNS Lookup for an IPv4 or IPv6 address"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'x' -l 'reverse'    -d "Performs a DNS Lookup for an IPv4 or IPv6 address"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'any'               -d "Query all supported DNS record types"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'A' -l 'authoritative' -d "Automatically query the authoritative nameserver for the domain"
 
 # Resolver options
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'strategy'  -d "Strategy to query nameservers" -x -a "all random first internal"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'ndots'     -d "Specify ndots parameter"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'search'    -d "Use the search list defined in resolv.conf" -x -a "true false"
-complete -c doggo -n '__fish_doggo_no_subcommand' -l 'timeout'   -d "Specify timeout (in seconds) for the resolver to return a response"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'T' -l 'timeout'   -d "Specify timeout (in seconds) for the resolver to return a response"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s '4' -l 'ipv4' -d "Use IPv4 only"
 complete -c doggo -n '__fish_doggo_no_subcommand' -s '6' -l 'ipv6' -d "Use IPv6 only"
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'http3' -d "Use HTTP/3 for DNS-over-HTTPS nameservers"
+complete -c doggo -n '__fish_doggo_no_subcommand' -s 'b' -l 'source' -d "Bind queries to a local source IP address" -x
 
 # Query flags
 complete -c doggo -n '__fish_doggo_no_subcommand' -l 'aa' -d "Set Authoritative Answer flag"
