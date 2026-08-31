@@ -1,3 +1,4 @@
+//go:build !windows && !darwin
 // +build !windows,!darwin
 
 package config
@@ -34,4 +35,9 @@ func GetDefaultServers() ([]string, int, []string, error) {
 // configured nameserver is already visible to every strategy.
 func GetAllServers() ([]string, int, []string, error) {
 	return GetDefaultServers()
+}
+
+// MatchDomainNameservers is a no-op on non-macOS platforms.
+func MatchDomainNameservers(queryNames []string) (nameservers []DomainNameserver, matchedDomains []string, ok bool) {
+	return nil, nil, false
 }

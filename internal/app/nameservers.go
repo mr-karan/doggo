@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/mr-karan/doggo/pkg/config"
 	"github.com/mr-karan/doggo/pkg/models"
 	"github.com/mr-karan/doggo/pkg/resolvers"
+	"golang.org/x/net/idna"
 )
 
 // ErrSystemNameservers identifies failures to load the host's resolver
@@ -24,6 +26,13 @@ var ErrSystemNameservers = errors.New("unable to load system nameservers")
 
 func (app *App) LoadNameservers() error {
 	app.Logger.Debug("LoadNameservers: Initial nameservers", "nameservers", app.QueryFlags.Nameservers)
+
+	// ResolverOpts is not wired to the CLI anywhere else; seed ndots from
+	// QueryFlags (--ndots, -1 when unset) on every path so the flag reaches
+	// the resolvers instead of silently defaulting to 0.
+	if app.ResolverOpts.Ndots == 0 {
+		app.ResolverOpts.Ndots = app.QueryFlags.Ndots
+	}
 
 	app.Nameservers = []models.Nameserver{} // Clear existing nameservers
 
@@ -351,6 +360,25 @@ func filterNameserversByIPVersion(servers []string, useIPv4, useIPv6 bool) []str
 	return filtered
 }
 
+// filterDomainNameserversByIPVersion filters macOS domain-specific
+// nameservers based on IPv4/IPv6 flags.
+func filterDomainNameserversByIPVersion(servers []config.DomainNameserver, useIPv4, useIPv6 bool) []config.DomainNameserver {
+	if !useIPv4 && !useIPv6 {
+		return servers
+	}
+
+	filtered := make([]config.DomainNameserver, 0, len(servers))
+	for _, srv := range servers {
+		if useIPv4 && isIPv4(srv.IP) {
+			filtered = append(filtered, srv)
+		} else if useIPv6 && isIPv6(srv.IP) {
+			filtered = append(filtered, srv)
+		}
+	}
+
+	return filtered
+}
+
 // applyNameserverStrategy narrows the supplied nameserver list according to
 // app.QueryFlags.Strategy and emits debug logs describing what it did. The
 // source argument labels the origin of the list (e.g. "explicit" for CLI
@@ -436,6 +464,58 @@ func nameserverHost(ns models.Nameserver) string {
 }
 
 func (app *App) getDefaultServers() ([]models.Nameserver, int, []string, error) {
+	// On macOS, Supplemental/domain-specific scutil resolvers apply only to
+	// matching query names. Prefer those nameservers when a query falls under
+	// such a domain so the NAMESERVER column reports the resolver that was
+	// actually used (issue #49). Interface-scoped "scoped queries" entries are
+	// never selected here.
+	//
+	// Search-domain and ndots expansion happens inside each resolver (see
+	// resolvers.constructPossibleQuestions), so match against the *primary*
+	// name each resolver will try first, not the raw argument. This keeps
+	// `doggo host` with search domain `foo.tld` on the supplemental resolver
+	// for foo.tld while `doggo host.example.com` (enough dots, tried bare
+	// first) is not hijacked by a search-list domain.
+	sysNdots, sysSearch := app.systemSearchDefaults()
+	ndots, search := app.effectiveSearchSettings(sysNdots, sysSearch)
+	if primaries := primaryQueryNames(app.QueryFlags.QNames, ndots, search); len(primaries) > 0 {
+		if matchedNS, domains, ok := config.MatchDomainNameservers(primaries); ok {
+			app.Logger.Debug("Using macOS domain-specific resolver from scutil",
+				"matched_domains", domains,
+				"nameservers", matchedNS,
+				"queries", primaries,
+			)
+
+			dnsServers := filterDomainNameserversByIPVersion(matchedNS, app.QueryFlags.UseIPv4, app.QueryFlags.UseIPv6)
+			if len(dnsServers) == 0 {
+				ipVersion := "IPv4"
+				if app.QueryFlags.UseIPv6 {
+					ipVersion = "IPv6"
+				}
+				return nil, ndots, search, fmt.Errorf("no %s nameservers found in domain-specific macOS resolver for %v", ipVersion, domains)
+			}
+
+			servers := make([]models.Nameserver, 0, len(dnsServers))
+			for _, s := range dnsServers {
+				port := models.DefaultUDPPort
+				if s.Port > 0 {
+					port = strconv.Itoa(s.Port)
+				}
+				servers = append(servers, models.Nameserver{
+					Type:    models.UDPResolver,
+					Address: net.JoinHostPort(s.IP, port),
+				})
+			}
+
+			var err error
+			servers, err = app.applyNameserverStrategy(servers, "macos-domain")
+			if err != nil {
+				return nil, ndots, search, fmt.Errorf("%w for domain-specific macOS resolver %v", err, domains)
+			}
+			return servers, ndots, search, nil
+		}
+	}
+
 	// Load nameservers from the system resolver configuration. The "internal"
 	// strategy needs to see Supplemental/domain-scoped resolvers (e.g. a VPN or
 	// Tailscale split-DNS resolver), which GetDefaultServers hides, so it sources
@@ -492,6 +572,68 @@ func (app *App) getDefaultServers() ([]models.Nameserver, int, []string, error) 
 	}
 
 	return servers, ndots, search, nil
+}
+
+// systemSearchDefaults returns ndots/search from the general system resolver
+// configuration (used when a macOS domain-specific resolver supplies the
+// nameservers but search/ndots still come from the host defaults).
+func (app *App) systemSearchDefaults() (int, []string) {
+	_, ndots, search, err := config.GetDefaultServers()
+	if err != nil {
+		return 1, nil
+	}
+	return ndots, search
+}
+
+// effectiveSearchSettings resolves the ndots/search values that resolvers
+// will actually use. LoadNameservers seeds ResolverOpts.Ndots from --ndots
+// before the system path runs, so at match time it already holds the final
+// configured value (-1 when unset, to be filled from the system); the system
+// search list applies only when the user did not disable it. Split-DNS
+// matching must use the same values or it would select a resolver for a name
+// that is never queried.
+func (app *App) effectiveSearchSettings(sysNdots int, sysSearch []string) (int, []string) {
+	ndots := app.ResolverOpts.Ndots
+	if ndots == -1 {
+		ndots = sysNdots
+	}
+	var search []string
+	if app.QueryFlags.UseSearchList {
+		search = sysSearch
+	}
+	return ndots, search
+}
+
+// primaryQueryNames returns, for each query name, the first name a resolver
+// will actually try, mirroring the ordering of
+// resolvers.constructPossibleQuestions: an FQDN is queried as-is; otherwise a
+// name with more labels than ndots is tried bare first, and a name with fewer
+// labels is tried with the first search-domain suffix first. Names are
+// converted to IDNA ASCII because the DNS questions built from them (see
+// prepareQuestions) and scutil domain entries are punycode. Matching macOS
+// domain-specific resolvers on these primaries keeps split-DNS selection in
+// sync with what is actually queried.
+func primaryQueryNames(qnames []string, ndots int, search []string) []string {
+	primaries := make([]string, 0, len(qnames))
+	for _, qname := range qnames {
+		if ascii, err := idna.ToASCII(qname); err == nil {
+			qname = ascii
+		}
+		if dns.IsFqdn(qname) {
+			primaries = append(primaries, qname)
+			continue
+		}
+		if dns.CountLabel(qname) > ndots {
+			primaries = append(primaries, qname)
+			continue
+		}
+		if len(search) > 0 {
+			primaries = append(primaries, strings.TrimSuffix(qname, ".")+"."+strings.TrimSuffix(search[0], "."))
+			continue
+		}
+		primaries = append(primaries, qname)
+	}
+	return primaries
 }
 
 // loadAuthoritativeNameserver finds the closest enclosing zone for the domain

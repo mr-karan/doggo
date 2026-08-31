@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -216,5 +217,150 @@ func TestInitNameserverClassifiesPort853AsDoT(t *testing.T) {
 				t.Fatalf("initNameserver(%q) type = %v, want %v", tc.input, ns.Type, tc.wantType)
 			}
 		})
+	}
+}
+
+func TestPrimaryQueryNames(t *testing.T) {
+	tests := []struct {
+		name   string
+		qnames []string
+		ndots  int
+		search []string
+		want   []string
+	}{
+		{
+			name:   "fqdn is queried as-is",
+			qnames: []string{"host.foo.tld."},
+			ndots:  1,
+			search: []string{"bar.tld"},
+			want:   []string{"host.foo.tld."},
+		},
+		{
+			name:   "enough dots tries bare name first",
+			qnames: []string{"host.example.com"},
+			ndots:  1,
+			search: []string{"foo.tld"},
+			want:   []string{"host.example.com"},
+		},
+		{
+			name:   "too few dots tries first search suffix first",
+			qnames: []string{"host"},
+			ndots:  1,
+			search: []string{"foo.tld", "hq"},
+			want:   []string{"host.foo.tld"},
+		},
+		{
+			name:   "no search list falls back to bare name",
+			qnames: []string{"host"},
+			ndots:  1,
+			search: nil,
+			want:   []string{"host"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := primaryQueryNames(tc.qnames, tc.ndots, tc.search)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("primaryQueryNames(%v, %d, %v) = %v, want %v", tc.qnames, tc.ndots, tc.search, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestEffectiveSearchSettingsMirrorsResolverOptions(t *testing.T) {
+	app := newTestApp()
+
+	// Defaults (ResolverOpts.Ndots = -1 as seeded by LoadNameservers):
+	// system values apply.
+	app.ResolverOpts.Ndots = -1
+	app.QueryFlags.UseSearchList = true
+	ndots, search := app.effectiveSearchSettings(2, []string{"foo.tld"})
+	if ndots != 2 || !reflect.DeepEqual(search, []string{"foo.tld"}) {
+		t.Fatalf("got ndots=%d search=%v, want 2 [foo.tld]", ndots, search)
+	}
+
+	// Configured ndots wins; --search=false suppresses the system search list.
+	app.ResolverOpts.Ndots = 5
+	app.QueryFlags.UseSearchList = false
+	ndots, search = app.effectiveSearchSettings(2, []string{"foo.tld"})
+	if ndots != 5 {
+		t.Fatalf("ndots = %d, want 5", ndots)
+	}
+	if len(search) != 0 {
+		t.Fatalf("search = %v, want none", search)
+	}
+}
+
+func TestLoadSystemNameserversMergesNdotsAndSearch(t *testing.T) {
+	// LoadNameservers seeds ResolverOpts.Ndots = -1 when --ndots is unset;
+	// the system loader must then fill the system value (2) and apply the
+	// system search list.
+	app := newTestApp()
+	app.ResolverOpts.Ndots = -1
+	app.QueryFlags.UseSearchList = true
+	err := app.loadSystemNameserversWith(func() ([]models.Nameserver, int, []string, error) {
+		return nil, 2, []string{"foo.tld"}, nil
+	})
+	if err != nil {
+		t.Fatalf("loadSystemNameserversWith: %v", err)
+	}
+	if app.ResolverOpts.Ndots != 2 {
+		t.Fatalf("ResolverOpts.Ndots = %d, want system 2", app.ResolverOpts.Ndots)
+	}
+	if !reflect.DeepEqual(app.ResolverOpts.SearchList, []string{"foo.tld"}) {
+		t.Fatalf("ResolverOpts.SearchList = %v, want [foo.tld]", app.ResolverOpts.SearchList)
+	}
+
+	// An already-configured ndots (5) must win over the system value, and
+	// --search=false must suppress the system search list.
+	app = newTestApp()
+	app.ResolverOpts.Ndots = 5
+	app.QueryFlags.UseSearchList = false
+	err = app.loadSystemNameserversWith(func() ([]models.Nameserver, int, []string, error) {
+		return nil, 2, []string{"foo.tld"}, nil
+	})
+	if err != nil {
+		t.Fatalf("loadSystemNameserversWith: %v", err)
+	}
+	if app.ResolverOpts.Ndots != 5 {
+		t.Fatalf("ResolverOpts.Ndots = %d, want 5", app.ResolverOpts.Ndots)
+	}
+	if len(app.ResolverOpts.SearchList) != 0 {
+		t.Fatalf("ResolverOpts.SearchList = %v, want none with --search=false", app.ResolverOpts.SearchList)
+	}
+}
+
+func TestLoadNameserversSeedsNdotsOnExplicitNameserverPath(t *testing.T) {
+	// --ndots must reach the resolvers even when explicit @server
+	// nameservers are given (the system loader is skipped on that path).
+	app := newTestApp()
+	app.QueryFlags.Ndots = 5
+	app.QueryFlags.Nameservers = []string{"1.1.1.1"}
+	if err := app.LoadNameservers(); err != nil {
+		t.Fatalf("LoadNameservers: %v", err)
+	}
+	if app.ResolverOpts.Ndots != 5 {
+		t.Fatalf("ResolverOpts.Ndots = %d, want 5 on explicit path", app.ResolverOpts.Ndots)
+	}
+
+	// Unset --ndots on the explicit path stays -1 (no system default to
+	// apply; resolvers treat it as their own default).
+	app = newTestApp()
+	app.QueryFlags.Ndots = -1
+	app.QueryFlags.Nameservers = []string{"1.1.1.1"}
+	if err := app.LoadNameservers(); err != nil {
+		t.Fatalf("LoadNameservers: %v", err)
+	}
+	if app.ResolverOpts.Ndots != -1 {
+		t.Fatalf("ResolverOpts.Ndots = %d, want -1 when unset", app.ResolverOpts.Ndots)
+	}
+}
+
+func TestPrimaryQueryNamesConvertsIDNA(t *testing.T) {
+	got := primaryQueryNames([]string{"köln.example"}, 1, nil)
+	want := []string{"xn--kln-sna.example"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("primaryQueryNames IDNA = %v, want %v", got, want)
 	}
 }

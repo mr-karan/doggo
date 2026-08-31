@@ -5,13 +5,28 @@ description: Learn how Doggo interacts with system resolver settings and how to 
 
 Doggo interacts with your system's DNS resolver configuration and provides options to customize this behavior. This page explains how Doggo handles `ndots`, `search` domains, and resolver strategies.
 
-## Reading from /etc/resolv.conf
+## Reading system resolver configuration
 
-By default, Doggo reads configuration from your system's `/etc/resolv.conf` file. This includes:
+By default, Doggo reads nameservers, `ndots`, and search domains from your OS:
 
-- List of nameservers
-- The `ndots` value
-- Search domains
+- **Linux / BSD:** `/etc/resolv.conf`
+- **macOS:** `scutil --dns` (falls back to `/etc/resolv.conf` if scutil fails)
+- **Windows:** the system DNS server list
+
+### macOS split-DNS / Supplemental resolvers
+
+macOS can advertise several resolver classes via `scutil --dns`:
+
+| Source | Used by Doggo? |
+| --- | --- |
+| General-purpose resolvers (no `domain`, not Supplemental) | Yes — default system nameserver list |
+| Supplemental / domain-specific resolvers (`domain : example.corp`) | Yes — **only when the query name matches that domain** |
+| `DNS configuration (for scoped queries)` (Scoped / per-interface) | No — never selected for outbound queries |
+| mDNS (`.local`, reverse-DNS) | No |
+
+When a query name matches a Supplemental/domain-specific resolver, Doggo uses **that** resolver's nameservers and the `NAMESERVER` column reports them (for example `10.100.0.2:53`). With `--debug`, Doggo also logs `Using macOS domain-specific resolver from scutil` including the matched domain(s).
+
+`--strategy=internal` still consults Supplemental resolvers with private IPs even when the query name does not match a domain entry (useful for VPN/Tailscale discovery). Explicit `@host` / `--nameserver` overrides always win over system selection.
 
 ## ndots Configuration
 
@@ -53,7 +68,7 @@ Available strategies:
 - `all` (default): Use all nameservers.
 - `first`: Use only the first nameserver in the list.
 - `random`: Randomly choose one nameserver from the list for each query. This can help distribute the load across multiple nameservers.
-- `internal`: Use private IP nameservers only (RFC 1918 IPv4 or RFC 4193 IPv6 ULA).
+- `internal`: Use private IP nameservers only (RFC 1918 IPv4, RFC 6598 CGNAT, or RFC 4193 IPv6 ULA). On macOS this also considers Supplemental/domain-specific resolvers so VPN/Tailscale private resolvers can be discovered.
 
 ## Command-line Options
 
@@ -89,6 +104,12 @@ Available strategies:
 5. Use only the first explicitly specified nameserver:
    ```bash
    doggo example.com --strategy=first @1.1.1.1 @8.8.8.8
+   ```
+
+6. On macOS with split-DNS, query an internal name and see the Supplemental resolver reported:
+   ```bash
+   doggo intranet.corp.example --debug
+   # debug: Using macOS domain-specific resolver from scutil matched_domains=[corp.example] nameservers=[10.x.x.x]
    ```
 
 You can find more examples at [Examples](/guide/examples) section.

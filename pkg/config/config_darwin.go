@@ -19,6 +19,7 @@ import (
 type scutilResolver struct {
 	number        int
 	nameservers   []string
+	port          int
 	domain        string
 	searchDomains []string
 	options       []string
@@ -42,6 +43,33 @@ func GetDefaultServers() ([]string, int, []string, error) {
 // mDNS resolvers (.local and reverse-DNS) are still excluded.
 func GetAllServers() ([]string, int, []string, error) {
 	return getSystemServers(true)
+}
+
+// MatchDomainNameservers selects nameservers for query names that fall under a
+// macOS Supplemental/domain-specific scutil resolver. Longest domain match wins
+// per query name. ok is true only when every query name falls under such a
+// resolver — a mix of matching and non-matching names stays on the
+// general-purpose list so unrelated names are not sent to a split-DNS
+// resolver. The interface-scoped "DNS configuration (for scoped queries)"
+// section is never consulted.
+func MatchDomainNameservers(queryNames []string) (nameservers []DomainNameserver, matchedDomains []string, ok bool) {
+	if len(queryNames) == 0 {
+		return nil, nil, false
+	}
+
+	cmd := exec.Command("scutil", "--dns")
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		return nil, nil, false
+	}
+
+	resolvers, err := parseScutilOutput(stdout.String())
+	if err != nil {
+		return nil, nil, false
+	}
+
+	return matchDomainNameservers(queryNames, resolvers)
 }
 
 // getSystemServers tries scutil first and falls back to /etc/resolv.conf.
@@ -130,6 +158,7 @@ func parseScutilOutput(output string) ([]scutilResolver, error) {
 	searchDomainRe := regexp.MustCompile(`^\s+search domain\[\d+\]\s*:\s*(.+)`)
 	optionsRe := regexp.MustCompile(`^\s+options\s*:\s*(.+)`)
 	flagsRe := regexp.MustCompile(`^\s+flags\s*:\s*(.+)`)
+	portRe := regexp.MustCompile(`^\s+port\s*:\s*(\d+)`)
 
 	for _, line := range lines {
 		if strings.Contains(line, "DNS configuration (for scoped queries)") {
@@ -165,6 +194,14 @@ func parseScutilOutput(output string) ([]scutilResolver, error) {
 		// Parse domain
 		if matches := domainRe.FindStringSubmatch(line); matches != nil {
 			current.domain = strings.TrimSpace(matches[1])
+			continue
+		}
+
+		// Parse port (kSCPropNetDNSServerPort); custom ports are rare but
+		// valid for split-DNS resolvers.
+		if matches := portRe.FindStringSubmatch(line); matches != nil {
+			p, _ := strconv.Atoi(matches[1])
+			current.port = p
 			continue
 		}
 
@@ -246,6 +283,115 @@ func isSupplemental(r scutilResolver) bool {
 // These should NOT be used for general DNS queries.
 func isDomainSpecific(r scutilResolver) bool {
 	return r.domain != ""
+}
+
+// matchDomainNameservers picks domain-specific resolvers whose domain is a
+// suffix of a query name. Longest match wins per name; nameservers from all
+// winning matches are unioned (order preserved, duplicates dropped). The
+// match is all-or-nothing: if any query name matches no domain resolver, or
+// different names match different domains (doggo routes all questions through
+// one nameserver list and cannot partition per question), ok is false and the
+// caller falls back to the general system resolvers.
+func matchDomainNameservers(queryNames []string, resolvers []scutilResolver) ([]DomainNameserver, []string, bool) {
+	domainResolvers := make([]scutilResolver, 0)
+	for _, r := range resolvers {
+		if isMDNS(r) || !isDomainSpecific(r) || len(r.nameservers) == 0 {
+			continue
+		}
+		domainResolvers = append(domainResolvers, r)
+	}
+	if len(domainResolvers) == 0 {
+		return nil, nil, false
+	}
+
+	seenNS := make(map[DomainNameserver]bool)
+	seenDomain := make(map[string]bool)
+	nameservers := make([]DomainNameserver, 0)
+	matchedDomains := make([]string, 0)
+
+	for _, qname := range queryNames {
+		bestDomain := ""
+		for _, r := range domainResolvers {
+			domain := matchableDomain(r.domain)
+			if domain == "" || !nameUnderDomain(qname, domain) {
+				continue
+			}
+			if len(domain) > len(bestDomain) {
+				bestDomain = domain
+			}
+		}
+		if bestDomain == "" {
+			// This name belongs to no split-DNS domain; forcing it through
+			// another name's domain resolver could break public resolution.
+			return nil, nil, false
+		}
+
+		if len(matchedDomains) > 0 && matchedDomains[0] != bestDomain {
+			// Names from different split-DNS domains would need per-question
+			// resolver routing, which doggo does not do; fall back to the
+			// general list instead of leaking queries across domains.
+			return nil, nil, false
+		}
+		if !seenDomain[bestDomain] {
+			matchedDomains = append(matchedDomains, bestDomain)
+			seenDomain[bestDomain] = true
+		}
+		// macOS can list several resolver records for the same domain (for
+		// example one per VPN interface); union their nameservers in scutil
+		// order so none of the domain's resolvers is silently dropped.
+		for _, r := range domainResolvers {
+			if matchableDomain(r.domain) != bestDomain {
+				continue
+			}
+			for _, ns := range r.nameservers {
+				ip := net.ParseIP(ns)
+				entry := DomainNameserver{IP: ns, Port: r.port}
+				// Deduplicate on IP and effective port (0 means the default
+				// DNS port): the same IP on two ports is a distinct
+				// endpoint, but an omitted port and an explicit "53" are the
+				// same endpoint.
+				dedupKey := entry
+				if dedupKey.Port == 0 {
+					dedupKey.Port = defaultDNSPort
+				}
+				if isUnicastLinkLocal(ip) || seenNS[dedupKey] {
+					continue
+				}
+				nameservers = append(nameservers, entry)
+				seenNS[dedupKey] = true
+			}
+		}
+	}
+
+	if len(nameservers) == 0 {
+		return nil, nil, false
+	}
+	return nameservers, matchedDomains, true
+}
+
+func normalizeDNSName(name string) string {
+	return strings.TrimSuffix(strings.ToLower(strings.TrimSpace(name)), ".")
+}
+
+// matchableDomain normalizes a scutil domain entry for matching. Apple DNS
+// settings allow wildcard match domains like "*.example.com"; the leading
+// wildcard label is stripped so subdomains and the apex both match, matching
+// macOS resolver behavior.
+func matchableDomain(domain string) string {
+	return strings.TrimPrefix(normalizeDNSName(domain), "*.")
+}
+
+// nameUnderDomain reports whether name is equal to domain or a subdomain of it.
+func nameUnderDomain(name, domain string) bool {
+	name = normalizeDNSName(name)
+	domain = normalizeDNSName(domain)
+	if name == "" || domain == "" {
+		return false
+	}
+	if name == domain {
+		return true
+	}
+	return strings.HasSuffix(name, "."+domain)
 }
 
 // aggregateSearchDomains collects search domains from all resolvers
