@@ -190,7 +190,7 @@ complete -c doggo -n 'not __fish_doggo_arg1_is_completions' -l 'gp-limit' -d "Li
 
 # Completions command
 complete -c doggo -n '__fish_doggo_no_subcommand' -a completions -d "Generate shell completion scripts"
-complete -c doggo -n '__fish_doggo_arg1_is_completions' -a "bash zsh fish" -d "Shell type"
+complete -c doggo -n '__fish_doggo_arg1_is_completions' -x -f -a "bash zsh fish" -d "Shell type"
 `
 )
 
