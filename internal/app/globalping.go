@@ -220,8 +220,10 @@ func parseGlobalpingLocations(from string) globalping.LocationOptions {
 
 func getGlobalPingLocationText(m *globalping.ProbeMeasurement) string {
 	state := ""
-	if m.Probe.State != "" {
-		state = " (" + m.Probe.State + ")"
+	// State became an optional *string in globalping-go v0.3.0 (nil when the
+	// probe has no US state).
+	if m.Probe.State != nil && *m.Probe.State != "" {
+		state = " (" + *m.Probe.State + ")"
 	}
 	return m.Probe.City + state + ", " +
 		m.Probe.Country + ", " +

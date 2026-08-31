@@ -7,7 +7,7 @@ require (
 	github.com/ameshkov/dnsstamps v1.0.3
 	github.com/fatih/color v1.19.0
 	github.com/go-chi/chi/v5 v5.3.1
-	github.com/jsdelivr/globalping-go v0.2.0
+	github.com/jsdelivr/globalping-go v0.3.0
 	github.com/knadh/koanf/parsers/toml v0.1.0
 	github.com/knadh/koanf/providers/env v1.1.0
 	github.com/knadh/koanf/providers/file v1.2.1
