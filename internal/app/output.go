@@ -169,29 +169,29 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 		return
 	}
 
-	fmt.Println()
-	fmt.Println(TerminalColorYellow("EDNS Information:"))
+	fmt.Fprintln(color.Output)
+	fmt.Fprintln(color.Output, TerminalColorYellow("EDNS Information:"))
 	for _, group := range groups {
-		fmt.Printf("  Nameserver: %s\n", TerminalColorCyan(group.nameserver))
+		fmt.Fprintf(color.Output, "  Nameserver: %s\n", TerminalColorCyan(group.nameserver))
 		metadata := group.metadata
 		if metadata.NSID != "" {
-			fmt.Printf("    NSID: %s\n", TerminalColorCyan(metadata.NSID))
+			fmt.Fprintf(color.Output, "    NSID: %s\n", TerminalColorCyan(metadata.NSID))
 		}
 		if metadata.Cookie != "" {
-			fmt.Printf("    Cookie: %s\n", TerminalColorCyan(metadata.Cookie))
+			fmt.Fprintf(color.Output, "    Cookie: %s\n", TerminalColorCyan(metadata.Cookie))
 		}
 		if metadata.Subnet != "" {
-			fmt.Printf("    Client Subnet: %s (Scope: %d)\n",
+			fmt.Fprintf(color.Output, "    Client Subnet: %s (Scope: %d)\n",
 				TerminalColorCyan(metadata.Subnet), metadata.SubnetScope)
 		}
 		if metadata.UDPSize > 0 {
-			fmt.Printf("    UDP Size: %s\n", TerminalColorCyan(fmt.Sprintf("%d", metadata.UDPSize)))
+			fmt.Fprintf(color.Output, "    UDP Size: %s\n", TerminalColorCyan(fmt.Sprintf("%d", metadata.UDPSize)))
 		}
 		if metadata.DNSSECOk {
-			fmt.Printf("    DNSSEC OK: %s\n", TerminalColorGreen("true"))
+			fmt.Fprintf(color.Output, "    DNSSEC OK: %s\n", TerminalColorGreen("true"))
 		}
 		for _, extendedErr := range group.extendedErrors {
-			fmt.Printf("    Extended Error: %s\n", TerminalColorRed(formatExtendedError(extendedErr)))
+			fmt.Fprintf(color.Output, "    Extended Error: %s\n", TerminalColorRed(formatExtendedError(extendedErr)))
 		}
 	}
 }
