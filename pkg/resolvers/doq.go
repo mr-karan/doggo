@@ -77,10 +77,26 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 	)
 
 	var session *quic.Conn
-	if r.resolverOptions.SourceAddr != "" {
+	if r.resolverOptions.SourceAddr != "" || r.resolverOptions.UseIPv4 || r.resolverOptions.UseIPv6 {
 		network, laddr, err := sourceUDPAddr(r.resolverOptions.SourceAddr)
 		if err != nil {
 			return rsp, err
+		}
+		requestedNetwork := ""
+		switch {
+		case r.resolverOptions.UseIPv4 && r.resolverOptions.UseIPv6:
+			return rsp, fmt.Errorf("cannot enable both IPv4-only and IPv6-only")
+		case r.resolverOptions.UseIPv6:
+			requestedNetwork = "udp6"
+		case r.resolverOptions.UseIPv4:
+			requestedNetwork = "udp4"
+		}
+
+		if requestedNetwork != "" {
+			if network != "" && network != requestedNetwork {
+				return rsp, fmt.Errorf("source address does not match requested IP family")
+			}
+			network = requestedNetwork
 		}
 		remote, err := resolveUDPAddrCompat(network, r.server)
 		if err != nil {
