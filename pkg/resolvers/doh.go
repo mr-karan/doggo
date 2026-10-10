@@ -53,10 +53,27 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 	)
 	if resolverOpts.UseHTTP3 {
 		h3Transport := &http3.Transport{TLSClientConfig: tlsConfig}
-		if resolverOpts.SourceAddr != "" {
+		if resolverOpts.SourceAddr != "" || resolverOpts.UseIPv4 || resolverOpts.UseIPv6 {
 			network, laddr, err := sourceUDPAddr(resolverOpts.SourceAddr)
 			if err != nil {
 				return nil, err
+			}
+			requestedNetwork := ""
+			switch {
+			case resolverOpts.UseIPv4 && resolverOpts.UseIPv6:
+				return nil, fmt.Errorf("cannot enable both IPv4-only and IPv6-only")
+			case resolverOpts.UseIPv6:
+				requestedNetwork = "udp6"
+			case resolverOpts.UseIPv4:
+				requestedNetwork = "udp4"
+			}
+
+			if requestedNetwork != "" {
+				// If configured, the source address must match the selected family.
+				if network != "" && network != requestedNetwork {
+					return nil, fmt.Errorf("source address does not match requested IP family")
+				}
+				network = requestedNetwork
 			}
 			// One source-bound UDP socket and QUIC transport shared by every
 			// connection this resolver opens. Neither the HTTP/3 transport nor
@@ -93,6 +110,19 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 			}
 			httpsTransport.DialContext = dialer.DialContext
 		}
+
+		if resolverOpts.UseIPv4 || resolverOpts.UseIPv6 {
+			network := "tcp4"
+			if resolverOpts.UseIPv6 {
+				network = "tcp6"
+			}
+
+			dialContext := httpsTransport.DialContext
+			httpsTransport.DialContext = func(ctx context.Context, _ string, address string) (net.Conn, error) {
+				return dialContext(ctx, network, address)
+			}
+		}
+
 		transport = httpsTransport
 		closeTransport = func() error {
 			httpsTransport.CloseIdleConnections()
