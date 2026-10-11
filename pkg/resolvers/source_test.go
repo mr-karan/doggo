@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"net"
 	"strings"
 	"testing"
@@ -122,5 +123,43 @@ func TestSourceDialerAndUDPAddr(t *testing.T) {
 
 	if _, _, err := sourceUDPAddr("nope"); err == nil {
 		t.Fatal("sourceUDPAddr: expected error for invalid address")
+	}
+}
+
+func TestResolveUDPAddrCompat(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		network  string
+		address  string
+		wantIP   string
+		wantZone string
+		wantErr  bool
+	}{
+		{name: "ipv4", network: "udp4", address: "127.0.0.1:53", wantIP: "127.0.0.1"},
+		{name: "ipv6", network: "udp6", address: "[::1]:53", wantIP: "::1"},
+		{name: "ipv6 zone", network: "udp6", address: "[fe80::1%en0]:53", wantIP: "fe80::1", wantZone: "en0"},
+		{name: "mapped ipv4", network: "udp4", address: "[::ffff:127.0.0.1]:53", wantIP: "127.0.0.1"},
+		{name: "named port", network: "udp4", address: "127.0.0.1:domain", wantIP: "127.0.0.1"},
+		{name: "ipv4 rejects ipv6", network: "udp4", address: "[::1]:53", wantErr: true},
+		{name: "ipv6 rejects ipv4", network: "udp6", address: "127.0.0.1:53", wantErr: true},
+		{name: "ipv6 rejects mapped ipv4", network: "udp6", address: "[::ffff:127.0.0.1]:53", wantErr: true},
+		{name: "missing port", network: "udp4", address: "127.0.0.1", wantErr: true},
+		{name: "invalid port", network: "udp4", address: "127.0.0.1:65536", wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			remote, err := resolveUDPAddrCompat(context.Background(), tc.network, tc.address)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("resolved %s over %s, want error", tc.address, tc.network)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !remote.IP.Equal(net.ParseIP(tc.wantIP)) || remote.Port != 53 || remote.Zone != tc.wantZone {
+				t.Fatalf("resolved address = %v, want IP %s, port 53, zone %q", remote, tc.wantIP, tc.wantZone)
+			}
+		})
 	}
 }

@@ -98,7 +98,7 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 			}
 			network = requestedNetwork
 		}
-		remote, err := resolveUDPAddrCompat(network, r.server)
+		remote, err := resolveUDPAddrCompat(ctx, network, r.server)
 		if err != nil {
 			return rsp, err
 		}
