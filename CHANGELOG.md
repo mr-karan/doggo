@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-10-12
+
+### Fixed
+
+- Honored `-4` and `-6` when connecting to DNS over HTTPS, HTTP/3, and DNS over QUIC servers.
+- Canceled pending upstream DNS lookups during HTTP/3 cleanup and family-bound DNS over QUIC queries.
+
+### Security
+
+- Updated the Go toolchain requirement to Go 1.27.2 and `golang.org/x/net` to v0.61.0 for security fixes.
+
+### Changed
+
+- Updated Go dependencies, GitHub Actions, release tools, container bases, and the Astro documentation stack to current releases.
+
 ## [1.4.0] - 2026-09-01
 
 ### Added
@@ -53,7 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Older release notes are available on the [GitHub releases page](https://github.com/mr-karan/doggo/releases).
 
-[Unreleased]: https://github.com/mr-karan/doggo/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/mr-karan/doggo/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/mr-karan/doggo/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/mr-karan/doggo/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/mr-karan/doggo/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/mr-karan/doggo/releases/tag/v1.2.1
