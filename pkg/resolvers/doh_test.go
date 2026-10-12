@@ -260,6 +260,127 @@ func TestDOHHTTP3HonorsRequestContext(t *testing.T) {
 	}
 }
 
+func TestDOHHTTP3CloseCancelsDNSLookup(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		opts Options
+	}{
+		{name: "ipv4", opts: Options{UseIPv4: true}},
+		{name: "ipv6", opts: Options{UseIPv6: true}},
+		{name: "source", opts: Options{SourceAddr: "127.0.0.1"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			conn, err := net.ListenPacket("udp", "127.0.0.1:0")
+			if err != nil {
+				t.Fatal(err)
+			}
+			started := make(chan struct{}, 1)
+			release := make(chan struct{})
+			var releaseOnce sync.Once
+			releaseDNS := func() { releaseOnce.Do(func() { close(release) }) }
+			serverReady := make(chan struct{})
+			server := &dns.Server{
+				PacketConn:        conn,
+				NotifyStartedFunc: func() { close(serverReady) },
+				Handler: dns.HandlerFunc(func(w dns.ResponseWriter, request *dns.Msg) {
+					select {
+					case started <- struct{}{}:
+					default:
+					}
+					<-release
+					response := new(dns.Msg)
+					response.SetReply(request)
+					if err := w.WriteMsg(response); err != nil {
+						t.Error(err)
+					}
+				}),
+			}
+			serveErr := make(chan error, 1)
+			go func() { serveErr <- server.ActivateAndServe() }()
+			t.Cleanup(func() {
+				releaseDNS()
+				_ = server.Shutdown()
+				if err := <-serveErr; err != nil {
+					t.Error(err)
+				}
+			})
+			<-serverReady
+			originalResolver := net.DefaultResolver
+			net.DefaultResolver = &net.Resolver{
+				PreferGo: true,
+				Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+					return (&net.Dialer{Resolver: originalResolver}).DialContext(ctx, network, conn.LocalAddr().String())
+				},
+			}
+			t.Cleanup(func() { net.DefaultResolver = originalResolver })
+			opts := tc.opts
+			opts.UseHTTP3 = true
+			opts.Logger = discardLogger()
+			opts.Timeout = 2 * time.Second
+			resolver, err := NewDOHResolver("https://blocked.test/dns-query", opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			doh := resolver.(*DOHResolver)
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			lookupErr := make(chan error, 1)
+			go func() {
+				question := dns.Question{Name: "example.test.", Qtype: dns.TypeA, Qclass: dns.ClassINET}
+				_, err := doh.Lookup(ctx, []dns.Question{question}, QueryFlags{RD: true})
+				lookupErr <- err
+			}()
+			select {
+			case <-started:
+			case <-ctx.Done():
+				t.Fatal("DNS lookup never reached the server")
+			}
+			cancel()
+			if err := <-lookupErr; !errors.Is(err, context.Canceled) {
+				t.Errorf("Lookup error = %v, want context canceled", err)
+			}
+			closeErr := make(chan error, 1)
+			go func() { closeErr <- doh.Close() }()
+			t.Cleanup(func() {
+				releaseDNS()
+				_ = doh.Close()
+			})
+			select {
+			case err := <-closeErr:
+				if err != nil {
+					t.Fatal(err)
+				}
+			case <-time.After(time.Second):
+				t.Error("Close blocked on DNS after request cancellation")
+			}
+		})
+	}
+}
+
+func TestDOHHTTP3ResolvesHostnameWithIPv4(t *testing.T) {
+	serverURL := startHTTP3TestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		wire, err := io.ReadAll(r.Body)
+		if err != nil || dnsResponse(w, wire) != nil {
+			http.Error(w, "invalid DNS request", http.StatusBadRequest)
+		}
+	}))
+	serverURL = strings.Replace(serverURL, "127.0.0.1", "localhost", 1)
+	for _, source := range []string{"", "127.0.0.1"} {
+		t.Run("source="+source, func(t *testing.T) {
+			resolver, err := NewDOHResolver(serverURL, Options{
+				Logger: discardLogger(), Timeout: 2 * time.Second,
+				UseHTTP3: true, UseIPv4: true, SourceAddr: source,
+				InsecureSkipVerify: true,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = resolver.(*DOHResolver).Close() })
+			testDOHLookup(t, resolver)
+		})
+	}
+}
+
 func TestDOHHTTP3DoesNotFallbackToHTTP2(t *testing.T) {
 	var requests atomic.Int32
 	tcpServer := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

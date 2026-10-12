@@ -85,7 +85,7 @@ func NewDOHResolver(server string, resolverOpts Options) (Resolver, error) {
 			}
 			udpTransport := &quic.Transport{Conn: conn}
 			h3Transport.Dial = func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
-				remote, err := resolveUDPAddrCompat(network, addr)
+				remote, err := resolveUDPAddrCompat(ctx, network, addr)
 				if err != nil {
 					return nil, err
 				}

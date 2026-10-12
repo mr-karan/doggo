@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/netip"
@@ -76,12 +77,32 @@ func udpNetwork(addr netip.Addr) string {
 
 // resolveUDPAddrCompat resolves addr restricted to network's address family,
 // failing with a clear error when the server has no address of that family.
-func resolveUDPAddrCompat(network, addr string) (*net.UDPAddr, error) {
-	remote, err := net.ResolveUDPAddr(network, addr)
+func resolveUDPAddrCompat(ctx context.Context, network, addr string) (*net.UDPAddr, error) {
+	host, service, err := net.SplitHostPort(addr)
 	if err != nil {
-		return nil, fmt.Errorf("resolving %s over %s to match the source address family: %w", addr, network, err)
+		return nil, err
 	}
-	return remote, nil
+	port, err := net.DefaultResolver.LookupPort(ctx, network, service)
+	if err != nil {
+		return nil, fmt.Errorf("resolving port for %s: %w", addr, err)
+	}
+	ipNetwork := "ip4"
+	if network == "udp6" {
+		ipNetwork = "ip6"
+	}
+	zone := ""
+	if ip, err := netip.ParseAddr(host); err == nil {
+		zone = ip.Zone()
+		host = ip.WithZone("").String()
+	}
+	ips, err := net.DefaultResolver.LookupIP(ctx, ipNetwork, host)
+	if err != nil {
+		return nil, fmt.Errorf("resolving %s over %s: %w", addr, network, err)
+	}
+	for _, ip := range ips {
+		return &net.UDPAddr{IP: ip, Port: port, Zone: zone}, nil
+	}
+	return nil, fmt.Errorf("resolving %s over %s: no address of the requested IP family", addr, network)
 }
 
 // sourceLocalAddr builds a net.Addr of the concrete type the given network

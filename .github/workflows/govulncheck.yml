@@ -14,12 +14,11 @@ jobs:
   govulncheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
       - run: |
-          # v1.4.0 currently panics under Go 1.26 while building the SSA call graph.
-          go run golang.org/x/vuln/cmd/govulncheck@v1.3.0 ./...
+          go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...

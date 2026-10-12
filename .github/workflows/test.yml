@@ -17,11 +17,11 @@ jobs:
     if: github.event_name != 'push' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
       - name: Check installer
@@ -31,14 +31,14 @@ jobs:
           done
           sh scripts/test-install.sh
       - name: Check GoReleaser configuration
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7.2.3
         with:
-          version: latest
+          version: v2.18.3
           args: check
       - name: Check normal CLI build gate
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7.2.3
         with:
-          version: latest
+          version: v2.18.3
           args: build --snapshot --clean --skip=before --id cli --single-target
       - name: Check normal CLI build output
         run: |
@@ -46,12 +46,12 @@ jobs:
           cli_binary_count="$(find dist -mindepth 2 -maxdepth 2 -type f -name doggo | wc -l | tr -d ' ')"
           test "${cli_binary_count}" -eq 1
       - name: Build snapshot release archives
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7.2.3
         # This validation needs only the ARM builds; real tagged releases do not set this switch.
         env:
           DOGGO_RELEASE_ARM_ONLY: "1"
         with:
-          version: latest
+          version: v2.18.3
           args: release --snapshot --clean --skip=before,docker
       - name: Check ARM release artifacts
         run: sh scripts/check-release-artifacts.sh
@@ -59,33 +59,43 @@ jobs:
   web-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7.1.0
         with:
-          node-version: "24.0.0"
+          node-version: "26.11.1"
       - run: node --test web/edns_test.js
+
+  docs-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "26.11.1"
+      - run: yarn install --frozen-lockfile
+        working-directory: docs
+      - run: yarn build
+        working-directory: docs
 
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        go:
-          - { go-version: stable }
-          - { go-version-file: go.mod }
         deps:
           - locked
           - latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7.0.0
         with:
-          go-version: ${{ matrix.go.go-version }}
-          go-version-file: ${{ matrix.go.go-version-file }}
+          go-version-file: go.mod
       - run: |
           if [ "${{ matrix.deps }}" = "latest" ]; then
             go get -u -t ./...

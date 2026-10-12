@@ -12,9 +12,7 @@ export default defineConfig({
     starlight({
       title: "Doggo",
       customCss: ["./src/assets/custom.css"],
-      social: {
-        github: "https://github.com/mr-karan/doggo",
-      },
+      social: [{ icon: "github", label: "GitHub", href: "https://github.com/mr-karan/doggo" }],
       sidebar: [
         {
           label: "Introduction",
