@@ -177,17 +177,16 @@ func startDOHHTTP3Server(t *testing.T, domain, answer string) string {
 	return "https://" + conn.LocalAddr().String() + "/dns-query"
 }
 
-// reservedClosedPort returns a TCP/UDP port that almost certainly has nothing
-// listening: we bind, capture the port, then close. There is a TOCTOU window
-// but it is large enough for these tests and the port lives on loopback only.
-func reservedClosedPort(t *testing.T) int {
+// unresponsiveUDPPort keeps a UDP socket bound without answering queries,
+// so neither another server nor the client can reuse the destination port.
+func unresponsiveUDPPort(t *testing.T) int {
 	t.Helper()
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
 	if err != nil {
 		t.Fatalf("ListenUDP: %v", err)
 	}
 	port := conn.LocalAddr().(*net.UDPAddr).Port
-	_ = conn.Close()
+	t.Cleanup(func() { _ = conn.Close() })
 	return port
 }
 
@@ -284,7 +283,7 @@ func TestPartialFailureExitsTwoAndPrintsResponse(t *testing.T) {
 	serverAddr, stop := startDNSServer(t, "example.test", "192.0.2.10")
 	defer stop()
 
-	deadPort := reservedClosedPort(t)
+	deadPort := unresponsiveUDPPort(t)
 	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
 
 	stdout, stderr, exit := runDoggo(t,
@@ -310,7 +309,7 @@ func TestPartialFailureExitsTwoAndPrintsResponse(t *testing.T) {
 }
 
 func TestFullFailureExitsNine(t *testing.T) {
-	deadPort := reservedClosedPort(t)
+	deadPort := unresponsiveUDPPort(t)
 	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
 
 	stdout, stderr, exit := runDoggo(t,
@@ -520,7 +519,7 @@ func TestPartialFailureJSONOutputIncludesErrorsArray(t *testing.T) {
 	serverAddr, stop := startDNSServer(t, "json.test", "192.0.2.30")
 	defer stop()
 
-	deadPort := reservedClosedPort(t)
+	deadPort := unresponsiveUDPPort(t)
 	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
 
 	stdout, stderr, exit := runDoggo(t,
@@ -562,7 +561,7 @@ func TestPartialFailureJSONOutputIncludesErrorsArray(t *testing.T) {
 }
 
 func TestFullFailureJSONOutputPopulatesLegacyErrorField(t *testing.T) {
-	deadPort := reservedClosedPort(t)
+	deadPort := unresponsiveUDPPort(t)
 	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
 
 	stdout, _, exit := runDoggo(t,
@@ -599,7 +598,7 @@ func TestDebugLogsStrategyApplication(t *testing.T) {
 	serverAddr, stop := startDNSServer(t, "debug.test", "192.0.2.40")
 	defer stop()
 
-	deadPort := reservedClosedPort(t)
+	deadPort := unresponsiveUDPPort(t)
 	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
 
 	_, stderr, exit := runDoggo(t,
@@ -638,7 +637,7 @@ func TestConfigFileSetsDefaults(t *testing.T) {
 	serverAddr, stop := startDNSServer(t, "cfg.test", "192.0.2.50")
 	defer stop()
 
-	deadPort := reservedClosedPort(t)
+	deadPort := unresponsiveUDPPort(t)
 	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
 
 	xdg := t.TempDir()
@@ -724,7 +723,7 @@ func TestEnvVarSetsStrategy(t *testing.T) {
 	serverAddr, stop := startDNSServer(t, "env.test", "192.0.2.80")
 	defer stop()
 
-	deadPort := reservedClosedPort(t)
+	deadPort := unresponsiveUDPPort(t)
 	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
 
 	stdout, stderr, exit := runDoggoEnv(t,
@@ -751,7 +750,7 @@ func TestExplicitConfigFlagLoadsFile(t *testing.T) {
 	serverAddr, stop := startDNSServer(t, "explicit.test", "192.0.2.90")
 	defer stop()
 
-	deadPort := reservedClosedPort(t)
+	deadPort := unresponsiveUDPPort(t)
 	deadAddr := fmt.Sprintf("127.0.0.1:%d", deadPort)
 
 	cfgPath := writeConfigFile(t, t.TempDir(), "strategy = \"first\"\n")
