@@ -15,6 +15,8 @@ import (
 	"github.com/miekg/dns"
 )
 
+const defaultDNSPort = 53
+
 // scutilResolver represents a parsed resolver from scutil --dns output
 type scutilResolver struct {
 	number        int

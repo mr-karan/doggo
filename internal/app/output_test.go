@@ -1,15 +1,56 @@
 package app
 
 import (
+	"errors"
 	"io"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/fatih/color"
+	"github.com/jsdelivr/globalping-go"
 	"github.com/mr-karan/doggo/pkg/models"
 	"github.com/mr-karan/doggo/pkg/resolvers"
 )
+
+func TestOutputReportsWriteErrors(t *testing.T) {
+	output, err := os.CreateTemp(t.TempDir(), "closed-output")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := output.Close(); err != nil {
+		t.Fatal(err)
+	}
+	previousStdout, previousColorOutput, previousNoColor := os.Stdout, color.Output, color.NoColor
+	os.Stdout, color.Output = output, output
+	t.Cleanup(func() {
+		os.Stdout, color.Output, color.NoColor = previousStdout, previousColorOutput, previousNoColor
+	})
+	responses := []resolvers.Response{{Answers: []resolvers.Answer{{Name: "example.test.", Type: "A", Address: "192.0.2.1"}}}}
+	trace := resolvers.TraceResult{Hops: []resolvers.TraceHop{{Outcome: resolvers.TraceOutcomeAnswer}}}
+	for _, test := range []struct {
+		name string
+		run  func() error
+	}{
+		{"terminal", func() error { return (&App{}).Output(responses) }},
+		{"short", func() error { return (&App{QueryFlags: models.QueryFlags{ShortOutput: true}}).Output(responses) }},
+		{"json", func() error { return (&App{QueryFlags: models.QueryFlags{ShowJSON: true}}).Output(responses) }},
+		{"trace", func() error { return (&App{}).OutputTrace(resolvers.TraceResult{}) }},
+		{"trace short", func() error { return (&App{QueryFlags: models.QueryFlags{ShortOutput: true}}).OutputTrace(trace) }},
+		{"trace json", func() error { return (&App{QueryFlags: models.QueryFlags{ShowJSON: true}}).OutputTrace(trace) }},
+		{"globalping", func() error { return (&App{}).OutputGlobalping(&globalping.Measurement{}) }},
+		{"globalping short", func() error {
+			return (&App{}).OutputGlobalpingShort(&globalping.Measurement{Results: []globalping.ProbeMeasurement{{}}})
+		}},
+		{"globalping json", func() error { return (&App{}).OutputGlobalpingJSON(&globalping.Measurement{}) }},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.run(); !errors.Is(err, os.ErrClosed) {
+				t.Fatalf("output error = %v, want closed output error", err)
+			}
+		})
+	}
+}
 
 func TestFormatExtendedError(t *testing.T) {
 	tests := []struct {
@@ -102,7 +143,7 @@ func TestOutputTerminalDisplaysAllExtendedErrors(t *testing.T) {
 	})
 
 	app := App{QueryFlags: models.QueryFlags{Color: false}}
-	app.outputTerminal([]resolvers.Response{
+	err = app.outputTerminal([]resolvers.Response{
 		{
 			Edns: &resolvers.EdnsInfo{
 				Nameserver: "resolver-a:53",
@@ -130,6 +171,9 @@ func TestOutputTerminalDisplaysAllExtendedErrors(t *testing.T) {
 			},
 		},
 	})
+	if err != nil {
+		t.Fatalf("outputTerminal: %v", err)
+	}
 
 	if err := writeOut.Close(); err != nil {
 		t.Fatalf("stdout close error = %v", err)

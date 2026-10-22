@@ -41,7 +41,11 @@ func TestClassicResolverOversizedUDPResponse(t *testing.T) {
 	}
 	usrv := &dns.Server{PacketConn: pc, Handler: handler}
 	go func() { _ = usrv.ActivateAndServe() }()
-	defer usrv.Shutdown()
+	t.Cleanup(func() {
+		if err := usrv.Shutdown(); err != nil {
+			t.Errorf("UDP server shutdown: %v", err)
+		}
+	})
 
 	rslvr, err := NewClassicResolver(pc.LocalAddr().String(), ClassicResolverOpts{}, Options{
 		Timeout: 2 * time.Second,
@@ -102,8 +106,14 @@ func TestClassicResolverTruncatedRetryWithSource(t *testing.T) {
 	tsrv := &dns.Server{Listener: l, Handler: handler}
 	go func() { _ = usrv.ActivateAndServe() }()
 	go func() { _ = tsrv.ActivateAndServe() }()
-	defer usrv.Shutdown()
-	defer tsrv.Shutdown()
+	t.Cleanup(func() {
+		if err := usrv.Shutdown(); err != nil {
+			t.Errorf("UDP server shutdown: %v", err)
+		}
+		if err := tsrv.Shutdown(); err != nil {
+			t.Errorf("TCP server shutdown: %v", err)
+		}
+	})
 
 	rslvr, err := NewClassicResolver(server, ClassicResolverOpts{}, Options{
 		Timeout:    2 * time.Second,

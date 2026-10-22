@@ -546,7 +546,10 @@ func outputResults(app *app.App, responses []resolvers.Response, responseErrors 
 		for _, err := range responseErrors {
 			logResolverError(app.Logger, slog.LevelWarn, "lookup failed", err)
 		}
-		app.Output(responses)
+		if err := app.Output(responses); err != nil {
+			app.Logger.Error("error writing output", "error", err)
+			os.Exit(exitLookupFailure)
+		}
 	}
 
 	if len(responseErrors) > 0 && len(responses) > 0 {

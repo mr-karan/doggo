@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -23,9 +24,11 @@ type httpResp struct {
 
 const systemNameserverErrorMessage = "Unable to load system DNS configuration."
 
+type appContextKey struct{}
+
 func handleIndexAPI(w http.ResponseWriter, r *http.Request) {
 	var (
-		app = r.Context().Value("app").(application.App)
+		app = r.Context().Value(appContextKey{}).(application.App)
 	)
 
 	sendResponse(w, http.StatusOK, fmt.Sprintf("Welcome to Doggo API. Version: %s", app.Version))
@@ -37,12 +40,11 @@ func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 
 func handleLookup(w http.ResponseWriter, r *http.Request) {
 	var (
-		app = r.Context().Value("app").(application.App)
+		app = r.Context().Value(appContextKey{}).(application.App)
 	)
 
 	// Read body.
 	b, err := io.ReadAll(r.Body)
-	defer r.Body.Close()
 	if err != nil {
 		app.Logger.Error("error reading request body", "error", err)
 		sendErrorResponse(w, "Invalid JSON payload", http.StatusBadRequest, nil)
@@ -193,33 +195,40 @@ func sendNameserverLoadError(w http.ResponseWriter, err error) {
 // wrap is a middleware that wraps HTTP handlers and injects the "app" context.
 func wrap(app application.App, next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), "app", app)
+		ctx := context.WithValue(r.Context(), appContextKey{}, app)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 // sendResponse sends a JSON envelope to the HTTP response.
 func sendResponse(w http.ResponseWriter, code int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code)
-
 	out, err := json.Marshal(httpResp{Status: "success", Data: data})
 	if err != nil {
 		sendErrorResponse(w, "Internal Server Error", http.StatusInternalServerError, nil)
 		return
 	}
 
-	w.Write(out)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(code)
+	if _, err := w.Write(out); err != nil {
+		slog.Debug("error writing response", "error", err)
+	}
 }
 
 // sendErrorResponse sends a JSON error envelope to the HTTP response.
 func sendErrorResponse(w http.ResponseWriter, message string, code int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code)
-
 	resp := httpResp{Status: "error",
 		Message: message,
 		Data:    data}
-	out, _ := json.Marshal(resp)
-	w.Write(out)
+	out, err := json.Marshal(resp)
+	if err != nil {
+		slog.Error("error encoding error response", "error", err)
+		code = http.StatusInternalServerError
+		out = []byte(`{"status":"error","message":"Internal Server Error"}`)
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(code)
+	if _, err := w.Write(out); err != nil {
+		slog.Debug("error writing error response", "error", err)
+	}
 }

@@ -106,7 +106,7 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 		if err != nil {
 			return rsp, err
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 		session, err = quic.Dial(ctx, conn, remote, r.tls, nil)
 		if err != nil {
 			return rsp, err
@@ -118,7 +118,7 @@ func (r *DOQResolver) query(ctx context.Context, question dns.Question, flags Qu
 			return rsp, err
 		}
 	}
-	defer session.CloseWithError(quic.ApplicationErrorCode(quic.NoError), "")
+	defer func() { _ = session.CloseWithError(quic.ApplicationErrorCode(quic.NoError), "") }()
 
 	for _, msg := range messages {
 		r.resolverOptions.Logger.Debug("Attempting to resolve",

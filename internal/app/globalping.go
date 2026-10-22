@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -95,7 +96,9 @@ func (app *App) OutputGlobalping(m *globalping.Measurement) error {
 		color.NoColor = true
 	}
 
-	table := tablewriter.NewWriter(color.Output)
+	// Tablewriter discards destination write errors, so write the rendered bytes ourselves.
+	var output bytes.Buffer
+	table := tablewriter.NewWriter(&output)
 	table.Options(
 		tablewriter.WithRendition(tw.Rendition{
 			Borders: tw.Border{
@@ -130,7 +133,9 @@ func (app *App) OutputGlobalping(m *globalping.Measurement) error {
 	table.Header("Location", "Name", "Type", "Class", "TTL", "Address", "Nameserver")
 
 	for i := range m.Results {
-		table.Append([]string{getGlobalPingLocationText(&m.Results[i]), "", "", "", "", "", ""})
+		if err := table.Append([]string{getGlobalPingLocationText(&m.Results[i]), "", "", "", "", "", ""}); err != nil {
+			return fmt.Errorf("error adding location row: %w", err)
+		}
 		answers, err := globalping.DecodeDNSAnswers(m.Results[i].Result.AnswersRaw)
 		if err != nil {
 			return err
@@ -139,22 +144,31 @@ func (app *App) OutputGlobalping(m *globalping.Measurement) error {
 		for _, ans := range answers {
 			typOut := getColoredType(ans.Type)
 			output := []string{"", TerminalColorGreen(ans.Name), typOut, ans.Class, fmt.Sprintf("%ds", ans.TTL), ans.Value, resolver}
-			table.Append(output)
+			if err := table.Append(output); err != nil {
+				return fmt.Errorf("error adding answer row: %w", err)
+			}
 		}
 	}
-	table.Render()
-	return nil
+	if err := table.Render(); err != nil {
+		return fmt.Errorf("error rendering globalping table: %w", err)
+	}
+	_, err := output.WriteTo(color.Output)
+	return err
 }
 
 func (app *App) OutputGlobalpingShort(m *globalping.Measurement) error {
 	for i := range m.Results {
-		fmt.Printf("%s\n", getGlobalPingLocationText(&m.Results[i]))
+		if _, err := fmt.Printf("%s\n", getGlobalPingLocationText(&m.Results[i])); err != nil {
+			return err
+		}
 		answers, err := globalping.DecodeDNSAnswers(m.Results[i].Result.AnswersRaw)
 		if err != nil {
 			return err
 		}
 		for _, ans := range answers {
-			fmt.Printf("%s\n", ans.Value)
+			if _, err := fmt.Printf("%s\n", ans.Value); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -196,8 +210,8 @@ func (app *App) OutputGlobalpingJSON(m *globalping.Measurement) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", res)
-	return nil
+	_, err = fmt.Printf("%s\n", res)
+	return err
 }
 
 func parseGlobalpingLocations(from string) globalping.LocationOptions {

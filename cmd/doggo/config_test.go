@@ -48,7 +48,9 @@ func isolateConfigEnv(t *testing.T) (xdg, home string) {
 			continue
 		}
 		key, val := kv[:eq], kv[eq+1:]
-		os.Unsetenv(key)
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatalf("Unsetenv(%q): %v", key, err)
+		}
 		t.Cleanup(func() { _ = os.Setenv(key, val) })
 	}
 	xdg = t.TempDir()

@@ -12,11 +12,6 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-// Config is the config given by the user
-type Config struct {
-	HTTPAddr string `koanf:"listen_addr"`
-}
-
 func initConfig() error {
 	f := flag.NewFlagSet("api", flag.ContinueOnError)
 	f.Usage = func() {
@@ -30,7 +25,9 @@ func initConfig() error {
 
 	// Register --version flag.
 	f.Bool("version", false, "Show build version")
-	f.Parse(os.Args[1:])
+	if err := f.Parse(os.Args[1:]); err != nil {
+		return fmt.Errorf("error parsing flags: %w", err)
+	}
 	// Display version.
 	if ok, _ := f.GetBool("version"); ok {
 		fmt.Println(buildVersion, buildDate)
@@ -46,12 +43,14 @@ func initConfig() error {
 	}
 	// Load environment variables and merge into the loaded config.
 	if err := ko.Load(env.Provider("DOGGO_API_", ".", func(s string) string {
-		return strings.Replace(strings.ToLower(
-			strings.TrimPrefix(s, "DOGGO_API_")), "__", ".", -1)
+		return strings.ReplaceAll(strings.ToLower(
+			strings.TrimPrefix(s, "DOGGO_API_")), "__", ".")
 	}), nil); err != nil {
 		return fmt.Errorf("error loading env config: %w", err)
 	}
 
-	ko.Load(posflag.Provider(f, ".", ko), nil)
+	if err := ko.Load(posflag.Provider(f, ".", ko), nil); err != nil {
+		return fmt.Errorf("error loading flags: %w", err)
+	}
 	return nil
 }

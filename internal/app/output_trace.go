@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/fatih/color"
@@ -42,11 +43,9 @@ func (app *App) OutputTrace(result resolvers.TraceResult) error {
 	case app.QueryFlags.ShowJSON:
 		return app.outputTraceJSON(result)
 	case app.QueryFlags.ShortOutput:
-		app.outputTraceShort(result)
-		return nil
+		return app.outputTraceShort(result)
 	default:
-		app.outputTraceTerminal(result)
-		return nil
+		return app.outputTraceTerminal(result)
 	}
 }
 
@@ -71,14 +70,14 @@ func (app *App) outputTraceJSON(result resolvers.TraceResult) error {
 	if err != nil {
 		return fmt.Errorf("unable to marshal trace output as JSON: %w", err)
 	}
-	fmt.Printf("%s\n", res)
-	return nil
+	_, err = fmt.Printf("%s\n", res)
+	return err
 }
 
 // outputTraceShort prints one tab-separated line per successful hop
 // (referral/answer/nxdomain/nodata/cname), followed by the final answer
 // record data, matching regular --short semantics.
-func (app *App) outputTraceShort(result resolvers.TraceResult) {
+func (app *App) outputTraceShort(result resolvers.TraceResult) error {
 	for _, hop := range result.Hops {
 		if hop.Outcome == resolvers.TraceOutcomeError || hop.Outcome == "" {
 			continue
@@ -92,75 +91,83 @@ func (app *App) outputTraceShort(result resolvers.TraceResult) {
 			rtt = fmt.Sprintf("%dms", attempt.RTTMS)
 			rcode = attempt.RCode
 		}
-		fmt.Printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\n", hop.Zone, string(hop.Outcome), ns, ip, protocol, rtt, rcode)
+		if _, err := fmt.Printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\n", hop.Zone, string(hop.Outcome), ns, ip, protocol, rtt, rcode); err != nil {
+			return err
+		}
 	}
 
 	if len(result.Hops) == 0 {
-		return
+		return nil
 	}
 	last := result.Hops[len(result.Hops)-1]
 	if last.Outcome != resolvers.TraceOutcomeAnswer {
-		return
+		return nil
 	}
 	for _, rec := range last.Answers {
-		fmt.Printf("%s\n", rec.Data)
+		if _, err := fmt.Printf("%s\n", rec.Data); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // outputTraceTerminal renders a human-readable, vertically structured trace:
 // one block per hop showing the contacted server(s), every attempt (success
 // or failure), delegation details, and the terminal result, followed by a
 // concise summary line.
-func (app *App) outputTraceTerminal(result resolvers.TraceResult) {
+func (app *App) outputTraceTerminal(result resolvers.TraceResult) error {
 	if !app.QueryFlags.Color {
 		color.NoColor = true
 	}
-	w := color.Output
+	var output strings.Builder
+	w := &output
 
-	fmt.Fprintf(w, "TRACE  %s  %s  %s\n", result.Query.Name, result.Query.Type, result.Query.Class)
+	_, _ = fmt.Fprintf(w, "TRACE  %s  %s  %s\n", result.Query.Name, result.Query.Type, result.Query.Class)
 
 	for _, hop := range result.Hops {
-		fmt.Fprintln(w)
-		fmt.Fprintf(w, "%2d  %-38s %s\n", hop.Number, hop.Zone, formatTraceHopRole(hop))
+		_, _ = fmt.Fprintln(w)
+		_, _ = fmt.Fprintf(w, "%2d  %-38s %s\n", hop.Number, hop.Zone, formatTraceHopRole(hop))
 
 		for _, attempt := range hop.Attempts {
-			fmt.Fprintf(w, "    %s\n", formatTraceAttempt(attempt))
+			_, _ = fmt.Fprintf(w, "    %s\n", formatTraceAttempt(attempt))
 		}
 
 		if hop.Delegation != nil {
-			fmt.Fprintf(w, "    %s\n", formatTraceDelegation(hop.Delegation))
+			_, _ = fmt.Fprintf(w, "    %s\n", formatTraceDelegation(hop.Delegation))
 		}
 
 		switch hop.Outcome {
 		case resolvers.TraceOutcomeAnswer:
-			fmt.Fprintf(w, "\n    %s\n", TerminalColorGreen("ANSWER"))
+			_, _ = fmt.Fprintf(w, "\n    %s\n", TerminalColorGreen("ANSWER"))
 			for _, rec := range hop.Answers {
-				fmt.Fprintf(w, "    %s\n", formatTraceRecord(rec))
+				_, _ = fmt.Fprintf(w, "    %s\n", formatTraceRecord(rec))
 			}
 		case resolvers.TraceOutcomeCNAME:
-			fmt.Fprintf(w, "\n    %s\n", TerminalColorYellow("ALIAS"))
+			_, _ = fmt.Fprintf(w, "\n    %s\n", TerminalColorYellow("ALIAS"))
 			for _, rec := range hop.Answers {
-				fmt.Fprintf(w, "    %s\n", formatTraceRecord(rec))
+				_, _ = fmt.Fprintf(w, "    %s\n", formatTraceRecord(rec))
 			}
 		case resolvers.TraceOutcomeNXDOMAIN:
-			fmt.Fprintf(w, "\n    %s\n", TerminalColorRed("NXDOMAIN"))
+			_, _ = fmt.Fprintf(w, "\n    %s\n", TerminalColorRed("NXDOMAIN"))
 			for _, rec := range hop.Authorities {
-				fmt.Fprintf(w, "    %s\n", formatTraceRecord(rec))
+				_, _ = fmt.Fprintf(w, "    %s\n", formatTraceRecord(rec))
 			}
 		case resolvers.TraceOutcomeNODATA:
-			fmt.Fprintf(w, "\n    %s\n", TerminalColorYellow("NODATA"))
+			_, _ = fmt.Fprintf(w, "\n    %s\n", TerminalColorYellow("NODATA"))
 			for _, rec := range hop.Authorities {
-				fmt.Fprintf(w, "    %s\n", formatTraceRecord(rec))
+				_, _ = fmt.Fprintf(w, "    %s\n", formatTraceRecord(rec))
 			}
 		case resolvers.TraceOutcomeError:
 			if len(hop.Attempts) == 0 && result.Error != nil {
-				fmt.Fprintf(w, "    %s\n", TerminalColorRed(fmt.Sprintf("ERROR: %s", result.Error.Error())))
+				_, _ = fmt.Fprintf(w, "    %s\n", TerminalColorRed(fmt.Sprintf("ERROR: %s", result.Error.Error())))
 			}
 		}
 	}
 
-	fmt.Fprintln(w)
-	fmt.Fprintf(w, "%s\n", formatTraceSummary(result))
+	_, _ = fmt.Fprintln(w)
+	_, _ = fmt.Fprintf(w, "%s\n", formatTraceSummary(result))
+	_, err := io.WriteString(color.Output, output.String())
+	return err
 }
 
 // formatTraceHopRole renders the role column of a hop header, e.g.

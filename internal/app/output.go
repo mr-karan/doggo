@@ -1,9 +1,10 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -26,7 +27,7 @@ var (
 	TerminalColorMagenta = color.New(color.FgMagenta, color.Bold).SprintFunc()
 )
 
-func (app *App) outputJSON(rsp []resolvers.Response) {
+func (app *App) outputJSON(rsp []resolvers.Response) error {
 	jsonOutput := struct {
 		Responses []resolvers.Response `json:"responses"`
 	}{
@@ -36,31 +37,38 @@ func (app *App) outputJSON(rsp []resolvers.Response) {
 	// Pretty print with 4 spaces.
 	res, err := json.MarshalIndent(jsonOutput, "", "    ")
 	if err != nil {
-		app.Logger.Error("unable to output data in JSON", "error", err)
-		os.Exit(-1)
+		return fmt.Errorf("unable to output data in JSON: %w", err)
 	}
-	fmt.Printf("%s\n", res)
+	_, err = fmt.Printf("%s\n", res)
+	return err
 }
 
-func (app *App) outputShort(rsp []resolvers.Response) {
+func (app *App) outputShort(rsp []resolvers.Response) error {
 	for _, r := range rsp {
 		for _, a := range r.Answers {
-			fmt.Printf("%s\n", a.Address)
+			if _, err := fmt.Printf("%s\n", a.Address); err != nil {
+				return err
+			}
 		}
 		for _, a := range r.Additional {
-			fmt.Printf("%s\n", a.Address)
+			if _, err := fmt.Printf("%s\n", a.Address); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
-func (app *App) outputTerminal(rsp []resolvers.Response) {
+func (app *App) outputTerminal(rsp []resolvers.Response) error {
 	// Disables colorized output if user specified.
 	if !app.QueryFlags.Color {
 		color.NoColor = true
 	}
 
 	// Conditional Time column.
-	table := tablewriter.NewWriter(color.Output)
+	// Tablewriter discards destination write errors, so write the rendered bytes ourselves.
+	var output bytes.Buffer
+	table := tablewriter.NewWriter(&output)
 	table.Options(
 		tablewriter.WithRendition(tw.Rendition{
 			Borders: tw.Border{
@@ -129,7 +137,9 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 			if outputStatus {
 				output = append(output, TerminalColorRed(ans.Status))
 			}
-			table.Append(output)
+			if err := table.Append(output); err != nil {
+				return fmt.Errorf("error adding answer row: %w", err)
+			}
 		}
 		for _, auth := range r.Authorities {
 			var typOut string
@@ -147,7 +157,9 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 			if outputStatus {
 				output = append(output, TerminalColorRed(auth.Status))
 			}
-			table.Append(output)
+			if err := table.Append(output); err != nil {
+				return fmt.Errorf("error adding authority row: %w", err)
+			}
 		}
 		for _, additional := range r.Additional {
 			typOut := getColoredType(additional.Type)
@@ -159,41 +171,51 @@ func (app *App) outputTerminal(rsp []resolvers.Response) {
 			if outputStatus {
 				output = append(output, TerminalColorRed(additional.Status))
 			}
-			table.Append(output)
+			if err := table.Append(output); err != nil {
+				return fmt.Errorf("error adding additional row: %w", err)
+			}
 		}
 	}
-	table.Render()
+	if err := table.Render(); err != nil {
+		return fmt.Errorf("error rendering table: %w", err)
+	}
+	if _, err := output.WriteTo(color.Output); err != nil {
+		return fmt.Errorf("error writing table: %w", err)
+	}
 
 	groups := groupEdnsByNameserver(rsp)
 	if len(groups) == 0 {
-		return
+		return nil
 	}
 
-	fmt.Fprintln(color.Output)
-	fmt.Fprintln(color.Output, TerminalColorYellow("EDNS Information:"))
+	var footer strings.Builder
+	_, _ = fmt.Fprintln(&footer)
+	_, _ = fmt.Fprintln(&footer, TerminalColorYellow("EDNS Information:"))
 	for _, group := range groups {
-		fmt.Fprintf(color.Output, "  Nameserver: %s\n", TerminalColorCyan(group.nameserver))
+		_, _ = fmt.Fprintf(&footer, "  Nameserver: %s\n", TerminalColorCyan(group.nameserver))
 		metadata := group.metadata
 		if metadata.NSID != "" {
-			fmt.Fprintf(color.Output, "    NSID: %s\n", TerminalColorCyan(metadata.NSID))
+			_, _ = fmt.Fprintf(&footer, "    NSID: %s\n", TerminalColorCyan(metadata.NSID))
 		}
 		if metadata.Cookie != "" {
-			fmt.Fprintf(color.Output, "    Cookie: %s\n", TerminalColorCyan(metadata.Cookie))
+			_, _ = fmt.Fprintf(&footer, "    Cookie: %s\n", TerminalColorCyan(metadata.Cookie))
 		}
 		if metadata.Subnet != "" {
-			fmt.Fprintf(color.Output, "    Client Subnet: %s (Scope: %d)\n",
+			_, _ = fmt.Fprintf(&footer, "    Client Subnet: %s (Scope: %d)\n",
 				TerminalColorCyan(metadata.Subnet), metadata.SubnetScope)
 		}
 		if metadata.UDPSize > 0 {
-			fmt.Fprintf(color.Output, "    UDP Size: %s\n", TerminalColorCyan(fmt.Sprintf("%d", metadata.UDPSize)))
+			_, _ = fmt.Fprintf(&footer, "    UDP Size: %s\n", TerminalColorCyan(fmt.Sprintf("%d", metadata.UDPSize)))
 		}
 		if metadata.DNSSECOk {
-			fmt.Fprintf(color.Output, "    DNSSEC OK: %s\n", TerminalColorGreen("true"))
+			_, _ = fmt.Fprintf(&footer, "    DNSSEC OK: %s\n", TerminalColorGreen("true"))
 		}
 		for _, extendedErr := range group.extendedErrors {
-			fmt.Fprintf(color.Output, "    Extended Error: %s\n", TerminalColorRed(formatExtendedError(extendedErr)))
+			_, _ = fmt.Fprintf(&footer, "    Extended Error: %s\n", TerminalColorRed(formatExtendedError(extendedErr)))
 		}
 	}
+	_, err := io.WriteString(color.Output, footer.String())
+	return err
 }
 
 type ednsOutputGroup struct {
@@ -317,12 +339,11 @@ func getColoredType(t string) string {
 
 // Output takes a list of `dns.Answers` and based
 // on the output format specified displays the information.
-func (app *App) Output(responses []resolvers.Response) {
+func (app *App) Output(responses []resolvers.Response) error {
 	if app.QueryFlags.ShowJSON {
-		app.outputJSON(responses)
+		return app.outputJSON(responses)
 	} else if app.QueryFlags.ShortOutput {
-		app.outputShort(responses)
-	} else {
-		app.outputTerminal(responses)
+		return app.outputShort(responses)
 	}
+	return app.outputTerminal(responses)
 }

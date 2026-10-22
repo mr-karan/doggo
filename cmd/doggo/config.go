@@ -82,7 +82,9 @@ func loadConfigFile(k *koanf.Koanf, f *flag.FlagSet) error {
 		}
 		return fmt.Errorf("error loading config file %q: %w", path, err)
 	}
-	normalizeSliceScalars(k)
+	if err := normalizeSliceScalars(k); err != nil {
+		return fmt.Errorf("error normalizing config file %q: %w", path, err)
+	}
 	if err := validateConfigKeys(k, f); err != nil {
 		return fmt.Errorf("error loading config file %q: %w", path, err)
 	}
@@ -159,18 +161,22 @@ func splitCSV(s string) []string {
 // koanf.Strings only handles []any/[]string, and the flag default is an empty
 // slice. Env vars are already split by envProvider and flags are already
 // slices, so this only affects config-file values.
-func normalizeSliceScalars(k *koanf.Koanf) {
+func normalizeSliceScalars(k *koanf.Koanf) error {
 	for key := range sliceFlags {
+		var values []string
 		switch v := k.Get(key).(type) {
 		case nil, []string, []any:
-			// already absent or a slice; leave as-is
+			continue
 		case string:
-			k.Set(key, splitCSV(v))
+			values = splitCSV(v)
 		default:
-			// numbers, bools, etc. — wrap the scalar as a single-element list
-			k.Set(key, []string{fmt.Sprintf("%v", v)})
+			values = []string{fmt.Sprintf("%v", v)}
+		}
+		if err := k.Set(key, values); err != nil {
+			return fmt.Errorf("error setting config key %q: %w", key, err)
 		}
 	}
+	return nil
 }
 
 // validateConfigKeys rejects config keys that don't map to a registered flag,

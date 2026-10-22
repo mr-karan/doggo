@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -29,19 +30,37 @@ var (
 )
 
 func main() {
-	initConfig()
+	if err := initConfig(); err != nil {
+		slog.Error("error loading config", "error", err)
+		os.Exit(1)
+	}
 
 	logger := utils.InitLogger(ko.Bool("app.debug"))
 
 	// Initialize app.
 	app := app.New(logger, nil, buildVersion)
 
+	srv := &http.Server{
+		Addr:         ko.String("server.address"),
+		Handler:      newRouter(app),
+		ReadTimeout:  ko.Duration("server.read_timeout") * time.Millisecond,
+		WriteTimeout: ko.Duration("server.write_timeout") * time.Millisecond,
+		IdleTimeout:  ko.Duration("server.keepalive_timeout") * time.Millisecond,
+	}
+
+	logger.Info("starting server", "address", srv.Addr, "version", buildVersion)
+	if err := srv.ListenAndServe(); err != nil {
+		logger.Error("couldn't start server", "error", err)
+		os.Exit(1)
+	}
+}
+
+func newRouter(app app.App) *chi.Mux {
 	// Register router instance.
 	r := chi.NewRouter()
 
 	// Register middlewares
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
@@ -53,11 +72,15 @@ func main() {
 	})
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
-		w.Write(indexHTML)
+		if _, err := w.Write(indexHTML); err != nil {
+			app.Logger.Debug("error writing index page", "error", err)
+		}
 	})
 	r.Get("/faq", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
-		w.Write(faqHTML)
+		if _, err := w.Write(faqHTML); err != nil {
+			app.Logger.Debug("error writing FAQ page", "error", err)
+		}
 	})
 
 	// API Handlers.
@@ -65,19 +88,5 @@ func main() {
 	r.Get("/api/ping/", wrap(app, handleHealthCheck))
 	r.Post("/api/lookup/", wrap(app, handleLookup))
 
-	// HTTP Server.
-	srv := &http.Server{
-		Addr:         ko.String("server.address"),
-		Handler:      r,
-		ReadTimeout:  ko.Duration("server.read_timeout") * time.Millisecond,
-		WriteTimeout: ko.Duration("server.write_timeout") * time.Millisecond,
-		IdleTimeout:  ko.Duration("server.keepalive_timeout") * time.Millisecond,
-	}
-
-	logger.Info("starting server", "address", srv.Addr, "version", buildVersion)
-
-	if err := srv.ListenAndServe(); err != nil {
-		logger.Error("couldn't start server", "error", err)
-		os.Exit(1)
-	}
+	return r
 }
