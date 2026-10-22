@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Require Go 1.27.3 and update Go dependencies, Astro, and CI tools to current releases.
+- Migrate container releases to GoReleaser's `dockers_v2` with multi-platform CLI tags and retain the ARM64 compatibility tags.
+
+### Fixed
+
+- Report configuration and output errors instead of silently ignoring them.
+- Remove unused web configuration code and keep the macOS DNS port constant in its platform-specific file.
+
+### Security
+
+- Stop trusting client-supplied forwarded-IP headers in the web API.
+
 ## [1.4.1] - 2026-10-12
 
 ### Fixed

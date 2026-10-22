@@ -158,50 +158,56 @@ changelog:
     - title: Others
       order: 999
 
-dockers:
-  - image_templates:
-      - "ghcr.io/mr-karan/doggo:{{ .Tag }}"
-      - "ghcr.io/mr-karan/doggo:latest"
-    goarch: amd64
+dockers_v2:
+  - id: cli
+    images:
+      - ghcr.io/mr-karan/doggo
+    tags:
+      - "{{ .Tag }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
     ids:
       - cli
     dockerfile: cli.Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--build-arg"
-      - "ARCH=amd64"
-      - --platform=linux/amd64
-      - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.source={{ .GitURL }}
-      - --label=org.opencontainers.image.version=v{{ .Version }}
-      - --label=org.opencontainers.image.created={{ .Date }}
-      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.source: "{{ .GitURL }}"
+      org.opencontainers.image.version: "v{{ .Version }}"
+      org.opencontainers.image.created: "{{ .Date }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
 
-  - image_templates:
-      - "ghcr.io/mr-karan/doggo:{{ .Tag }}-arm64v8"
-      - "ghcr.io/mr-karan/doggo:latest-arm64v8"
+  - id: cli-arm64
+    images:
+      - ghcr.io/mr-karan/doggo
+    tags:
+      - "{{ .Tag }}-arm64v8"
+      - latest-arm64v8
+    platforms:
+      - linux/arm64
     ids:
       - cli
-    goarch: arm64
     dockerfile: cli.Dockerfile
-    build_flag_templates:
-      - "--build-arg"
-      - "ARCH=arm64v8"
-      - --platform=linux/arm64
-      - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.source={{ .GitURL }}
-      - --label=org.opencontainers.image.version=v{{ .Version }}
-      - --label=org.opencontainers.image.created={{ .Date }}
-      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.source: "{{ .GitURL }}"
+      org.opencontainers.image.version: "v{{ .Version }}"
+      org.opencontainers.image.created: "{{ .Date }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
 
-  - image_templates:
-      - "ghcr.io/mr-karan/doggo-web:{{ .Tag }}"
-      - "ghcr.io/mr-karan/doggo-web:latest"
+  - id: web
+    images:
+      - ghcr.io/mr-karan/doggo-web
+    tags:
+      - "{{ .Tag }}"
+      - latest
+    platforms:
+      - linux/amd64
     ids:
       - web
-    goarch: amd64
+    disable: "{{ .IsSnapshot }}"
     dockerfile: web.Dockerfile
-    use: buildx
     extra_files:
       - config-api-sample.toml
       - docs/dist/
