@@ -183,6 +183,39 @@ func TestDOHHTTP3POSTUsesHTTP3(t *testing.T) {
 	}
 }
 
+func TestDOHHTTP3RejectsExpandedResponseHeaders(t *testing.T) {
+	serverURL := startHTTP3TestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Static QPACK references fit on the wire but exceed the decoded 10 MiB budget.
+		for range 110_000 {
+			w.Header().Add("Strict-Transport-Security", "max-age=31536000; includesubdomains; preload")
+		}
+		wire, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("read DNS request: %v", err)
+			return
+		}
+		// The client can reset the stream before the server writes the body.
+		_ = dnsResponse(w, wire)
+	}))
+
+	resolver, err := NewDOHResolver(serverURL, Options{
+		Logger:             discardLogger(),
+		Timeout:            5 * time.Second,
+		UseHTTP3:           true,
+		InsecureSkipVerify: true,
+	})
+	if err != nil {
+		t.Fatalf("NewDOHResolver: %v", err)
+	}
+	t.Cleanup(func() { _ = resolver.(*DOHResolver).Close() })
+
+	question := dns.Question{Name: "example.test.", Qtype: dns.TypeA, Qclass: dns.ClassINET}
+	_, err = resolver.Lookup(context.Background(), []dns.Question{question}, QueryFlags{RD: true})
+	if err == nil || !strings.Contains(err.Error(), "headers too large") {
+		t.Fatalf("Lookup error = %v, want oversized decoded headers rejected", err)
+	}
+}
+
 func TestDOHHTTP3GETFallback(t *testing.T) {
 	var (
 		methodsMu sync.Mutex

@@ -1,28 +1,28 @@
 module github.com/mr-karan/doggo
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/ameshkov/dnscrypt/v2 v2.4.0
 	github.com/ameshkov/dnsstamps v1.0.3
 	github.com/fatih/color v1.19.0
-	github.com/go-chi/chi/v5 v5.3.2
+	github.com/go-chi/chi/v5 v5.5.0
 	github.com/jsdelivr/globalping-go v0.3.0
 	github.com/knadh/koanf/parsers/toml v0.1.0
 	github.com/knadh/koanf/providers/env v1.1.0
 	github.com/knadh/koanf/providers/file v1.2.1
 	github.com/knadh/koanf/providers/posflag v1.0.2
-	github.com/knadh/koanf/v2 v2.3.8
+	github.com/knadh/koanf/v2 v2.4.1
 	github.com/miekg/dns v1.1.73
 	github.com/olekukonko/tablewriter v1.1.5
-	github.com/quic-go/quic-go v0.63.0
+	github.com/quic-go/quic-go v0.64.1
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/net v0.61.0
 	golang.org/x/sys v0.49.0
 )
 
 require (
-	github.com/AdguardTeam/golibs v0.35.16 // indirect
+	github.com/AdguardTeam/golibs v0.35.17 // indirect
 	github.com/andybalholm/brotli v1.2.6 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
@@ -43,6 +43,6 @@ require (
 	github.com/quic-go/qpack v0.6.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
-	golang.org/x/exp v0.0.0-20261011100332-faecfb24eb49 // indirect
+	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e // indirect
 	golang.org/x/text v0.43.0 // indirect
 )
