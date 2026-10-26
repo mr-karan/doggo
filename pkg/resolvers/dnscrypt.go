@@ -71,14 +71,22 @@ func (r *DNSCryptResolver) query(ctx context.Context, question dns.Question, fla
 
 		now := time.Now()
 
-		// Use a channel to handle the result of the Exchange
+		// Buffered so the goroutine can still finish if ctx is cancelled first.
 		resultChan := make(chan struct {
 			resp *dns.Msg
 			err  error
-		})
+		}, 1)
 
 		go func() {
 			resp, err := r.client.Exchange(&msg, r.resolverInfo)
+			// DNSCrypt servers set TC when the reply exceeds the UDP response
+			// size limit; retry over TCP like dig and the classic resolver do.
+			if err == nil && resp.Truncated && r.client.Net == "udp" {
+				r.resolverOptions.Logger.Debug("Response truncated; retrying now", "protocol", "tcp")
+				tcpClient := *r.client
+				tcpClient.Net = "tcp"
+				resp, err = tcpClient.Exchange(&msg, r.resolverInfo)
+			}
 			resultChan <- struct {
 				resp *dns.Msg
 				err  error
