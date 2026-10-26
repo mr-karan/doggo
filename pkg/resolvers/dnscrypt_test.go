@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"net"
 	"sync/atomic"
 	"testing"
@@ -10,6 +11,65 @@ import (
 	"github.com/ameshkov/dnscrypt/v2"
 	"github.com/miekg/dns"
 )
+
+// startDNSCryptServer runs an in-process DNSCrypt server on 127.0.0.1 with
+// UDP and TCP on the same port, and returns its sdns:// stamp.
+func startDNSCryptServer(t *testing.T, handler dnscrypt.Handler) string {
+	t.Helper()
+	rc, err := dnscrypt.GenerateResolverConfig("2.dnscrypt-cert.doggo.test", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cert, err := rc.CreateCert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := &dnscrypt.Server{
+		ProviderName: rc.ProviderName,
+		ResolverCert: cert,
+		Handler:      handler,
+	}
+
+	// The stamp carries one address, so UDP and TCP must share the port.
+	// The port the OS picks for UDP may already be taken for TCP; retry.
+	var (
+		udpConn *net.UDPConn
+		tcpLn   *net.TCPListener
+	)
+	for attempt := 0; attempt < 10 && tcpLn == nil; attempt++ {
+		udpConn, err = net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		addr := udpConn.LocalAddr().(*net.UDPAddr)
+		tcpLn, err = net.ListenTCP("tcp", &net.TCPAddr{IP: addr.IP, Port: addr.Port})
+		if err != nil {
+			_ = udpConn.Close()
+		}
+	}
+	if tcpLn == nil {
+		t.Fatalf("no port free for both UDP and TCP: %v", err)
+	}
+
+	go func() { _ = srv.ServeUDP(udpConn) }()
+	go func() { _ = srv.ServeTCP(tcpLn) }()
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(ctx); err != nil {
+			t.Errorf("DNSCrypt server shutdown: %v", err)
+		}
+		// Shutdown does not close caller-owned listeners.
+		_ = udpConn.Close()
+		_ = tcpLn.Close()
+	})
+
+	stamp, err := rc.CreateStamp(udpConn.LocalAddr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return stamp.String()
+}
 
 // largeAnswerHandler replies with more A records than the DNSCrypt UDP
 // response size limit allows, so the server sets TC on UDP.
@@ -36,52 +96,11 @@ func (h largeAnswerHandler) ServeDNS(rw dnscrypt.ResponseWriter, r *dns.Msg) err
 // TestDNSCryptResolverTruncatedRetry ensures a DNSCrypt reply truncated over
 // UDP is retried over TCP instead of returning an empty answer. See issue #262.
 func TestDNSCryptResolverTruncatedRetry(t *testing.T) {
-	rc, err := dnscrypt.GenerateResolverConfig("2.dnscrypt-cert.doggo.test", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cert, err := rc.CreateCert()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	const answers = 64
 	var tcpCalls atomic.Int32
-	srv := &dnscrypt.Server{
-		ProviderName: rc.ProviderName,
-		ResolverCert: cert,
-		Handler:      largeAnswerHandler{answers: answers, tcpCalls: &tcpCalls},
-	}
+	stamp := startDNSCryptServer(t, largeAnswerHandler{answers: answers, tcpCalls: &tcpCalls})
 
-	// The stamp carries one address, so UDP and TCP must share the port.
-	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
-	if err != nil {
-		t.Fatal(err)
-	}
-	addr := udpConn.LocalAddr().(*net.UDPAddr)
-	tcpLn, err := net.ListenTCP("tcp", &net.TCPAddr{IP: addr.IP, Port: addr.Port})
-	if err != nil {
-		_ = udpConn.Close()
-		t.Fatal(err)
-	}
-	go func() { _ = srv.ServeUDP(udpConn) }()
-	go func() { _ = srv.ServeTCP(tcpLn) }()
-	t.Cleanup(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-		if err := srv.Shutdown(ctx); err != nil {
-			t.Errorf("DNSCrypt server shutdown: %v", err)
-		}
-		// Shutdown does not close caller-owned listeners.
-		_ = udpConn.Close()
-		_ = tcpLn.Close()
-	})
-
-	stamp, err := rc.CreateStamp(addr.String())
-	if err != nil {
-		t.Fatal(err)
-	}
-	rslvr, err := NewDNSCryptResolver(stamp.String(), DNSCryptResolverOpts{}, Options{
+	rslvr, err := NewDNSCryptResolver(stamp, Options{
 		Timeout: 2 * time.Second,
 		Logger:  discardLogger(),
 	})
@@ -100,5 +119,57 @@ func TestDNSCryptResolverTruncatedRetry(t *testing.T) {
 	}
 	if tcpCalls.Load() != 1 {
 		t.Fatalf("expected 1 TCP retry, got %d", tcpCalls.Load())
+	}
+}
+
+// silentHandler never replies, so a query only ends by timeout or
+// cancellation. It signals each received query on received.
+type silentHandler struct {
+	received chan<- struct{}
+}
+
+func (h silentHandler) ServeDNS(dnscrypt.ResponseWriter, *dns.Msg) error {
+	select {
+	case h.received <- struct{}{}:
+	default:
+	}
+	return nil
+}
+
+// TestDNSCryptResolverCancel ensures cancelling the context stops an
+// in-flight DNSCrypt exchange instead of waiting for the read timeout.
+func TestDNSCryptResolverCancel(t *testing.T) {
+	received := make(chan struct{}, 1)
+	stamp := startDNSCryptServer(t, silentHandler{received: received})
+
+	const timeout = 10 * time.Second
+	rslvr, err := NewDNSCryptResolver(stamp, Options{
+		Timeout: timeout,
+		Logger:  discardLogger(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	// Cancel only once the server holds the query, so the exchange is in flight.
+	go func() {
+		select {
+		case <-received:
+			cancel()
+		case <-time.After(timeout):
+		}
+	}()
+
+	start := time.Now()
+	_, err = rslvr.Lookup(ctx, []dns.Question{
+		{Name: "silent.test.", Qtype: dns.TypeA, Qclass: dns.ClassINET},
+	}, QueryFlags{})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", err)
+	}
+	if elapsed := time.Since(start); elapsed > timeout/2 {
+		t.Fatalf("lookup took %v; cancellation did not stop the exchange", elapsed)
 	}
 }
