@@ -137,4 +137,3 @@ func TestConcurrentLookupWaitsForAllGoroutines(t *testing.T) {
 		t.Fatal("ConcurrentLookup returned before slow goroutine finished")
 	}
 }
-

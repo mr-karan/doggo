@@ -190,7 +190,7 @@ func newResolver(ns models.Nameserver, opts Options) (Resolver, error) {
 		return NewClassicResolver(ns.Address, ClassicResolverOpts{}, opts)
 	case models.DNSCryptResolver:
 		opts.Logger.Debug("initiating DNSCrypt resolver")
-		return NewDNSCryptResolver(ns.Address, DNSCryptResolverOpts{}, opts)
+		return NewDNSCryptResolver(ns.Address, opts)
 	case models.DOQResolver:
 		opts.Logger.Debug("initiating DOQ resolver")
 		return NewDOQResolver(ns.Address, opts)
