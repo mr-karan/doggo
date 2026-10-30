@@ -63,7 +63,7 @@ Compatibility note: before this EDE correctness fix, a multi-EDE response repeat
       }
       // ... more entries ...
     ],
-    "queries": [
+    "questions": [
       {
         "name": "internetfreedom.in.",
         "type": "A",
