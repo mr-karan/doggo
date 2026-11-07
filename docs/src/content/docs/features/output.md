@@ -58,6 +58,7 @@ Compatibility note: before this EDE correctness fix, a multi-EDE response repeat
         "class": "IN",
         "ttl": "22s",
         "address": "104.27.158.96",
+        "status": "NOERROR",
         "rtt": "37ms",
         "nameserver": "127.0.0.1:53"
       }

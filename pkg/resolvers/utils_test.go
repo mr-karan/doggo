@@ -14,6 +14,37 @@ import (
 	"github.com/miekg/dns"
 )
 
+func TestParseMessageSetsAnswerStatus(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		record string
+		rcode  int
+		want   string
+	}{
+		{name: "successful A", record: "example.com. 60 IN A 192.0.2.1", rcode: dns.RcodeSuccess, want: "NOERROR"},
+		{name: "CNAME to missing name", record: "example.com. 60 IN CNAME missing.example.com.", rcode: dns.RcodeNameError, want: "NXDOMAIN"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			record, err := dns.NewRR(test.record)
+			if err != nil {
+				t.Fatal(err)
+			}
+			msg := &dns.Msg{
+				MsgHdr: dns.MsgHdr{Rcode: test.rcode},
+				Answer: []dns.RR{record},
+			}
+
+			response := parseMessage(msg, time.Millisecond, "127.0.0.1:53")
+			if len(response.Answers) != 1 {
+				t.Fatalf("answers = %+v, want one answer", response.Answers)
+			}
+			if got := response.Answers[0].Status; got != test.want {
+				t.Fatalf("answer status = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
 func TestParseMessageUsesGenericNamesForReservedTypesInAllSections(t *testing.T) {
 	for _, test := range []struct {
 		name       string
