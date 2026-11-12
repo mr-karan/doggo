@@ -351,6 +351,7 @@ func parseMessage(msg *dns.Msg, rtt time.Duration, server string) Response {
 				Address:    parts[len(parts)-1],
 				RTT:        timeTaken,
 				Nameserver: server,
+				Status:     dns.RcodeToString[msg.Rcode],
 			}
 		)
 
